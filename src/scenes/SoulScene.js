@@ -15,7 +15,7 @@ export default class SoulScene extends Phaser.Scene {
 
   create() {
     // 배경
-    this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000).setOrigin(0);
+    // this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000).setOrigin(0);
 
     // 플레이어 생성
     this.player = this.physics.add
