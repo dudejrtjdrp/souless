@@ -25,4 +25,4 @@ dist-ssr
 
 .eslintrc.cjs
 .prettierrc
-src/assets
+/src/assets/
