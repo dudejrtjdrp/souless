@@ -7,8 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+.yarn
 node_modules
-dist
+dist/
+.vite/
 dist-ssr
 *.local
 
@@ -23,6 +25,20 @@ dist-ssr
 *.sln
 *.sw?
 
+# Electron 빌드
+out/
+*.app
+*.exe
+*.dll
+*.dmg
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+
+# 에셋 폴더 무시
+/src/assets/
+
 .eslintrc.cjs
 .prettierrc
-/src/assets/
