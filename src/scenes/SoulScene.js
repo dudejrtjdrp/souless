@@ -6,11 +6,10 @@ export default class SoulScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.spritesheet('soul', 'src/assets/images/soul_spritesheet.png', {
+    this.load.spritesheet('soul', 'assets/images/soul_spritesheet.png', {
       frameWidth: 32,
       frameHeight: 32,
     });
-    this.load.image('enemy', 'src/assets/images/enemy.png');
   }
 
   create() {
@@ -20,7 +19,7 @@ export default class SoulScene extends Phaser.Scene {
     // 플레이어 생성
     this.player = this.physics.add
       .sprite(this.scale.width / 2, this.scale.height / 2, 'soul')
-      .setScale(2);
+      .setScale(1);
     this.player.setCollideWorldBounds(true);
 
     this.moveSpeed = 200;
@@ -50,7 +49,7 @@ export default class SoulScene extends Phaser.Scene {
       enemy.setImmovable(true);
     }
 
-    this.physics.add.overlap(this.player, this.enemies, this.onPlayerOverlap, null, this);
+    this.physics.add.overlap(this.player, this.onPlayerOverlap, null, this);
 
     // 애니메이션 정의
     this.createAnimations();

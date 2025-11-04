@@ -1,108 +1,164 @@
 import Phaser from 'phaser';
+import Soul from '../models/characters/SoulModel.js';
+import { MAPS } from '../config/maps.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
   }
 
+  // 🔹 초기화 시 맵 선택
+  init(data) {
+    this.currentMapKey = data.mapKey || 'forest'; // 기본값: cave
+    this.mapConfig = MAPS[this.currentMapKey];
+  }
+
   preload() {
-    // 타일셋 이미지
-    this.load.image('tiles', 'assets/map/terrain_and_props.png');
-    // TMJ 맵 JSON
-    this.load.tilemapTiledJSON('map', 'assets/map/map.tmj');
-    // 스프라이트 시트
-    this.load.spritesheet('soul', 'assets/sprites/soul_spritesheet.png', {
+    // 🔹 현재 맵의 레이어들 로드
+    this.mapConfig.layers.forEach((layer) => {
+      this.load.image(layer.key, layer.path);
+    });
+
+    // 🔹 충돌 레이어 로드
+    this.load.image(this.mapConfig.collision.key, this.mapConfig.collision.path);
+
+    // 🔹 캐릭터 스프라이트 (공통)
+    this.load.spritesheet('soul', '/assets/characters/soul_spritesheet.png', {
       frameWidth: 32,
       frameHeight: 32,
     });
-    // 적 예시
-    this.load.image('enemy', 'assets/images/enemy.png');
   }
 
   create() {
-    // Tilemap과 Tileset 연결
-    const map = this.make.tilemap({ key: 'map' });
-    const tileset = map.addTilesetImage('terrain_and_props', 'tiles');
-    // 'terrain_and_props'는 Tiled에서 tileset 이름과 동일해야 함
+    this.physics.world.gravity.y = this.mapConfig.gravity;
 
-    // 레이어 생성
-    const groundLayer = map.createLayer('Ground', tileset, 0, 0);
-    const propsLayer = map.createLayer('Props', tileset, 0, 0);
+    const mapScale = this.mapConfig.mapScale || 1;
 
-    // 충돌 처리
-    propsLayer.setCollisionByProperty({ collides: true });
+    const firstLayerTexture = this.textures.get(this.mapConfig.layers[0].key).getSourceImage();
+    const mapWidth = firstLayerTexture.width * mapScale;
+    const mapHeight = firstLayerTexture.height * mapScale;
 
-    // 플레이어 생성
-    this.player = this.physics.add.sprite(100, 100, 'soul');
-    this.player.setCollideWorldBounds(true);
-    this.moveSpeed = 200;
-
-    // 애니메이션 정의
-    this.anims.create({
-      key: 'idle',
-      frames: this.anims.generateFrameNumbers('soul', { start: 0, end: 1 }),
-      frameRate: 3,
-      repeat: -1,
-    });
-    this.anims.create({
-      key: 'walk',
-      frames: this.anims.generateFrameNumbers('soul', { start: 4, end: 7 }),
-      frameRate: 6,
-      repeat: -1,
+    this.mapConfig.layers.forEach((layer, index) => {
+      const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
+      img.setScale(mapScale);
+      img.setDepth(index);
     });
 
-    this.player.play('idle');
+    // 🔹 spawn 위치 계산 (고급)
+    const spawn = this.mapConfig.spawn;
+    let spawnX, spawnY;
 
-    // 키 입력
-    this.cursors = this.input.keyboard.createCursorKeys();
-
-    // 적 그룹
-    this.enemies = this.physics.add.group();
-    for (let i = 0; i < 5; i++) {
-      const enemy = this.enemies.create(
-        Phaser.Math.Between(50, this.scale.width - 50),
-        Phaser.Math.Between(50, this.scale.height - 50),
-        'enemy',
-      );
-      enemy.setImmovable(true);
+    // X 좌표 계산
+    if (spawn.x === 'center') {
+      spawnX = mapWidth / 2;
+    } else if (spawn.x === 'left') {
+      spawnX = 100;
+    } else if (spawn.x === 'right') {
+      spawnX = mapWidth - 100;
+    } else {
+      spawnX = spawn.x * mapScale;
     }
 
-    // 충돌 처리
-    this.physics.add.collider(this.player, propsLayer);
-    this.physics.add.collider(this.player, this.enemies);
+    // Y 좌표 계산
+    if (spawn.y === 'bottom') {
+      spawnY = mapHeight + (spawn.offsetY || -50) * mapScale;
+    } else if (spawn.y === 'top') {
+      spawnY = 100;
+    } else if (spawn.y === 'center') {
+      spawnY = mapHeight / 2;
+    } else {
+      spawnY = spawn.y * mapScale;
+    }
+
+    const playerScale = this.mapConfig.playerScale || 2;
+    this.player = new Soul(this, spawnX, spawnY, playerScale, mapScale);
+
+    this.createCollisionLayer(this.mapConfig.collision.key, mapScale);
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+    this.jumpKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
+    this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+    this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
   }
 
-  update() {
-    const body = this.player.body;
-    body.setVelocity(0);
+  createCollisionLayer(collisionKey, mapScale = 1) {
+    const collisionTexture = this.textures.get(collisionKey).getSourceImage();
+    const { width, height } = collisionTexture;
 
-    let moving = false;
+    const collisionCanvas = this.textures.createCanvas('collisionCanvas', width, height);
+    collisionCanvas.draw(0, 0, collisionTexture);
+    const ctx = collisionCanvas.getContext();
 
-    if (this.cursors.left.isDown) {
-      body.setVelocityX(-this.moveSpeed);
-      this.player.setFlipX(true);
-      moving = true;
-    } else if (this.cursors.right.isDown) {
-      body.setVelocityX(this.moveSpeed);
-      this.player.setFlipX(false);
-      moving = true;
+    this.collisionData = ctx.getImageData(0, 0, width, height);
+    this.collisionWidth = width;
+    this.collisionHeight = height;
+
+    this.collisionRects = [];
+    const step = 4;
+    const imgData = this.collisionData.data;
+    const processed = new Set();
+
+    for (let y = 0; y < height; y += step) {
+      for (let x = 0; x < width; x += step) {
+        const key = `${x},${y}`;
+        if (processed.has(key)) continue;
+
+        const i = (y * width + x) * 4;
+        const alpha = imgData[i + 3];
+
+        if (alpha > 128) {
+          let endX = x + step;
+          while (endX < width) {
+            const checkI = (y * width + endX) * 4;
+            if (imgData[checkI + 3] <= 128) break;
+            processed.add(`${endX},${y}`);
+            endX += step;
+          }
+
+          const rectWidth = endX - x;
+          // 🔹 충돌 박스 위치와 크기에도 스케일 적용
+          const rect = this.add.rectangle(
+            (x + rectWidth / 2) * mapScale,
+            (y + step / 2) * mapScale,
+            rectWidth * mapScale,
+            step * mapScale,
+          );
+          this.physics.add.existing(rect, true);
+          this.physics.add.collider(this.player.sprite, rect);
+          this.collisionRects.push(rect);
+
+          processed.add(key);
+        }
+      }
     }
+    collisionCanvas.destroy();
+  }
 
-    if (this.cursors.up.isDown) {
-      body.setVelocityY(-this.moveSpeed);
-      moving = true;
-    } else if (this.cursors.down.isDown) {
-      body.setVelocityY(this.moveSpeed);
-      moving = true;
-    }
+  update(time, delta) {
+    this.player.update(time, delta);
+  }
 
-    body.velocity.normalize().scale(this.moveSpeed);
+  // 🔹 맵 전환 메서드
+  changeMap(newMapKey) {
+    this.scene.restart({ mapKey: newMapKey });
+  }
 
-    // 애니메이션 전환
-    if (moving) {
-      if (this.player.anims.currentAnim.key !== 'walk') this.player.play('walk');
-    } else {
-      if (this.player.anims.currentAnim.key !== 'idle') this.player.play('idle');
-    }
+  createPortals() {
+    const portals = [
+      { x: 100, y: 500, targetMap: 'forest' },
+      { x: 1500, y: 500, targetMap: 'dungeon' },
+    ];
+
+    portals.forEach((portal) => {
+      const portalSprite = this.physics.add.sprite(portal.x, portal.y, 'portal');
+      portalSprite.setImmovable(true);
+
+      this.physics.add.overlap(this.player.sprite, portalSprite, () => {
+        this.changeMap(portal.targetMap);
+      });
+    });
   }
 }

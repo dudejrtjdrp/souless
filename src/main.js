@@ -13,7 +13,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [SoulScene],
+  scene: [GameScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
