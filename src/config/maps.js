@@ -46,7 +46,7 @@ export const MAPS = {
       initialCount: 10,
       maxCount: 15,
       respawnInterval: 5000, // ms
-      yFixed: 1800, // 바닥 고정
+      yFixed: 2195, // 바닥 고정
       patrolRangeX: 100,
       minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },
@@ -101,7 +101,7 @@ export const MAPS = {
       initialCount: 10,
       maxCount: 15,
       respawnInterval: 5000, // ms
-      yFixed: 1800, // 바닥 고정
+      yFixed: 2195, // 바닥 고정
       patrolRangeX: 100,
       minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },

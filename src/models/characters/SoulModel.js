@@ -5,18 +5,21 @@ export default class Soul {
     this.scene = scene;
     this.mapScale = mapScale;
 
-    // ✅ Arcade Physics 스프라이트 생성
     this.sprite = scene.physics.add.sprite(x, y, 'soul', 0);
     this.sprite.setScale(scale);
     this.sprite.setDepth(100);
-
-    // ✅ Arcade Physics 설정
     this.sprite.setCollideWorldBounds(true);
-    this.sprite.body.setSize(24, 30); // 충돌 박스 크기
-    this.sprite.body.setOffset(4, 2); // 충돌 박스 위치
+    this.sprite.body.setSize(24, 30);
+    this.sprite.body.setOffset(4, 2);
 
     this.playerState = 'idle';
     this.isJumping = false;
+
+    // ✅ 공격용 hitbox
+    this.attackHitbox = scene.add.rectangle(x, y, 40, 30, 0xff0000, 0.3);
+    scene.physics.add.existing(this.attackHitbox);
+    this.attackHitbox.body.enable = false;
+    this.attackHitbox.body.setAllowGravity(false);
 
     this.createAnimations();
     this.changeState('idle');
@@ -52,9 +55,7 @@ export default class Soul {
     switch (newState) {
       case 'idle':
       case 'walk':
-        if (this.sprite.anims.currentAnim?.key !== newState) {
-          this.sprite.play(newState, true);
-        }
+        if (this.sprite.anims.currentAnim?.key !== newState) this.sprite.play(newState, true);
         break;
       case 'jump':
         this.sprite.play('jump');
@@ -64,6 +65,8 @@ export default class Soul {
         break;
       case 'attack':
         this.sprite.play('attack');
+        // 공격 시작 시 hitbox 활성화
+        this.activateHitbox();
         this.sprite.once('animationcomplete-attack', () => {
           if (this.playerState === 'attack') this.changeState('idle');
         });
@@ -71,38 +74,82 @@ export default class Soul {
     }
   }
 
-  jump() {
-    // ✅ Arcade Physics 바닥 감지
-    const onGround = this.sprite.body.touching.down || this.sprite.body.blocked.down;
+  activateHitbox() {
+    // hitbox 활성화
+    this.attackHitbox.body.enable = true;
 
+    // 위치를 공격 방향으로 맞춤
+    const offsetX = this.sprite.flipX ? -30 : 30;
+    this.attackHitbox.x = this.sprite.x + offsetX;
+    this.attackHitbox.y = this.sprite.y;
+
+    // 1초 후 hitbox 비활성화
+    this.scene.time.delayedCall(1000, () => {
+      this.attackHitbox.body.enable = false;
+    });
+  }
+
+  jump() {
+    const onGround = this.sprite.body.touching.down || this.sprite.body.blocked.down;
     if (onGround) {
-      this.sprite.setVelocityY(-130 * this.mapScale); // 점프 힘
+      this.sprite.setVelocityY(-130 * this.mapScale);
       this.changeState('jump');
       this.isJumping = true;
     }
   }
 
   attack() {
-    if (!this.sprite.active) return;
+    if (this.playerState === 'attack') return;
 
-    // 공격 범위 Hitbox 생성
-    const attackHitbox = this.scene.physics.add.sprite(
-      this.sprite.x + (this.sprite.flipX ? -20 : 20),
-      this.sprite.y,
-      null,
+    this.changeState('attack');
+
+    // 기존 hitbox 제거
+    if (this.currentHitbox) {
+      this.currentHitbox.destroy();
+      this.currentHitbox = null;
+      if (this.hitboxTimer) {
+        this.hitboxTimer.remove(false);
+        this.hitboxTimer = null;
+      }
+    }
+
+    // 히트박스 생성
+    const width = 10; // 가로 폭을 좁게
+    const height = 50; // 세로를 길게
+    const offsetX = this.sprite.flipX ? -5 : 5; // 플레이어 몸 가까이
+    const offsetY = -20; // 플레이어 몸 위쪽으로 올림
+
+    const hitbox = this.scene.add.rectangle(
+      this.sprite.x + offsetX,
+      this.sprite.y + offsetY,
+      width,
+      height,
+      0xff0000,
+      0.3,
     );
-    attackHitbox.setSize(20, 20);
-    attackHitbox.body.allowGravity = false;
+    this.scene.physics.add.existing(hitbox);
+    hitbox.body.setAllowGravity(false);
 
-    // EnemyManager에 있는 모든 적과 충돌 처리
-    this.scene.enemyManager.enemies.forEach((enemy) => {
-      this.scene.physics.add.overlap(attackHitbox, enemy.sprite, () => {
-        enemy.takeDamage(1);
+    // enemy와 충돌 처리
+    this.scene.enemyManager?.enemies.forEach((enemy) => {
+      this.scene.physics.add.overlap(hitbox, enemy.sprite, () => {
+        enemy.takeDamage();
       });
     });
 
-    // 잠깐 후 hitbox 제거
-    this.scene.time.delayedCall(100, () => attackHitbox.destroy());
+    this.currentHitbox = hitbox;
+
+    // 일정 시간 후 hitbox 제거
+    this.hitboxTimer = this.scene.time.addEvent({
+      delay: 100, // 0.3초
+      callback: () => {
+        if (this.currentHitbox) {
+          this.currentHitbox.destroy();
+          this.currentHitbox = null;
+          this.hitboxTimer = null;
+        }
+      },
+    });
   }
 
   update() {
@@ -111,50 +158,29 @@ export default class Soul {
     const attackKey = this.scene.attackKey;
     const jumpKey = this.scene.jumpKey;
 
-    // ✅ 바닥 체크
     const onGround = this.sprite.body.touching.down || this.sprite.body.blocked.down;
-
     if (onGround && this.isJumping) {
       this.isJumping = false;
-      if (this.playerState === 'jump') {
-        this.changeState('idle');
-      }
+      if (this.playerState === 'jump') this.changeState('idle');
     }
 
     // 좌우 이동
     if (cursors.left.isDown) {
       this.sprite.setVelocityX(-speed);
       this.sprite.setFlipX(true);
-      if (!this.isJumping && this.playerState !== 'attack') {
-        this.changeState('walk');
-      }
+      if (!this.isJumping && this.playerState !== 'attack') this.changeState('walk');
     } else if (cursors.right.isDown) {
       this.sprite.setVelocityX(speed);
       this.sprite.setFlipX(false);
-      if (!this.isJumping && this.playerState !== 'attack') {
-        this.changeState('walk');
-      }
+      if (!this.isJumping && this.playerState !== 'attack') this.changeState('walk');
     } else {
       this.sprite.setVelocityX(0);
-      if (!this.isJumping && this.playerState !== 'attack') {
-        this.changeState('idle');
-      }
+      if (!this.isJumping && this.playerState !== 'attack') this.changeState('idle');
     }
 
-    // 점프
-    if (Phaser.Input.Keyboard.JustDown(jumpKey)) {
-      this.jump();
-    }
+    if (Phaser.Input.Keyboard.JustDown(jumpKey)) this.jump();
+    if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) this.changeState('attack');
 
-    // 공격
-    if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) {
-      this.changeState('attack');
-      // this.attack();
-      this.scene.time.delayedCall(400, () => {
-        if (this.scene.enemyManager) {
-          this.attack();
-        }
-      });
-    }
+    // hitbox가 활성화돼 있으면 항상 플레이어 위치에 맞춤
   }
 }
