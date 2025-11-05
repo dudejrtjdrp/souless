@@ -2,7 +2,16 @@ export const MAPS = {
   cave: {
     key: 'cave',
     name: 'Parallax Cave',
-    mapScale: 1, // 🔹 원본 크기
+    mapScale: 1,
+    mapPath: '/assets/map/parallax_cave/cave_map.json',
+    tilesets: [
+      {
+        key: 'cave_tiles',
+        imagePath: '/assets/map/parallax_cave/cave_tiles.png',
+        nameInTiled: 'CaveTiles',
+      },
+    ],
+    layerNames: ['Background1', 'Background2', 'Midground', 'Collision', 'Foreground'],
     layers: [
       { key: 'cave_layer1', path: '/assets/map/parallax_cave/1.png' },
       { key: 'cave_layer2', path: '/assets/map/parallax_cave/2.png' },
@@ -19,18 +28,33 @@ export const MAPS = {
       path: '/assets/map/parallax_cave/9.png',
     },
     spawn: {
-      x: 'center',
-      y: 'bottom', //
-      offsetY: -80, //
+      x: 'left',
+      y: 'bottom',
+      offsetY: -80,
     },
     gravity: 800,
     playerScale: 2,
+    depths: {
+      backgroundStart: -100, // 이미지 레이어 시작 (9개: -100 ~ -92)
+      tilemapStart: 0, // 타일맵 레이어 시작 (5개: 0 ~ 4)
+      player: 100, // 플레이어
+      ui: 1000, // UI 및 디버그
+    },
   },
 
   forest: {
     key: 'forest',
     name: 'Dark Forest',
-    mapScale: 3, // 🔹 3배 확대
+    mapScale: 3,
+    mapPath: '/assets/map/forest/forest_map.tmj',
+    tilesets: [
+      {
+        key: 'forest_tileset',
+        nameInTiled: 'forest_map',
+        imagePath: '/assets/map/forest/forest_tileset.png',
+      },
+    ],
+    layerNames: ['Background', 'Ground', 'Collision'],
     layers: [
       { key: 'forest_layer1', path: '/assets/map/forest/0.png' },
       { key: 'forest_layer2', path: '/assets/map/forest/1.png' },
@@ -46,22 +70,37 @@ export const MAPS = {
       { key: 'forest_layer12', path: '/assets/map/forest/11.png' },
     ],
     collision: {
-      key: 'forest_collision',
-      path: '/assets/map/forest/10.png',
+      key: 'forest_tileset',
+      path: '/assets/map/forest/forest_tileset.png',
     },
     spawn: {
-      x: 'center', //
-      y: 'bottom',
-      offsetY: -80, //
+      x: 'left',
+      y: 1800,
+      offsetY: 200,
     },
     gravity: 800,
     playerScale: 2,
+    depths: {
+      backgroundStart: 0, // 이미지 레이어 시작 (12개: -100 ~ -89)
+      tilemapStart: -100, // 타일맵 레이어 시작 (3개: 0 ~ 2)
+      player: 100, // 플레이어
+      ui: 1000, // UI 및 디버그
+    },
   },
 
   dungeon: {
     key: 'dungeon',
     name: 'Ancient Dungeon',
-    mapScale: 2, // 🔹 2배 확대
+    mapScale: 2,
+    mapPath: '/assets/map/dungeon/dungeon_map.json',
+    tilesets: [
+      {
+        key: 'dungeon_tiles',
+        imagePath: '/assets/map/dungeon/dungeon_tiles.png',
+        nameInTiled: 'DungeonTiles',
+      },
+    ],
+    layerNames: ['Background', 'Collision', 'Foreground'],
     layers: [
       { key: 'dungeon_layer1', path: '/assets/map/dungeon/1.png' },
       { key: 'dungeon_layer2', path: '/assets/map/dungeon/2.png' },
@@ -77,5 +116,11 @@ export const MAPS = {
     },
     gravity: 1000,
     playerScale: 1.5,
+    depths: {
+      backgroundStart: -100, // 이미지 레이어 시작 (2개: -100 ~ -99)
+      tilemapStart: 0, // 타일맵 레이어 시작 (3개: 0 ~ 2)
+      player: 100, // 플레이어
+      ui: 1000, // UI 및 디버그
+    },
   },
 };
