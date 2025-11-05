@@ -9,7 +9,6 @@ export default class MapModel {
 
     this.tiledMap = null;
     this.collisionLayer = null;
-    this.debugGraphics = null;
   }
 
   preload() {
@@ -21,13 +20,6 @@ export default class MapModel {
 
   create() {
     this.tiledMap = this.scene.make.tilemap({ key: this.mapKey });
-
-    const depths = this.config.depths || {
-      backgroundStart: 0,
-      tilemapStart: -100,
-      player: 100,
-      ui: 1000,
-    };
 
     const tilesets = [];
     this.config.tilesets.forEach((tileset) => {
@@ -41,12 +33,11 @@ export default class MapModel {
       if (!layer) return;
 
       layer.setScale(this.config.mapScale);
-      layer.setDepth(depths.tilemapStart + index);
 
       if (layerName === 'Collision') {
         collisionLayer = layer;
         layer.setCollisionByExclusion([-1]);
-        layer.setVisible(false);
+        layer.setVisible(false); // collision 레이어 안 보이게
       }
     });
 
@@ -57,17 +48,36 @@ export default class MapModel {
     this.scene.physics.world.setBounds(0, 0, widthInPixels, heightInPixels);
     this.scene.cameras.main.setBounds(0, 0, widthInPixels, heightInPixels);
 
-    const spawnX =
+    // 기본 spawn 위치
+    let spawnX =
       this.config.spawn.x === 'left'
         ? 50 * this.config.mapScale
         : this.config.spawn.x === 'right'
         ? widthInPixels - 50 * this.config.mapScale
         : this.config.spawn.x;
 
-    const spawnY =
+    let spawnY =
       this.config.spawn.y === 'bottom'
         ? heightInPixels - 50 * this.config.mapScale
         : this.config.spawn.y;
+
+    // collisionLayer가 있으면 spawnY를 collider 바로 위로
+    if (this.collisionLayer) {
+      // collisionLayer를 아래로 이동
+
+      // 첫 번째 충돌 타일 기준으로 spawnY 조정
+      const tiles = this.collisionLayer.getTilesWithin(
+        0,
+        0,
+        this.collisionLayer.width,
+        this.collisionLayer.height,
+      );
+      const firstTile = tiles.find((tile) => tile.index !== -1);
+      if (firstTile) {
+        const tileTop = firstTile.getBounds().top + this.collisionLayer.y;
+        spawnY = tileTop - 32 * (this.config.playerScale || 1) + 227;
+      }
+    }
 
     return {
       spawn: { x: spawnX, y: spawnY },
@@ -77,20 +87,13 @@ export default class MapModel {
 
   addPlayerCollision(playerSprite) {
     if (this.collisionLayer) {
-      this.collisionLayer.setVisible(false);
-      this.collisionLayer.y += 180;
       this.scene.physics.add.collider(playerSprite, this.collisionLayer);
-
-      if (this.debugGraphics) {
-        this.debugGraphics.destroy();
-        this.debugGraphics = null;
-      }
+      this.collisionLayer.y += 180;
     }
   }
 
   destroy() {
     if (this.tiledMap) this.tiledMap.destroy();
-    if (this.debugGraphics) this.debugGraphics.destroy();
     this.collisionLayer = null;
   }
 }
