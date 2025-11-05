@@ -84,7 +84,7 @@ export default class Soul {
     this.attackHitbox.y = this.sprite.y;
 
     // 1초 후 hitbox 비활성화
-    this.scene.time.delayedCall(1000, () => {
+    this.scene.time.delayedCall(500, () => {
       this.attackHitbox.body.enable = false;
     });
   }
@@ -141,7 +141,7 @@ export default class Soul {
 
     // 일정 시간 후 hitbox 제거
     this.hitboxTimer = this.scene.time.addEvent({
-      delay: 100, // 0.3초
+      delay: 10, // 0.3초
       callback: () => {
         if (this.currentHitbox) {
           this.currentHitbox.destroy();
