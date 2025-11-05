@@ -68,4 +68,20 @@ export default class EnemyManager {
       this.scene.physics.add.collider(enemy.sprite, this.collisionLayer);
     }
   }
+
+  checkPlayerAttack(playerSprite) {
+    this.enemies.forEach((enemy) => {
+      // 간단한 충돌 판정 (범위 안에 있으면 피해)
+      const distance = Phaser.Math.Distance.Between(
+        playerSprite.x,
+        playerSprite.y,
+        enemy.sprite.x,
+        enemy.sprite.y,
+      );
+      if (distance < 50) {
+        // 공격 범위
+        enemy.takeDamage(1);
+      }
+    });
+  }
 }

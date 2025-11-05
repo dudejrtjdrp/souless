@@ -45,10 +45,10 @@ export const MAPS = {
       types: ['Slime', 'Goblin', 'Bat'],
       initialCount: 10,
       maxCount: 15,
-      respawnInterval: 5000, // 5초마다 스폰
-      yFixed: 1800, // 고정 Y
-      patrolRangeX: 100, // X 이동 범위
-      minPlayerDistance: 200, // 플레이어 근처에 스폰 방지
+      respawnInterval: 5000, // ms
+      yFixed: 1800, // 바닥 고정
+      patrolRangeX: 100,
+      minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },
   },
 
@@ -100,10 +100,10 @@ export const MAPS = {
       types: ['Slime', 'Goblin', 'Bat'],
       initialCount: 10,
       maxCount: 15,
-      respawnInterval: 5000, // 5초마다 스폰
-      yFixed: 1800, // 고정 Y
-      patrolRangeX: 100, // X 이동 범위
-      minPlayerDistance: 200, // 플레이어 근처에 스폰 방지
+      respawnInterval: 5000, // ms
+      yFixed: 1800, // 바닥 고정
+      patrolRangeX: 100,
+      minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },
   },
 
@@ -145,10 +145,10 @@ export const MAPS = {
       types: ['Slime', 'Goblin', 'Bat'],
       initialCount: 10,
       maxCount: 15,
-      respawnInterval: 5000, // 5초마다 스폰
-      yFixed: 1800, // 고정 Y
-      patrolRangeX: 100, // X 이동 범위
-      minPlayerDistance: 200, // 플레이어 근처에 스폰 방지
+      respawnInterval: 5000, // ms
+      yFixed: 1800, // 바닥 고정
+      patrolRangeX: 100,
+      minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },
   },
 };

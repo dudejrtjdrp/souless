@@ -82,6 +82,29 @@ export default class Soul {
     }
   }
 
+  attack() {
+    if (!this.sprite.active) return;
+
+    // 공격 범위 Hitbox 생성
+    const attackHitbox = this.scene.physics.add.sprite(
+      this.sprite.x + (this.sprite.flipX ? -20 : 20),
+      this.sprite.y,
+      null,
+    );
+    attackHitbox.setSize(20, 20);
+    attackHitbox.body.allowGravity = false;
+
+    // EnemyManager에 있는 모든 적과 충돌 처리
+    this.scene.enemyManager.enemies.forEach((enemy) => {
+      this.scene.physics.add.overlap(attackHitbox, enemy.sprite, () => {
+        enemy.takeDamage(1);
+      });
+    });
+
+    // 잠깐 후 hitbox 제거
+    this.scene.time.delayedCall(100, () => attackHitbox.destroy());
+  }
+
   update() {
     const speed = 100 * this.mapScale;
     const cursors = this.scene.cursors;
@@ -126,6 +149,12 @@ export default class Soul {
     // 공격
     if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) {
       this.changeState('attack');
+      // this.attack();
+      this.scene.time.delayedCall(400, () => {
+        if (this.scene.enemyManager) {
+          this.attack();
+        }
+      });
     }
   }
 }
