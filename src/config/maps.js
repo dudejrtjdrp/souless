@@ -35,10 +35,20 @@ export const MAPS = {
     gravity: 800,
     playerScale: 2,
     depths: {
-      backgroundStart: -100, // 이미지 레이어 시작 (9개: -100 ~ -92)
-      tilemapStart: 0, // 타일맵 레이어 시작 (5개: 0 ~ 4)
-      player: 100, // 플레이어
-      ui: 1000, // UI 및 디버그
+      backgroundStart: -100,
+      tilemapStart: 0,
+      player: 100,
+      ui: 1000,
+    },
+    // 🟢 적 관련 설정
+    enemies: {
+      types: ['Slime', 'Goblin', 'Bat'],
+      initialCount: 10,
+      maxCount: 15,
+      respawnInterval: 5000, // 5초마다 스폰
+      yFixed: 1800, // 고정 Y
+      patrolRangeX: 100, // X 이동 범위
+      minPlayerDistance: 200, // 플레이어 근처에 스폰 방지
     },
   },
 
@@ -81,10 +91,19 @@ export const MAPS = {
     gravity: 800,
     playerScale: 2,
     depths: {
-      backgroundStart: 0, // 이미지 레이어 시작 (12개: -100 ~ -89)
-      tilemapStart: -100, // 타일맵 레이어 시작 (3개: 0 ~ 2)
-      player: 100, // 플레이어
-      ui: 1000, // UI 및 디버그
+      backgroundStart: 0,
+      tilemapStart: -100,
+      player: 100,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Goblin', 'Bat'],
+      initialCount: 10,
+      maxCount: 15,
+      respawnInterval: 5000, // 5초마다 스폰
+      yFixed: 1800, // 고정 Y
+      patrolRangeX: 100, // X 이동 범위
+      minPlayerDistance: 200, // 플레이어 근처에 스폰 방지
     },
   },
 
@@ -117,10 +136,19 @@ export const MAPS = {
     gravity: 1000,
     playerScale: 1.5,
     depths: {
-      backgroundStart: -100, // 이미지 레이어 시작 (2개: -100 ~ -99)
-      tilemapStart: 0, // 타일맵 레이어 시작 (3개: 0 ~ 2)
-      player: 100, // 플레이어
-      ui: 1000, // UI 및 디버그
+      backgroundStart: -100,
+      tilemapStart: 0,
+      player: 100,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Goblin', 'Bat'],
+      initialCount: 10,
+      maxCount: 15,
+      respawnInterval: 5000, // 5초마다 스폰
+      yFixed: 1800, // 고정 Y
+      patrolRangeX: 100, // X 이동 범위
+      minPlayerDistance: 200, // 플레이어 근처에 스폰 방지
     },
   },
 };

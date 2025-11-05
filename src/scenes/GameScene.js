@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import Soul from '../models/characters/SoulModel.js';
 import MapModel from '../models/map/MapModel.js';
 import { MAPS } from '../config/maps.js';
+import EnemyManager from '../controllers/EnemyManager.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -64,10 +65,18 @@ export default class GameScene extends Phaser.Scene {
 
     // 기본 카메라
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
+    this.enemyManager = new EnemyManager(
+      this,
+      this.mapConfig,
+      this.mapModel.collisionLayer,
+      this.player,
+    );
+    this.enemyManager.createInitial();
   }
 
   update(time, delta) {
     this.player.update(time, delta);
+    this.enemyManager.update(time, delta);
   }
 
   changeMap(newMapKey) {
