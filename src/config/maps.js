@@ -39,6 +39,7 @@ export const MAPS = {
       tilemapStart: 0,
       player: 100,
       ui: 1000,
+      enemy: 100,
     },
     // 🟢 적 관련 설정
     enemies: {
@@ -92,8 +93,9 @@ export const MAPS = {
     playerScale: 2,
     depths: {
       backgroundStart: 0,
-      tilemapStart: -100,
+      tilemapStart: 50, // 타일맵은 background 위
       player: 100,
+      enemy: 90, // enemy는 타일보다 위지만 player보다 약간 낮게
       ui: 1000,
     },
     enemies: {
@@ -101,7 +103,7 @@ export const MAPS = {
       initialCount: 10,
       maxCount: 15,
       respawnInterval: 5000, // ms
-      yFixed: 2195, // 바닥 고정
+      yFixed: 2150, // 바닥 고정
       patrolRangeX: 100,
       minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },
@@ -140,6 +142,7 @@ export const MAPS = {
       tilemapStart: 0,
       player: 100,
       ui: 1000,
+      enemy: 100,
     },
     enemies: {
       types: ['Slime', 'Goblin', 'Bat'],

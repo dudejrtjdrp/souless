@@ -13,9 +13,12 @@ export default class Soul {
     this.sprite.body.setOffset(4, 2);
 
     this.playerState = 'idle';
-    this.isJumping = false;
 
-    // ✅ 공격용 hitbox
+    // 점프 관련
+    this.jumpCount = 0;
+    this.maxJump = 2;
+
+    // 공격용 hitbox
     this.attackHitbox = scene.add.rectangle(x, y, 40, 30, 0xff0000, 0.3);
     scene.physics.add.existing(this.attackHitbox);
     this.attackHitbox.body.enable = false;
@@ -91,10 +94,16 @@ export default class Soul {
 
   jump() {
     const onGround = this.sprite.body.touching.down || this.sprite.body.blocked.down;
+
     if (onGround) {
+      // 바닥에 있으면 점프 횟수 초기화
+      this.jumpCount = 0;
+    }
+
+    if (this.jumpCount < this.maxJump) {
       this.sprite.setVelocityY(-130 * this.mapScale);
       this.changeState('jump');
-      this.isJumping = true;
+      this.jumpCount++;
     }
   }
 
@@ -159,8 +168,8 @@ export default class Soul {
     const jumpKey = this.scene.jumpKey;
 
     const onGround = this.sprite.body.touching.down || this.sprite.body.blocked.down;
-    if (onGround && this.isJumping) {
-      this.isJumping = false;
+    if (onGround) {
+      this.jumpCount = 0;
       if (this.playerState === 'jump') this.changeState('idle');
     }
 
@@ -178,9 +187,10 @@ export default class Soul {
       if (!this.isJumping && this.playerState !== 'attack') this.changeState('idle');
     }
 
+    // 점프 입력 처리
     if (Phaser.Input.Keyboard.JustDown(jumpKey)) this.jump();
-    if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) this.changeState('attack');
 
-    // hitbox가 활성화돼 있으면 항상 플레이어 위치에 맞춤
+    // 공격 입력 처리
+    if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) this.changeState('attack');
   }
 }

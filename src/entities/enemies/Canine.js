@@ -1,12 +1,13 @@
 import EnemyBase from './EnemyBase.js';
 
-export default class Slime extends EnemyBase {
+export default class Canine extends EnemyBase {
   constructor(scene, x, y, scale = 1, patrolRangeX = 100) {
     super(scene, x, y, 32, 32, patrolRangeX, 1);
-    this.type = 'slime';
+    this.type = 'canine';
 
-    this.sprite.setTexture('slime_idle');
+    this.sprite.setTexture('canine_idle');
     this.sprite.setScale(scale);
+
     // 체력바 depth
     this.hpBar.setDepth(this.scene.mapConfig.depths.enemy + 1);
 
@@ -17,8 +18,8 @@ export default class Slime extends EnemyBase {
   createAnimations() {
     const anims = [
       { key: `${this.type}_idle`, start: 0, end: 3, frameRate: 6, repeat: -1 },
-      { key: `${this.type}_hit`, start: 0, end: 3, frameRate: 8, repeat: 0 },
-      { key: `${this.type}_death`, start: 0, end: 5, frameRate: 8, repeat: 0 },
+      { key: `${this.type}_hit`, start: 0, end: 2, frameRate: 8, repeat: 0 },
+      { key: `${this.type}_death`, start: 0, end: 4, frameRate: 0, repeat: 0 }, // 단일 spritesheet
     ];
 
     anims.forEach((a) => {

@@ -3,6 +3,10 @@ import Soul from '../models/characters/SoulModel.js';
 import MapModel from '../models/map/MapModel.js';
 import EnemyManager from '../controllers/EnemyManager.js';
 import { MAPS } from '../config/maps.js';
+import Slime from '../entities/enemies/Slime.js';
+import Goblin from '../entities/enemies/Canine.js';
+import Bat from '../entities/enemies/Bat.js';
+import EnemyAssetLoader from '../utils/EnemyAssetLoader.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -26,6 +30,8 @@ export default class GameScene extends Phaser.Scene {
       frameWidth: 32,
       frameHeight: 32,
     });
+
+    EnemyAssetLoader.preload(this);
   }
 
   create() {

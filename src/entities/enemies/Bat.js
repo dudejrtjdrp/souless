@@ -1,31 +1,39 @@
-import Phaser from 'phaser';
+import EnemyBase from './EnemyBase.js';
 
-export default class Bat {
+export default class Bat extends EnemyBase {
   constructor(scene, x, y, scale = 1, patrolRangeX = 100) {
-    this.scene = scene;
-    this.sprite = scene.physics.add.sprite(x, y, null); // 아직 스프라이트 없으면 null
-    this.sprite.setDisplaySize(32, 32); // placeholder 사각형
-    this.sprite.setCollideWorldBounds(true);
+    super(scene, x, y, 32, 32, patrolRangeX, 1);
+    this.type = 'bat';
 
-    this.patrolRangeX = patrolRangeX;
-    this.originX = x;
-    this.speed = 40;
-    this.direction = 1;
+    // sprite를 spritesheet로 생성
+    this.sprite.destroy(); // 기존 rectangle 제거
+    this.sprite = scene.physics.add.sprite(x, y, 'bat_idle', 0);
+    this.sprite.setScale(scale);
+    this.sprite.setDepth(this.scene.mapConfig.depths.enemy);
+
+    // 체력바 depth
+    this.hpBar.setDepth(this.scene.mapConfig.depths.enemy + 1);
+
+    this.createAnimations();
+    this.sprite.play(`${this.type}_idle`);
   }
 
-  update() {
-    // 단순 좌우 패트롤
-    this.sprite.setVelocityX(this.speed * this.direction);
-    if (Math.abs(this.sprite.x - this.originX) >= this.patrolRangeX) {
-      this.direction *= -1;
-    }
-  }
+  createAnimations() {
+    const anims = [
+      { key: `${this.type}_idle`, start: 0, end: 4, frameRate: 6, repeat: -1 },
+      { key: `${this.type}_hit`, start: 0, end: 4, frameRate: 8, repeat: 0 },
+      { key: `${this.type}_death`, start: 0, end: 6, frameRate: 8, repeat: 0 },
+    ];
 
-  takeDamage(amount = 1) {
-    this.hp = (this.hp ?? 3) - amount;
-    if (this.hp <= 0) {
-      this.isDead = true;
-      this.sprite.destroy();
-    }
+    anims.forEach((a) => {
+      if (!this.scene.anims.exists(a.key)) {
+        this.scene.anims.create({
+          key: a.key,
+          frames: this.scene.anims.generateFrameNumbers(a.key, { start: a.start, end: a.end }),
+          frameRate: a.frameRate,
+          repeat: a.repeat,
+        });
+      }
+    });
   }
 }

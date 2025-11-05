@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import Slime from '../entities/enemies/Slime.js';
-import Goblin from '../entities/enemies/Goblin.js';
+import Goblin from '../entities/enemies/Canine.js';
 import Bat from '../entities/enemies/Bat.js';
 
 const enemyClassMap = { Slime, Goblin, Bat };
@@ -107,6 +107,11 @@ export default class EnemyManager {
     enemy.patrolRangeX = patrolRangeX;
     enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
     enemy.speed = 50;
+
+    // ✅ enemy depth 적용
+    if (this.mapConfig.depths?.enemy !== undefined) {
+      enemy.sprite.setDepth(this.mapConfig.depths.enemy);
+    }
 
     this.enemies.push(enemy);
 
