@@ -14,12 +14,13 @@ export default class GameScene extends Phaser.Scene {
   }
 
   init(data) {
-    // this.currentMapKey = data.mapKey || 'dark_cave';
-    this.currentMapKey = data.mapKey || 'forest';
+    // this.currentMapKey = data.mapKey || 'forest';
+    this.currentMapKey = data.mapKey || 'dark_cave';
     this.mapConfig = MAPS[this.currentMapKey];
   }
 
   preload() {
+    // ✅ 디버그 모드 활성화
     this.mapModel = new MapModel(this, this.currentMapKey, this.mapConfig, true);
     this.mapModel.preload();
 
@@ -39,11 +40,11 @@ export default class GameScene extends Phaser.Scene {
     this.physics.world.gravity.y = this.mapConfig.gravity;
     const mapScale = this.mapConfig.mapScale || 1;
 
-    const { spawn, collisionLayer } = this.mapModel.create();
+    // ✅ mapModel.create() - collisionGround와 collisionLayer 모두 받기
+    const { spawn, collisionGround, collisionLayer } = this.mapModel.create();
 
     // 배경 레이어 생성
     this.mapConfig.layers.forEach((layer, index) => {
-      // const img = this.add.image(0, 1400, layer.key).setOrigin(0, 0);
       const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
       img.setScale(mapScale);
       img.setDepth(this.mapConfig.depths.backgroundStart + index);
@@ -53,8 +54,22 @@ export default class GameScene extends Phaser.Scene {
     this.player = new Soul(this, spawn.x, spawn.y, this.mapConfig.playerScale, mapScale);
     this.player.sprite.setDepth(this.mapConfig.depths.player);
 
-    // 충돌 연결
-    this.mapModel.addPlayerCollision(this.player.sprite);
+    this.mapModel.addPlayer(this.player.sprite);
+
+    this.mapModel.createPortals();
+
+    // 포탈 충돌 체크
+    this.mapModel.portals.forEach((portal) => {
+      if (!MAPS[portal.targetMap]) {
+        console.warn(`포탈 targetMap이 존재하지 않음: ${portal.targetMap}`);
+        return;
+      }
+
+      this.physics.add.overlap(this.player.sprite, portal, () => {
+        console.log(`포탈 이동! ${portal.targetMap}로 이동`);
+        this.scene.start('GameScene', { mapKey: portal.targetMap });
+      });
+    });
 
     // 키 입력
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -64,27 +79,26 @@ export default class GameScene extends Phaser.Scene {
     // 카메라
     this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
 
-    // EnemyManager 생성
-    this.enemyManager = new EnemyManager(this, this.mapConfig, collisionLayer, this.player);
+    this.enemyManager = new EnemyManager(
+      this,
+      this.mapConfig,
+      this.mapModel, // ✅ 변경
+      this.player,
+    );
     this.enemyManager.createInitial();
   }
 
   update(time, delta) {
     this.player.update();
 
-    // 적 공격 판정 (hitbox 기준)
     if (Phaser.Input.Keyboard.JustDown(this.attackKey) && !this.player.isJumping) {
       this.player.changeState('attack');
-      this.enemyManager?.enemies?.forEach((enemy) => {
-        if (
-          Phaser.Geom.Intersects.RectangleToRectangle(
-            this.player.sprite.getBounds(),
-            enemy.sprite.getBounds(),
-          )
-        ) {
-          enemy.takeDamage();
-        }
-      });
+
+      // this.enemyManager?.enemies?.forEach((enemy) => {
+      //   if (this.player.checkAttackHit(enemy)) {
+      //     enemy.takeDamage(this.mapConfig.enemies.attackDamage || 1);
+      //   }
+      // });
     }
 
     // 적 업데이트
@@ -92,6 +106,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   changeMap(newMapKey) {
+    // ✅ 정리 추가
+    if (this.mapModel) {
+      this.mapModel.destroy();
+    }
+    if (this.enemyManager) {
+      this.enemyManager.destroy();
+    }
+
     this.scene.restart({ mapKey: newMapKey });
   }
 }

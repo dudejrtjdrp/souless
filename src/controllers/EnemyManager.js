@@ -6,10 +6,10 @@ import Bat from '../entities/enemies/Bat.js';
 const enemyClassMap = { Slime, Goblin, Bat };
 
 export default class EnemyManager {
-  constructor(scene, mapConfig, collisionLayer, player) {
+  constructor(scene, mapConfig, mapModel, player) {
     this.scene = scene;
     this.mapConfig = mapConfig;
-    this.collisionLayer = collisionLayer;
+    this.mapModel = mapModel; // ✅ MapModel 사용
     this.player = player;
     this.enemies = [];
     this.lastSpawnTime = 0;
@@ -17,17 +17,18 @@ export default class EnemyManager {
     const worldBounds = scene.physics.world.bounds;
     this.spawnMinX = 50;
     this.spawnMaxX = worldBounds.width - 50;
+    this.spawnY = mapConfig.enemies.yFixed; // ✅ 위쪽에 생성 후 낙하
   }
 
   createInitial() {
-    const { types, initialCount, yFixed, patrolRangeX } = this.mapConfig.enemies;
+    const { types, initialCount, patrolRangeX } = this.mapConfig.enemies;
     for (let i = 0; i < initialCount; i++) {
-      this.spawnRandomEnemy(types, yFixed, patrolRangeX);
+      this.spawnRandomEnemy(types, patrolRangeX);
     }
   }
 
   update(time, delta) {
-    const { types, maxCount, respawnInterval, yFixed, patrolRangeX, minPlayerDistance } =
+    const { types, maxCount, respawnInterval, patrolRangeX, minPlayerDistance } =
       this.mapConfig.enemies;
 
     // 적 업데이트
@@ -36,9 +37,8 @@ export default class EnemyManager {
       enemy.update(time, delta);
     });
 
-    // 🔹 공격 hitbox와 충돌 판정 - 한 번에 한 명만
+    // 공격 hitbox와 충돌 판정
     if (this.player.isAttacking()) {
-      // 가까운 순서로 정렬
       const sortedEnemies = [...this.enemies].sort((a, b) => {
         const distA = Phaser.Math.Distance.Between(
           this.player.sprite.x,
@@ -55,11 +55,10 @@ export default class EnemyManager {
         return distA - distB;
       });
 
-      // 가장 가까운 적부터 체크
       for (const enemy of sortedEnemies) {
         if (this.player.checkAttackHit(enemy)) {
           enemy.takeDamage(this.mapConfig.enemies.attackDamage || 1);
-          break; // 한 명 맞으면 즉시 종료
+          break;
         }
       }
     }
@@ -69,7 +68,7 @@ export default class EnemyManager {
 
     // 리젠
     if (this.enemies.length < maxCount && time - this.lastSpawnTime > respawnInterval) {
-      this.spawnRandomEnemyNearPlayer(types, yFixed, patrolRangeX, minPlayerDistance);
+      this.spawnRandomEnemyNearPlayer(types, patrolRangeX, minPlayerDistance);
       this.lastSpawnTime = time;
     }
   }
@@ -88,12 +87,12 @@ export default class EnemyManager {
     }
   }
 
-  spawnRandomEnemy(types, yFixed, patrolRangeX) {
+  spawnRandomEnemy(types, patrolRangeX) {
     const x = Phaser.Math.Between(this.spawnMinX, this.spawnMaxX);
-    this.createEnemy(types, x, yFixed, patrolRangeX);
+    this.createEnemy(types, x, patrolRangeX);
   }
 
-  spawnRandomEnemyNearPlayer(types, yFixed, patrolRangeX, minDistance = 200) {
+  spawnRandomEnemyNearPlayer(types, patrolRangeX, minDistance = 200) {
     let x;
     const playerX = this.player.sprite.x;
     const attempts = 10;
@@ -101,34 +100,43 @@ export default class EnemyManager {
       x = Phaser.Math.Between(this.spawnMinX, this.spawnMaxX);
       if (Math.abs(x - playerX) >= minDistance) break;
     }
-    this.createEnemy(types, x, yFixed, patrolRangeX);
+    this.createEnemy(types, x, patrolRangeX);
   }
 
-  createEnemy(types, x, y, patrolRangeX) {
+  createEnemy(types, x, patrolRangeX) {
     const type = types[Phaser.Math.Between(0, types.length - 1)];
     const EnemyClass = enemyClassMap[type];
     if (!EnemyClass) return;
 
-    const enemy = new EnemyClass(this.scene, x, y);
-
-    // 🔹 HP는 각 Enemy 클래스의 생성자에서 설정되므로 여기서 덮어쓰지 않음
-    // enemy.hp = 3; ❌ 제거
-    // enemy.isDead = false; ❌ 제거 (생성자에서 이미 false)
+    // ✅ 위쪽에 생성
+    const enemy = new EnemyClass(this.scene, x, this.spawnY);
 
     // Patrol 초기값
     enemy.startX = x;
     enemy.patrolRangeX = patrolRangeX;
     enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
 
-    // ✅ enemy depth 적용
+    // Depth 적용
     if (this.mapConfig.depths?.enemy !== undefined) {
       enemy.sprite.setDepth(this.mapConfig.depths.enemy);
     }
 
     this.enemies.push(enemy);
 
-    if (this.collisionLayer) {
-      this.scene.physics.add.collider(enemy.sprite, this.collisionLayer);
+    // ✅ MapModel을 통해 collision 추가
+    if (this.mapModel) {
+      this.mapModel.addEnemy(enemy.sprite);
+    } else {
+      console.error('MapModel not available!');
     }
+  }
+
+  destroy() {
+    this.enemies.forEach((enemy) => {
+      if (enemy.sprite) {
+        enemy.sprite.destroy();
+      }
+    });
+    this.enemies = [];
   }
 }

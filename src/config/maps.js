@@ -26,6 +26,7 @@ export const MAPS = {
     collision: {
       key: 'cave_collision',
       path: '/assets/map/parallax_cave/9.png',
+      groundHeight: 200,
     },
     spawn: {
       x: 'left',
@@ -47,10 +48,28 @@ export const MAPS = {
       initialCount: 10,
       maxCount: 15,
       respawnInterval: 5000, // ms
-      yFixed: 2195, // 바닥 고정
+      yFixed: 2150, // 바닥 고정
       patrolRangeX: 100,
       minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
     },
+    portals: [
+      {
+        x: 800,
+        y: 400,
+        width: 64,
+        height: 64,
+        targetMap: 'cave_map',
+        targetSpawn: { x: 'left', y: 'bottom' },
+      },
+      {
+        x: 1600,
+        y: 300,
+        width: 64,
+        height: 64,
+        targetMap: 'village_map',
+        targetSpawn: { x: 'right', y: 'bottom' },
+      },
+    ],
   },
 
   forest: {
@@ -83,10 +102,11 @@ export const MAPS = {
     collision: {
       key: 'forest_tileset',
       path: '/assets/map/forest/forest_tileset.png',
+      groundHeight: 200,
     },
     spawn: {
       x: 'left',
-      y: 1800,
+      y: 2170,
       offsetY: 200,
     },
     gravity: 800,
@@ -103,22 +123,40 @@ export const MAPS = {
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000, // ms
-      yFixed: 2150, // 바닥 고정
+      yFixed: 2169, // 바닥 고정
       patrolRangeX: 100,
       minPlayerDistance: 100, // 리젠 시 플레이어 근처 피하기
     },
+    portals: [
+      {
+        x: 800,
+        y: 400,
+        width: 64,
+        height: 64,
+        targetMap: 'cave_map',
+        targetSpawn: { x: 'left', y: 'bottom' },
+      },
+      {
+        x: 1600,
+        y: 300,
+        width: 64,
+        height: 64,
+        targetMap: 'village_map',
+        targetSpawn: { x: 'right', y: 'bottom' },
+      },
+    ],
   },
 
   dark_cave: {
     key: 'dark_cave',
     name: 'Dark cave',
-    mapScale: 3,
-    mapPath: '/assets/map/dark_cave/forest_map.tmj',
+    mapScale: 4,
+    mapPath: '/assets/map/dark_cave/dark_cave_map.tmj',
     tilesets: [
       {
-        key: 'forest_tileset',
-        nameInTiled: 'forest_map',
-        imagePath: '/assets/map/dark_cave/forest_tileset.png',
+        key: 'dark_cave_tileset',
+        nameInTiled: 'dark_cave_tileset',
+        imagePath: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
       },
     ],
     layerNames: ['Background', 'Ground', 'Collision'],
@@ -132,12 +170,13 @@ export const MAPS = {
       },
     ],
     collision: {
-      key: 'forest_tileset',
-      path: '/assets/map/dark_cave/forest_tileset.png',
+      key: 'dark_cave_tileset',
+      path: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
+      groundHeight: 100,
     },
     spawn: {
       x: 'left',
-      y: 1800,
+      y: 893,
       offsetY: 200,
     },
     gravity: 800,
@@ -154,9 +193,27 @@ export const MAPS = {
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000, // ms
-      yFixed: 2150, // 바닥 고정
+      yFixed: 895, // 바닥 고정
       patrolRangeX: 100,
       minPlayerDistance: 100, // 리젠 시 플레이어 근처 피하기
     },
+    portals: [
+      {
+        x: 800,
+        y: 895,
+        width: 64,
+        height: 64,
+        targetMap: 'forest',
+        targetSpawn: { x: 'left', y: 'bottom' },
+      },
+      {
+        x: 1600,
+        y: 895,
+        width: 64,
+        height: 64,
+        targetMap: 'village_map',
+        targetSpawn: { x: 'right', y: 'bottom' },
+      },
+    ],
   },
 };

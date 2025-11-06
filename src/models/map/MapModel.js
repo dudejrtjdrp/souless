@@ -8,104 +8,103 @@ export default class MapModel {
     this.debug = debug;
 
     this.tiledMap = null;
-    this.collisionLayer = null;
+    this.collisionGround = null;
+    this.collisionLayer = null; // ✅ Tiled Collision 레이어
+    this.entityColliders = []; // ✅ 충돌 추적
   }
 
-  // 맵 및 타일셋 로드
   preload() {
     this.loadMapJSON();
     this.loadTilesets();
   }
 
-  // 맵 JSON 파일 로드
   loadMapJSON() {
     this.scene.load.tilemapTiledJSON(this.mapKey, this.config.mapPath);
   }
 
-  // 타일셋 이미지 로드
   loadTilesets() {
     this.config.tilesets.forEach(({ key, imagePath }) => {
       this.scene.load.image(key, imagePath);
     });
   }
 
-  // 타일맵 생성 전체 루틴
   create() {
     this.createTilemap();
     const tilesets = this.addTilesets();
-    this.createAllLayers(tilesets);
+    // this.createAllLayers(tilesets);
     this.setupWorldBounds();
+    this.createFixedCollisionGround();
     const spawn = this.calculateSpawn();
-    return { spawn, collisionLayer: this.collisionLayer };
+
+    return {
+      spawn,
+      collisionGround: this.collisionGround,
+      collisionLayer: this.collisionLayer,
+    };
   }
 
-  // 타일맵 생성
   createTilemap() {
     this.tiledMap = this.scene.make.tilemap({ key: this.mapKey });
   }
 
-  // 타일셋 추가
   addTilesets() {
     return this.config.tilesets.map(({ nameInTiled, key }) =>
       this.tiledMap.addTilesetImage(nameInTiled, key),
     );
   }
 
-  // 모든 레이어 생성
   createAllLayers(tilesets) {
     const camera = this.scene.cameras.main;
     const { width, height } = camera;
     this.config.layerNames.forEach((name, i) => this.createLayer(name, i, tilesets, width, height));
   }
 
-  // 단일 레이어 생성
   createLayer(layerName, index, tilesets, cameraWidth, cameraHeight) {
     const layer = this.tiledMap.createLayer(layerName, tilesets);
-
-    if (!layer && this.config.key === 'dark_cave') {
-      this.createBackgroundImage(index, cameraWidth, cameraHeight);
-      return;
-    }
     if (!layer) return;
 
     layer.setScale(this.config.mapScale);
-    if (layerName === 'Collision') this.setupCollisionLayer(layer);
+
+    // ✅ Collision 레이어 처리
+    if (layerName === 'Collision') {
+      layer.setVisible(false);
+      this.collisionLayer = layer;
+      // 모든 타일에 충돌 활성화
+      layer.setCollisionByExclusion([-1]);
+    }
+
+    if (layerName === 'Background') {
+      this.createBackgroundImage(index, cameraWidth, cameraHeight, layer);
+    }
   }
 
-  // 충돌 레이어 설정
-  setupCollisionLayer(layer) {
-    layer.setCollisionByExclusion([-1]);
-    layer.setVisible(false);
-    this.collisionLayer = layer;
-  }
-
-  // 배경 이미지 생성
-  createBackgroundImage(index, cameraWidth, cameraHeight) {
+  createBackgroundImage(index, cameraWidth, cameraHeight, layer = null) {
     const imageConfig = this.config.layers[index];
     if (!imageConfig) return;
 
     const bg = this.scene.add.image(0, 0, imageConfig.key).setOrigin(0, 0);
     const scale = this.calculateBackgroundScale(bg, cameraWidth, cameraHeight);
 
-    bg.setScale(scale).setScrollFactor(0.3 + index * 0.1);
+    bg.setScale(scale);
+    bg.setScrollFactor(0);
     bg.setDepth(this.config.depths.backgroundStart + index * 10);
+
+    const scaledHeight = bg.height * scale;
+    bg.y = cameraHeight - scaledHeight;
   }
 
-  // 배경 스케일 계산
   calculateBackgroundScale(bg, cameraWidth, cameraHeight) {
-    const scaleX = cameraWidth / bg.width;
     const scaleY = cameraHeight / bg.height;
-    return Math.max(scaleX, scaleY);
+    const scaledWidth = bg.width * scaleY;
+    return scaledWidth < cameraWidth ? cameraWidth / bg.width : scaleY;
   }
 
-  // 월드 경계 설정
   setupWorldBounds() {
     const { width, height } = this.getScaledMapSize();
     this.scene.physics.world.setBounds(0, 0, width, height);
     this.scene.cameras.main.setBounds(0, 0, width, height);
   }
 
-  // 스케일된 맵 크기 반환
   getScaledMapSize() {
     return {
       width: this.tiledMap.widthInPixels * this.config.mapScale,
@@ -113,16 +112,13 @@ export default class MapModel {
     };
   }
 
-  // 스폰 위치 계산
   calculateSpawn() {
     const { width, height } = this.getScaledMapSize();
     const spawnX = this.calculateSpawnX(width);
-    let spawnY = this.calculateSpawnY(height);
-    if (this.collisionLayer) spawnY = this.adjustSpawnYByCollision(spawnY);
+    const spawnY = this.config.spawn.y;
     return { x: spawnX, y: spawnY };
   }
 
-  // 스폰 X좌표 계산
   calculateSpawnX(width) {
     const { x } = this.config.spawn;
     const { mapScale } = this.config;
@@ -131,44 +127,108 @@ export default class MapModel {
     return x;
   }
 
-  // 스폰 Y좌표 계산
-  calculateSpawnY(height) {
-    const { y } = this.config.spawn;
-    const { mapScale } = this.config;
-    if (y === 'bottom') return height - 50 * mapScale;
-    return y;
-  }
+  createFixedCollisionGround() {
+    const { width, height } = this.getScaledMapSize();
+    const groundHeight = this.config.collision.groundHeight;
+    const groundY = height - groundHeight / 2;
 
-  // 충돌 기반 스폰 Y 보정
-  adjustSpawnYByCollision(defaultY) {
-    const tiles = this.collisionLayer.getTilesWithin(
-      0,
-      0,
-      this.collisionLayer.width,
-      this.collisionLayer.height,
+    this.collisionGround = this.scene.add.rectangle(
+      width / 2,
+      groundY,
+      width,
+      groundHeight,
+      0x00ff00,
+      this.debug ? 0.3 : 0, // ✅ 디버그 모드면 반투명 표시
     );
-    const firstTile = tiles.find((t) => t.index !== -1);
-    if (!firstTile) return defaultY;
 
-    const tileTop = firstTile.getBounds().top + this.collisionLayer.y;
-    return tileTop - 32 * (this.config.playerScale || 1) + 227;
+    this.scene.physics.add.existing(this.collisionGround, true);
+
+    // ✅ 명시적으로 static body 설정
+    if (this.collisionGround.body) {
+      this.collisionGround.body.immovable = true;
+      this.collisionGround.body.moves = false;
+    }
+
+    this.collisionGround.setDepth(this.config.depths.collision || 10);
   }
 
-  // 플레이어 충돌 추가
-  addPlayerCollision(playerSprite) {
-    if (!this.collisionLayer) return;
-    this.scene.physics.add.collider(playerSprite, this.collisionLayer);
-    this.adjustCollisionLayerOffset();
+  // ✅ 플레이어 추가
+  addPlayer(playerSprite) {
+    if (!playerSprite || !playerSprite.body) {
+      return false;
+    }
+
+    playerSprite.setDepth(this.config.depths.player || 50);
+    return this.addEntityCollision(playerSprite, 'Player');
   }
 
-  // 충돌 레이어 오프셋 보정
-  adjustCollisionLayerOffset() {
-    this.collisionLayer.y += 180;
+  // ✅ 적 추가
+  addEnemy(enemySprite) {
+    if (!enemySprite || !enemySprite.body) {
+      return false;
+    }
+
+    enemySprite.setDepth(this.config.depths.enemy || this.config.depths.player || 50);
+    return this.addEntityCollision(enemySprite, 'Enemy');
   }
 
-  // 메모리 해제
+  // ✅ 엔티티 충돌 추가 (통합)
+  addEntityCollision(entitySprite, entityType = 'Entity') {
+    if (!this.collisionGround) {
+      return false;
+    }
+
+    // 물리 설정
+    entitySprite.body.setAllowGravity(true);
+    entitySprite.body.setCollideWorldBounds(true); // ✅ body에 적용
+
+    // 1. CollisionGround와 충돌
+    const groundCollider = this.scene.physics.add.collider(entitySprite, this.collisionGround);
+    this.entityColliders.push(groundCollider);
+
+    // 2. Collision 레이어와 충돌 (있으면)
+    if (this.collisionLayer) {
+      const layerCollider = this.scene.physics.add.collider(entitySprite, this.collisionLayer);
+      this.entityColliders.push(layerCollider);
+    }
+
+    return true;
+  }
+
+  createPortals() {
+    this.portals = [];
+
+    if (!this.config.portals) return;
+
+    this.config.portals.forEach((p) => {
+      // 포탈은 플레이어와 충돌 체크용 Rectangle
+      const portal = this.scene.add.rectangle(
+        p.x,
+        p.y,
+        p.width,
+        p.height,
+        0x00ff00,
+        0.5, // 디버그용 투명도
+      );
+      this.scene.physics.add.existing(portal, true); // 정적 바디
+
+      portal.targetMap = p.targetMap;
+      portal.targetSpawn = p.targetSpawn;
+
+      this.portals.push(portal);
+    });
+  }
   destroy() {
+    this.entityColliders.forEach((collider) => {
+      if (collider) {
+        collider.destroy();
+      }
+    });
+    this.entityColliders = [];
+
     this.tiledMap?.destroy();
+    this.collisionGround?.destroy();
     this.collisionLayer = null;
+    this.collisionGround = null;
   }
 }
