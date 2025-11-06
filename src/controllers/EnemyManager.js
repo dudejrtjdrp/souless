@@ -2,8 +2,9 @@ import Phaser from 'phaser';
 import Slime from '../entities/enemies/Slime.js';
 import Goblin from '../entities/enemies/Canine.js';
 import Bat from '../entities/enemies/Bat.js';
+import PurpleMonkey from '../entities/enemies/PurpleMonkey.js';
 
-const enemyClassMap = { Slime, Goblin, Bat };
+const enemyClassMap = { Slime, Goblin, Bat, PurpleMonkey };
 
 export default class EnemyManager {
   constructor(scene, mapConfig, mapModel, player) {
@@ -33,7 +34,7 @@ export default class EnemyManager {
 
     // 적 업데이트
     this.enemies.forEach((enemy) => {
-      this.updatePatrol(enemy, delta);
+      this.updatePatrol(enemy);
       enemy.update(time, delta);
     });
 
@@ -73,18 +74,22 @@ export default class EnemyManager {
     }
   }
 
-  updatePatrol(enemy, delta) {
-    const speed = enemy.speed;
-    enemy.sprite.body.velocity.x = enemy.direction * speed;
+  updatePatrol(enemy) {
+    const leftBound = enemy.startX - enemy.patrolRangeX;
+    const rightBound = enemy.startX + enemy.patrolRangeX;
 
     // 좌우 범위 체크
-    if (enemy.sprite.x < enemy.startX - enemy.patrolRangeX) {
-      enemy.sprite.x = enemy.startX - enemy.patrolRangeX;
+    if (enemy.sprite.x <= leftBound) {
       enemy.direction = 1;
-    } else if (enemy.sprite.x > enemy.startX + enemy.patrolRangeX) {
-      enemy.sprite.x = enemy.startX + enemy.patrolRangeX;
+      enemy.sprite.setFlipX(false);
+      enemy.sprite.x = leftBound; // 위치 보정 최소화
+    } else if (enemy.sprite.x >= rightBound) {
       enemy.direction = -1;
+      enemy.sprite.setFlipX(true);
+      enemy.sprite.x = rightBound; // 위치 보정 최소화
     }
+
+    enemy.sprite.body.setVelocityX(enemy.direction * enemy.speed);
   }
 
   spawnRandomEnemy(types, patrolRangeX) {

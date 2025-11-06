@@ -53,12 +53,6 @@ export default class MapModel {
     );
   }
 
-  createAllLayers(tilesets) {
-    const camera = this.scene.cameras.main;
-    const { width, height } = camera;
-    this.config.layerNames.forEach((name, i) => this.createLayer(name, i, tilesets, width, height));
-  }
-
   createLayer(layerName, index, tilesets, cameraWidth, cameraHeight) {
     const layer = this.tiledMap.createLayer(layerName, tilesets);
     if (!layer) return;
@@ -138,7 +132,7 @@ export default class MapModel {
       width,
       groundHeight,
       0x00ff00,
-      this.debug ? 0.3 : 0, // ✅ 디버그 모드면 반투명 표시
+      0,
     );
 
     this.scene.physics.add.existing(this.collisionGround, true);

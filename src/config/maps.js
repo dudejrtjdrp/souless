@@ -4,6 +4,9 @@ export const MAPS = {
     name: 'Parallax Cave',
     mapScale: 1,
     mapPath: '/assets/map/parallax_cave/cave_map.json',
+    camera: {
+      offsetY: 150,
+    },
     tilesets: [
       {
         key: 'cave_tiles',
@@ -77,6 +80,9 @@ export const MAPS = {
     name: 'Dark Forest',
     mapScale: 3,
     mapPath: '/assets/map/forest/forest_map.tmj',
+    camera: {
+      offsetY: 150,
+    },
     tilesets: [
       {
         key: 'forest_tileset',
@@ -152,6 +158,9 @@ export const MAPS = {
     name: 'Dark cave',
     mapScale: 4,
     mapPath: '/assets/map/dark_cave/dark_cave_map.tmj',
+    camera: {
+      offsetY: 0,
+    },
     tilesets: [
       {
         key: 'dark_cave_tileset',
@@ -189,7 +198,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Goblin', 'Bat'],
+      types: ['Slime', 'Goblin', 'Bat', 'PurpleMonkey'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000, // ms

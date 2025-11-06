@@ -3,9 +3,6 @@ import Soul from '../models/characters/SoulModel.js';
 import MapModel from '../models/map/MapModel.js';
 import EnemyManager from '../controllers/EnemyManager.js';
 import { MAPS } from '../config/maps.js';
-import Slime from '../entities/enemies/Slime.js';
-import Goblin from '../entities/enemies/Canine.js';
-import Bat from '../entities/enemies/Bat.js';
 import EnemyAssetLoader from '../utils/EnemyAssetLoader.js';
 
 export default class GameScene extends Phaser.Scene {
@@ -15,6 +12,7 @@ export default class GameScene extends Phaser.Scene {
 
   init(data) {
     // this.currentMapKey = data.mapKey || 'forest';
+    // this.currentMapKey = data.mapKey || 'dark_cave';
     this.currentMapKey = data.mapKey || 'dark_cave';
     this.mapConfig = MAPS[this.currentMapKey];
   }
@@ -51,33 +49,23 @@ export default class GameScene extends Phaser.Scene {
     });
 
     // 플레이어 생성
-    this.player = new Soul(this, spawn.x, spawn.y, this.mapConfig.playerScale, mapScale);
+    this.player = new Soul(this, spawn.x, spawn.y, this.mapConfig.playerScale);
     this.player.sprite.setDepth(this.mapConfig.depths.player);
 
     this.mapModel.addPlayer(this.player.sprite);
 
     this.mapModel.createPortals();
 
-    // 포탈 충돌 체크
-    this.mapModel.portals.forEach((portal) => {
-      if (!MAPS[portal.targetMap]) {
-        console.warn(`포탈 targetMap이 존재하지 않음: ${portal.targetMap}`);
-        return;
-      }
-
-      this.physics.add.overlap(this.player.sprite, portal, () => {
-        console.log(`포탈 이동! ${portal.targetMap}로 이동`);
-        this.scene.start('GameScene', { mapKey: portal.targetMap });
-      });
-    });
-
     // 키 입력
     this.cursors = this.input.keyboard.createCursorKeys();
     this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
     this.jumpKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.runKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
     // 카메라
-    this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
+    const camera = this.cameras.main;
+    camera.startFollow(this.player.sprite, true, 0.1, 0.1);
+    camera.followOffset.set(0, this.mapConfig.camera.offsetY);
 
     this.enemyManager = new EnemyManager(
       this,
@@ -90,6 +78,27 @@ export default class GameScene extends Phaser.Scene {
 
   update(time, delta) {
     this.player.update();
+
+    this.mapModel.portals.forEach((portal) => {
+      const playerBounds = this.player.sprite.getBounds();
+      const portalBounds = portal.getBounds();
+
+      // 플레이어가 포탈 안에 있으면
+      if (Phaser.Geom.Rectangle.Overlaps(playerBounds, portalBounds)) {
+        // 포탈 안임을 표시하거나 UI 표시 가능
+        // 예: "↑ 눌러서 이동"
+
+        if (Phaser.Input.Keyboard.JustDown(this.cursors.up)) {
+          const targetMap = portal.targetMap;
+          if (!MAPS[targetMap]) {
+            console.warn(`포탈 targetMap이 존재하지 않음: ${targetMap}`);
+            return;
+          }
+          console.log(`포탈 이동! ${targetMap}로 이동`);
+          this.scene.start('GameScene', { mapKey: targetMap });
+        }
+      }
+    });
 
     if (Phaser.Input.Keyboard.JustDown(this.attackKey) && !this.player.isJumping) {
       this.player.changeState('attack');

@@ -21,9 +21,11 @@ function createWindow() {
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: true,
+      contextIsolation: false,
       sandbox: false,
     },
+    resizable: false, // 창 크기 고정
+    fullscreen: false,
     title: 'Soul Game',
     backgroundColor: '#000000',
   });
@@ -41,6 +43,14 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // mainWindow.center();
+
+  // IPC로 전체화면 토글
+  ipcMain.on('toggle-fullscreen', () => {
+    const isFull = mainWindow.isFullScreen();
+    mainWindow.setFullScreen(!isFull);
   });
 }
 
