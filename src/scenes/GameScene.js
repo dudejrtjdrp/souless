@@ -14,6 +14,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   init(data) {
+    // this.currentMapKey = data.mapKey || 'dark_cave';
     this.currentMapKey = data.mapKey || 'forest';
     this.mapConfig = MAPS[this.currentMapKey];
   }
@@ -42,6 +43,7 @@ export default class GameScene extends Phaser.Scene {
 
     // 배경 레이어 생성
     this.mapConfig.layers.forEach((layer, index) => {
+      // const img = this.add.image(0, 1400, layer.key).setOrigin(0, 0);
       const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
       img.setScale(mapScale);
       img.setDepth(this.mapConfig.depths.backgroundStart + index);

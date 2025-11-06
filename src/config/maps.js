@@ -109,49 +109,54 @@ export const MAPS = {
     },
   },
 
-  dungeon: {
-    key: 'dungeon',
-    name: 'Ancient Dungeon',
-    mapScale: 2,
-    mapPath: '/assets/map/dungeon/dungeon_map.json',
+  dark_cave: {
+    key: 'dark_cave',
+    name: 'Dark cave',
+    mapScale: 3,
+    mapPath: '/assets/map/dark_cave/forest_map.tmj',
     tilesets: [
       {
-        key: 'dungeon_tiles',
-        imagePath: '/assets/map/dungeon/dungeon_tiles.png',
-        nameInTiled: 'DungeonTiles',
+        key: 'forest_tileset',
+        nameInTiled: 'forest_map',
+        imagePath: '/assets/map/dark_cave/forest_tileset.png',
       },
     ],
-    layerNames: ['Background', 'Collision', 'Foreground'],
+    layerNames: ['Background', 'Ground', 'Collision'],
     layers: [
-      { key: 'dungeon_layer1', path: '/assets/map/dungeon/1.png' },
-      { key: 'dungeon_layer2', path: '/assets/map/dungeon/2.png' },
+      { key: 'dark_cave_layer1', path: '/assets/map/dark_cave/parallax-demon-woods-bg.png' },
+      { key: 'dark_cave_layer2', path: '/assets/map/dark_cave/parallax-demon-woods-far-trees.png' },
+      { key: 'dark_cave_layer3', path: '/assets/map/dark_cave/parallax-demon-woods-mid-trees.png' },
+      {
+        key: 'dark_cave_layer4',
+        path: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
+      },
     ],
     collision: {
-      key: 'dungeon_collision',
-      path: '/assets/map/dungeon/collision.png',
+      key: 'forest_tileset',
+      path: '/assets/map/dark_cave/forest_tileset.png',
     },
     spawn: {
-      x: 100,
-      y: 'bottom',
-      offsetY: -80,
+      x: 'left',
+      y: 1800,
+      offsetY: 200,
     },
-    gravity: 1000,
-    playerScale: 1.5,
+    gravity: 800,
+    playerScale: 2,
     depths: {
-      backgroundStart: -100,
-      tilemapStart: 0,
+      backgroundStart: 0,
+      tilemapStart: 50, // 타일맵은 background 위
       player: 100,
+      enemy: 90, // enemy는 타일보다 위지만 player보다 약간 낮게
       ui: 1000,
-      enemy: 100,
     },
     enemies: {
       types: ['Slime', 'Goblin', 'Bat'],
-      initialCount: 10,
-      maxCount: 15,
+      initialCount: 20,
+      maxCount: 35,
       respawnInterval: 5000, // ms
-      yFixed: 1800, // 바닥 고정
+      yFixed: 2150, // 바닥 고정
       patrolRangeX: 100,
-      minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
+      minPlayerDistance: 100, // 리젠 시 플레이어 근처 피하기
     },
   },
 };
