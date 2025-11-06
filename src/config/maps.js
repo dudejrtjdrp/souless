@@ -100,12 +100,12 @@ export const MAPS = {
     },
     enemies: {
       types: ['Slime', 'Goblin', 'Bat'],
-      initialCount: 10,
-      maxCount: 15,
+      initialCount: 20,
+      maxCount: 35,
       respawnInterval: 5000, // ms
       yFixed: 2150, // 바닥 고정
       patrolRangeX: 100,
-      minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
+      minPlayerDistance: 100, // 리젠 시 플레이어 근처 피하기
     },
   },
 

@@ -1,8 +1,10 @@
 import EnemyBase from './EnemyBase.js';
 
 export default class Bat extends EnemyBase {
-  constructor(scene, x, y, scale = 1, patrolRangeX = 100) {
-    super(scene, x, y, 32, 32, patrolRangeX, 1);
+  constructor(scene, x, y, scale = 1) {
+    const patrolRangeX = Phaser.Math.Between(300, 700);
+    const speed = Phaser.Math.Between(50, 70); // Bat 랜덤 속도
+    super(scene, x, y, 32, 32, patrolRangeX, speed, 1);
     this.type = 'bat';
 
     // sprite를 spritesheet로 생성
@@ -16,6 +18,21 @@ export default class Bat extends EnemyBase {
 
     this.createAnimations();
     this.sprite.play(`${this.type}_idle`);
+  }
+
+  static preload(scene) {
+    scene.load.spritesheet('bat_idle', '/assets/enemy/bat/Bat_Spiked_Idle.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    scene.load.spritesheet('bat_hit', '/assets/enemy/bat/Bat_Spiked_Hit.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    scene.load.spritesheet('bat_death', '/assets/enemy/bat/Bat_Spiked_Death.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
   }
 
   createAnimations() {

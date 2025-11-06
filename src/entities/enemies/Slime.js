@@ -1,8 +1,10 @@
 import EnemyBase from './EnemyBase.js';
 
 export default class Slime extends EnemyBase {
-  constructor(scene, x, y, scale = 1, patrolRangeX = 100) {
-    super(scene, x, y, 32, 32, patrolRangeX, 1);
+  constructor(scene, x, y, scale = 1) {
+    const patrolRangeX = Phaser.Math.Between(100, 300);
+    const speed = Phaser.Math.Between(10, 25); // Canine 고정 속도
+    super(scene, x, y, 32, 32, patrolRangeX, speed, 1);
     this.type = 'slime';
 
     this.sprite.setTexture('slime_idle');
@@ -12,6 +14,21 @@ export default class Slime extends EnemyBase {
 
     this.createAnimations();
     this.sprite.play(`${this.type}_idle`);
+  }
+
+  static preload(scene) {
+    scene.load.spritesheet('slime_idle', '/assets/enemy/slime/Slime_Spiked_Idle.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    scene.load.spritesheet('slime_hit', '/assets/enemy/slime/Slime_Spiked_Hit.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    scene.load.spritesheet('slime_death', '/assets/enemy/slime/Slime_Spiked_Death.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
   }
 
   createAnimations() {

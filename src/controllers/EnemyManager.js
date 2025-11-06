@@ -63,7 +63,7 @@ export default class EnemyManager {
   }
 
   updatePatrol(enemy, delta) {
-    const speed = enemy.speed || 50;
+    const speed = enemy.speed;
     enemy.sprite.body.velocity.x = enemy.direction * speed;
 
     // 좌우 범위 체크
@@ -97,7 +97,7 @@ export default class EnemyManager {
     const EnemyClass = enemyClassMap[type];
     if (!EnemyClass) return;
 
-    const enemy = new EnemyClass(this.scene, x, y, 1, patrolRangeX);
+    const enemy = new EnemyClass(this.scene, x, y);
 
     enemy.hp = 3;
     enemy.isDead = false;
@@ -106,12 +106,15 @@ export default class EnemyManager {
     enemy.startX = x;
     enemy.patrolRangeX = patrolRangeX;
     enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
-    enemy.speed = 50;
 
     // ✅ enemy depth 적용
     if (this.mapConfig.depths?.enemy !== undefined) {
       enemy.sprite.setDepth(this.mapConfig.depths.enemy);
     }
+
+    enemy.startX = x;
+    enemy.patrolRangeX = patrolRangeX;
+    enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
 
     this.enemies.push(enemy);
 
