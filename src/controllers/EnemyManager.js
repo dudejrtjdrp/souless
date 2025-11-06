@@ -1,16 +1,16 @@
 import Phaser from 'phaser';
-import Slime from '../entities/enemies/Slime.js';
-import Goblin from '../entities/enemies/Canine.js';
-import Bat from '../entities/enemies/Bat.js';
-import PurpleMonkey from '../entities/enemies/PurpleMonkey.js';
+import Canine from '../characters/enemies/Canine.js';
+import Slime from '../characters/enemies/Slime.js';
+import Bat from '../characters/enemies/Bat.js';
+import PurpleMonkey from '../characters/enemies/PurpleMonkey.js';
 
-const enemyClassMap = { Slime, Goblin, Bat, PurpleMonkey };
+const enemyClassMap = { Slime, Canine, Bat, PurpleMonkey };
 
 export default class EnemyManager {
   constructor(scene, mapConfig, mapModel, player) {
     this.scene = scene;
     this.mapConfig = mapConfig;
-    this.mapModel = mapModel; // ✅ MapModel 사용
+    this.mapModel = mapModel; // MapModel 사용
     this.player = player;
     this.enemies = [];
     this.lastSpawnTime = 0;
@@ -18,7 +18,7 @@ export default class EnemyManager {
     const worldBounds = scene.physics.world.bounds;
     this.spawnMinX = 50;
     this.spawnMaxX = worldBounds.width - 50;
-    this.spawnY = mapConfig.enemies.yFixed; // ✅ 위쪽에 생성 후 낙하
+    this.spawnY = mapConfig.enemies.yFixed; // 위쪽에 생성 후 낙하
   }
 
   createInitial() {

@@ -35,6 +35,7 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
+        // 빌드 인풋 경로도 __dirname 기준으로 renderer/index.html을 지정합니다.
         main: path.resolve(__dirname, 'renderer/index.html'),
       },
     },
