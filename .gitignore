@@ -43,3 +43,17 @@ public
 
 .eslintrc.cjs
 .prettierrc
+
+# Electron 빌드/배포 파일
+release/
+*.exe
+*.zip
+*.blockmap
+*.asar
+*.bin
+*.yml
+
+# Yarn, Node 등 의존성
+.yarn/
+node_modules/
+.pnp.*
