@@ -21,15 +21,10 @@ const config = {
   antialias: false,
 };
 
-console.log('Phaser config:', config);
-
 const game = new Phaser.Game(config);
-
-console.log('Phaser game created:', game);
 
 // Electron API 사용 예제
 if (window.electronAPI) {
-  console.log('Electron API available');
 }
 
 export default game;

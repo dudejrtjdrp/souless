@@ -1,3 +1,4 @@
+// controllers/EnemyManager.js
 import Phaser from 'phaser';
 import Canine from '../characters/enemies/Canine.js';
 import Slime from '../characters/enemies/Slime.js';
@@ -10,7 +11,7 @@ export default class EnemyManager {
   constructor(scene, mapConfig, mapModel, player) {
     this.scene = scene;
     this.mapConfig = mapConfig;
-    this.mapModel = mapModel; // MapModel 사용
+    this.mapModel = mapModel;
     this.player = player;
     this.enemies = [];
     this.lastSpawnTime = 0;
@@ -18,7 +19,7 @@ export default class EnemyManager {
     const worldBounds = scene.physics.world.bounds;
     this.spawnMinX = 50;
     this.spawnMaxX = worldBounds.width - 50;
-    this.spawnY = mapConfig.enemies.yFixed; // 위쪽에 생성 후 낙하
+    this.spawnY = mapConfig.enemies.yFixed;
   }
 
   createInitial() {
@@ -34,38 +35,55 @@ export default class EnemyManager {
 
     // 적 업데이트
     this.enemies.forEach((enemy) => {
-      this.updatePatrol(enemy);
-      enemy.update(time, delta);
+      if (enemy && enemy.sprite && !enemy.isDead) {
+        this.updatePatrol(enemy);
+        if (enemy.update) {
+          enemy.update(time, delta);
+        }
+      }
     });
 
-    // 공격 hitbox와 충돌 판정
-    if (this.player.isAttacking()) {
-      const sortedEnemies = [...this.enemies].sort((a, b) => {
-        const distA = Phaser.Math.Distance.Between(
-          this.player.sprite.x,
-          this.player.sprite.y,
-          a.sprite.x,
-          a.sprite.y,
-        );
-        const distB = Phaser.Math.Distance.Between(
-          this.player.sprite.x,
-          this.player.sprite.y,
-          b.sprite.x,
-          b.sprite.y,
-        );
-        return distA - distB;
-      });
+    // 공격 체크
+    if (this.player && this.player.isAttacking && this.player.isAttacking()) {
+      // 플레이어와 가장 가까운 순으로 정렬
+      const sortedEnemies = [...this.enemies]
+        .filter((e) => e && e.sprite && !e.isDead)
+        .sort((a, b) => {
+          const distA = Phaser.Math.Distance.Between(
+            this.player.sprite.x,
+            this.player.sprite.y,
+            a.sprite.x,
+            a.sprite.y,
+          );
+          const distB = Phaser.Math.Distance.Between(
+            this.player.sprite.x,
+            this.player.sprite.y,
+            b.sprite.x,
+            b.sprite.y,
+          );
+          return distA - distB;
+        });
 
+      // checkAttackHit이 내부적으로 hasHitThisAttack을 체크하므로
+      // 첫 번째 히트 후에는 자동으로 false 반환
       for (const enemy of sortedEnemies) {
-        if (this.player.checkAttackHit(enemy)) {
-          enemy.takeDamage(this.mapConfig.enemies.attackDamage || 1);
+        const wasHit = this.player.checkAttackHit(enemy.sprite);
+
+        if (wasHit) {
+          const damage = this.mapConfig.enemies.attackDamage || 1;
+
+          if (enemy.takeDamage) {
+            enemy.takeDamage(damage);
+          }
+
+          // 히트했으면 바로 종료 (추가 안전장치)
           break;
         }
       }
     }
 
     // 제거된 적 필터링
-    this.enemies = this.enemies.filter((e) => !e.isDead);
+    this.enemies = this.enemies.filter((e) => e && !e.isDead);
 
     // 리젠
     if (this.enemies.length < maxCount && time - this.lastSpawnTime > respawnInterval) {
@@ -75,6 +93,8 @@ export default class EnemyManager {
   }
 
   updatePatrol(enemy) {
+    if (!enemy || !enemy.sprite || !enemy.sprite.body) return;
+
     const leftBound = enemy.startX - enemy.patrolRangeX;
     const rightBound = enemy.startX + enemy.patrolRangeX;
 
@@ -82,11 +102,11 @@ export default class EnemyManager {
     if (enemy.sprite.x <= leftBound) {
       enemy.direction = 1;
       enemy.sprite.setFlipX(false);
-      enemy.sprite.x = leftBound; // 위치 보정 최소화
+      enemy.sprite.x = leftBound;
     } else if (enemy.sprite.x >= rightBound) {
       enemy.direction = -1;
       enemy.sprite.setFlipX(true);
-      enemy.sprite.x = rightBound; // 위치 보정 최소화
+      enemy.sprite.x = rightBound;
     }
 
     enemy.sprite.body.setVelocityX(enemy.direction * enemy.speed);
@@ -111,10 +131,18 @@ export default class EnemyManager {
   createEnemy(types, x, patrolRangeX) {
     const type = types[Phaser.Math.Between(0, types.length - 1)];
     const EnemyClass = enemyClassMap[type];
-    if (!EnemyClass) return;
+    if (!EnemyClass) {
+      console.warn(`Enemy class not found: ${type}`);
+      return;
+    }
 
-    // ✅ 위쪽에 생성
+    // 위쪽에 생성
     const enemy = new EnemyClass(this.scene, x, this.spawnY);
+
+    if (!enemy || !enemy.sprite) {
+      console.error('Enemy creation failed');
+      return;
+    }
 
     // Patrol 초기값
     enemy.startX = x;
@@ -128,17 +156,17 @@ export default class EnemyManager {
 
     this.enemies.push(enemy);
 
-    // ✅ MapModel을 통해 collision 추가
-    if (this.mapModel) {
+    // MapModel을 통해 collision 추가
+    if (this.mapModel && this.mapModel.addEnemy) {
       this.mapModel.addEnemy(enemy.sprite);
     } else {
-      console.error('MapModel not available!');
+      console.warn('MapModel not available or addEnemy method missing');
     }
   }
 
   destroy() {
     this.enemies.forEach((enemy) => {
-      if (enemy.sprite) {
+      if (enemy && enemy.sprite) {
         enemy.sprite.destroy();
       }
     });

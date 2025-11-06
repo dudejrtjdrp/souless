@@ -10,7 +10,7 @@ const config = {
   physics: {
     default: 'arcade',
     arcade: {
-      debug: false,
+      debug: true,
     },
   },
   scene: [GameScene, SoulScene], // 나중에 SoulScene도 추가 가능

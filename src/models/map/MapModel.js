@@ -9,8 +9,8 @@ export default class MapModel {
 
     this.tiledMap = null;
     this.collisionGround = null;
-    this.collisionLayer = null; // ✅ Tiled Collision 레이어
-    this.entityColliders = []; // ✅ 충돌 추적
+    this.collisionLayer = null; // Tiled Collision 레이어
+    this.entityColliders = []; // 충돌 추적
   }
 
   preload() {
@@ -59,7 +59,7 @@ export default class MapModel {
 
     layer.setScale(this.config.mapScale);
 
-    // ✅ Collision 레이어 처리
+    // Collision 레이어 처리
     if (layerName === 'Collision') {
       layer.setVisible(false);
       this.collisionLayer = layer;
@@ -137,7 +137,7 @@ export default class MapModel {
 
     this.scene.physics.add.existing(this.collisionGround, true);
 
-    // ✅ 명시적으로 static body 설정
+    // 명시적으로 static body 설정
     if (this.collisionGround.body) {
       this.collisionGround.body.immovable = true;
       this.collisionGround.body.moves = false;
@@ -146,7 +146,7 @@ export default class MapModel {
     this.collisionGround.setDepth(this.config.depths.collision || 10);
   }
 
-  // ✅ 플레이어 추가
+  // 플레이어 추가
   addPlayer(playerSprite) {
     if (!playerSprite || !playerSprite.body) {
       return false;
@@ -156,7 +156,7 @@ export default class MapModel {
     return this.addEntityCollision(playerSprite, 'Player');
   }
 
-  // ✅ 적 추가
+  // 적 추가
   addEnemy(enemySprite) {
     if (!enemySprite || !enemySprite.body) {
       return false;
@@ -166,7 +166,7 @@ export default class MapModel {
     return this.addEntityCollision(enemySprite, 'Enemy');
   }
 
-  // ✅ 엔티티 충돌 추가 (통합)
+  // 엔티티 충돌 추가 (통합)
   addEntityCollision(entitySprite, entityType = 'Entity') {
     if (!this.collisionGround) {
       return false;
@@ -174,7 +174,7 @@ export default class MapModel {
 
     // 물리 설정
     entitySprite.body.setAllowGravity(true);
-    entitySprite.body.setCollideWorldBounds(true); // ✅ body에 적용
+    entitySprite.body.setCollideWorldBounds(true); // body에 적용
 
     // 1. CollisionGround와 충돌
     const groundCollider = this.scene.physics.add.collider(entitySprite, this.collisionGround);

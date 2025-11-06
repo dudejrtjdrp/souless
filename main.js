@@ -29,7 +29,6 @@ function createWindow() {
     title: 'Soul Game',
     backgroundColor: '#000000',
   });
-  console.log(isDev);
 
   // 개발 모드: Vite 개발 서버로 연결
   if (isDev) {

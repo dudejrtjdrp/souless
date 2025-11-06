@@ -11,7 +11,7 @@ export default class EnemyBase {
     this.hp = maxHP;
     this.isDead = false;
 
-    // 🔹 데미지 쿨다운 (연속 히트 방지)
+    // 데미지 쿨다운 (연속 히트 방지)
     this.lastDamageTime = 0;
     this.damageCooldown = 300; // 300ms 쿨다운
 
@@ -57,18 +57,16 @@ export default class EnemyBase {
   takeDamage(amount = 1) {
     if (this.isDead) return;
 
-    // 🔹 쿨다운 체크 (너무 빠르게 연속으로 맞지 않도록)
+    // 쿨다운 체크 (너무 빠르게 연속으로 맞지 않도록)
     const currentTime = this.scene.time.now;
     if (currentTime - this.lastDamageTime < this.damageCooldown) {
-      console.log(`[Enemy] ⏱️ Damage on cooldown (${currentTime - this.lastDamageTime}ms)`);
       return; // 쿨다운 중이면 무시
     }
     this.lastDamageTime = currentTime;
 
     this.hp -= amount;
-    console.log(`[Enemy] 💔 Took ${amount} damage. HP: ${this.hp}/${this.maxHP}`);
 
-    // 🔹 HP바 업데이트
+    // HP바 업데이트
     const hpPercent = Math.max(0, this.hp / this.maxHP);
     this.hpBar.width = this.hpBarMaxWidth * hpPercent;
 
