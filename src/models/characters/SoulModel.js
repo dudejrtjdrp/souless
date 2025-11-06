@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import GameState from '../GameState.js';
 
 export default class Soul {
   constructor(scene, x, y, scale = 1, mapScale = 1) {
@@ -23,6 +24,9 @@ export default class Soul {
     scene.physics.add.existing(this.attackHitbox);
     this.attackHitbox.body.enable = false;
     this.attackHitbox.body.setAllowGravity(false);
+
+    // 🔹 한 번의 공격에서 한 명만 맞도록 플래그
+    this.hasDealtDamageThisAttack = false;
 
     this.createAnimations();
     this.changeState('idle');
@@ -68,7 +72,6 @@ export default class Soul {
         break;
       case 'attack':
         this.sprite.play('attack');
-        // 공격 시작 시 hitbox 활성화
         this.activateHitbox();
         this.sprite.once('animationcomplete-attack', () => {
           if (this.playerState === 'attack') this.changeState('idle');
@@ -78,6 +81,9 @@ export default class Soul {
   }
 
   activateHitbox() {
+    // 🔹 새 공격 시작 시 플래그 초기화
+    this.hasDealtDamageThisAttack = false;
+
     // hitbox 활성화
     this.attackHitbox.body.enable = true;
 
@@ -86,7 +92,7 @@ export default class Soul {
     this.attackHitbox.x = this.sprite.x + offsetX;
     this.attackHitbox.y = this.sprite.y;
 
-    // 1초 후 hitbox 비활성화
+    // 0.5초 후 hitbox 비활성화
     this.scene.time.delayedCall(500, () => {
       this.attackHitbox.body.enable = false;
     });
@@ -96,7 +102,6 @@ export default class Soul {
     const onGround = this.sprite.body.touching.down || this.sprite.body.blocked.down;
 
     if (onGround) {
-      // 바닥에 있으면 점프 횟수 초기화
       this.jumpCount = 0;
     }
 
@@ -109,56 +114,36 @@ export default class Soul {
 
   attack() {
     if (this.playerState === 'attack') return;
-
     this.changeState('attack');
+  }
 
-    // 기존 hitbox 제거
-    if (this.currentHitbox) {
-      this.currentHitbox.destroy();
-      this.currentHitbox = null;
-      if (this.hitboxTimer) {
-        this.hitboxTimer.remove(false);
-        this.hitboxTimer = null;
-      }
+  // 🔹 EnemyManager에서 호출할 메서드
+  checkAttackHit(enemy) {
+    // 이미 이번 공격에서 데미지를 줬으면 무시
+    if (this.hasDealtDamageThisAttack) return false;
+
+    // hitbox가 비활성화되어 있으면 무시
+    if (!this.attackHitbox.body.enable) return false;
+
+    // hitbox와 적 충돌 확인
+    if (
+      Phaser.Geom.Intersects.RectangleToRectangle(
+        this.attackHitbox.getBounds(),
+        enemy.sprite.getBounds(),
+      )
+    ) {
+      // 🔹 이번 공격에서 데미지를 줬다고 표시
+      this.hasDealtDamageThisAttack = true;
+      console.log(`[Soul] 🎯 Hit enemy!`);
+      return true;
     }
 
-    // 히트박스 생성
-    const width = 10; // 가로 폭을 좁게
-    const height = 50; // 세로를 길게
-    const offsetX = this.sprite.flipX ? -5 : 5; // 플레이어 몸 가까이
-    const offsetY = -20; // 플레이어 몸 위쪽으로 올림
+    return false;
+  }
 
-    const hitbox = this.scene.add.rectangle(
-      this.sprite.x + offsetX,
-      this.sprite.y + offsetY,
-      width,
-      height,
-      0xff0000,
-      0.3,
-    );
-    this.scene.physics.add.existing(hitbox);
-    hitbox.body.setAllowGravity(false);
-
-    // enemy와 충돌 처리
-    this.scene.enemyManager?.enemies.forEach((enemy) => {
-      this.scene.physics.add.overlap(hitbox, enemy.sprite, () => {
-        enemy.takeDamage();
-      });
-    });
-
-    this.currentHitbox = hitbox;
-
-    // 일정 시간 후 hitbox 제거
-    this.hitboxTimer = this.scene.time.addEvent({
-      delay: 10, // 0.3초
-      callback: () => {
-        if (this.currentHitbox) {
-          this.currentHitbox.destroy();
-          this.currentHitbox = null;
-          this.hitboxTimer = null;
-        }
-      },
-    });
+  // 🔹 공격이 끝났는지 확인
+  isAttacking() {
+    return this.playerState === 'attack' && this.attackHitbox.body.enable;
   }
 
   update() {
@@ -191,6 +176,6 @@ export default class Soul {
     if (Phaser.Input.Keyboard.JustDown(jumpKey)) this.jump();
 
     // 공격 입력 처리
-    if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) this.changeState('attack');
+    if (Phaser.Input.Keyboard.JustDown(attackKey) && !this.isJumping) this.attack();
   }
 }

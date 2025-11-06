@@ -36,18 +36,30 @@ export default class EnemyManager {
       enemy.update(time, delta);
     });
 
-    // 공격 hitbox와 충돌 판정
+    // 🔹 공격 hitbox와 충돌 판정 - 한 번에 한 명만
+    if (this.player.isAttacking()) {
+      // 가까운 순서로 정렬
+      const sortedEnemies = [...this.enemies].sort((a, b) => {
+        const distA = Phaser.Math.Distance.Between(
+          this.player.sprite.x,
+          this.player.sprite.y,
+          a.sprite.x,
+          a.sprite.y,
+        );
+        const distB = Phaser.Math.Distance.Between(
+          this.player.sprite.x,
+          this.player.sprite.y,
+          b.sprite.x,
+          b.sprite.y,
+        );
+        return distA - distB;
+      });
 
-    if (this.player.attackHitbox.body.enable) {
-      for (const enemy of this.enemies) {
-        if (
-          Phaser.Geom.Intersects.RectangleToRectangle(
-            this.player.attackHitbox.getBounds(),
-            enemy.sprite.getBounds(),
-          )
-        ) {
+      // 가장 가까운 적부터 체크
+      for (const enemy of sortedEnemies) {
+        if (this.player.checkAttackHit(enemy)) {
           enemy.takeDamage(this.mapConfig.enemies.attackDamage || 1);
-          break; // 첫 번째 적만 처리
+          break; // 한 명 맞으면 즉시 종료
         }
       }
     }
@@ -99,8 +111,9 @@ export default class EnemyManager {
 
     const enemy = new EnemyClass(this.scene, x, y);
 
-    enemy.hp = 3;
-    enemy.isDead = false;
+    // 🔹 HP는 각 Enemy 클래스의 생성자에서 설정되므로 여기서 덮어쓰지 않음
+    // enemy.hp = 3; ❌ 제거
+    // enemy.isDead = false; ❌ 제거 (생성자에서 이미 false)
 
     // Patrol 초기값
     enemy.startX = x;
@@ -111,10 +124,6 @@ export default class EnemyManager {
     if (this.mapConfig.depths?.enemy !== undefined) {
       enemy.sprite.setDepth(this.mapConfig.depths.enemy);
     }
-
-    enemy.startX = x;
-    enemy.patrolRangeX = patrolRangeX;
-    enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
 
     this.enemies.push(enemy);
 

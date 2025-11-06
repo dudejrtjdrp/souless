@@ -1,18 +1,21 @@
-// EnemyBase.js
 import Phaser from 'phaser';
 
 export default class EnemyBase {
   constructor(scene, x, y, width = 32, height = 32, patrolRangeX = 100, speed = 50, maxHP = 3) {
     this.scene = scene;
     this.patrolRangeX = patrolRangeX;
-    this.speed = speed; // 클래스마다 다른 속도 가능
+    this.speed = speed;
 
     this.startX = x;
     this.maxHP = maxHP;
     this.hp = maxHP;
     this.isDead = false;
 
-    this.sprite = scene.add.sprite(x, y, 'placeholder'); // 실제 Enemy 클래스에서 바꿀 것
+    // 🔹 데미지 쿨다운 (연속 히트 방지)
+    this.lastDamageTime = 0;
+    this.damageCooldown = 300; // 300ms 쿨다운
+
+    this.sprite = scene.add.sprite(x, y, 'placeholder');
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
 
@@ -21,13 +24,11 @@ export default class EnemyBase {
     // HP바
     this.hpBar = scene.add.rectangle(x, y - height / 2 - 5, width, 5, 0x00ff00);
     this.hpBar.setOrigin(0.5, 0.5);
-
-    // 이동 속도 랜덤
-    this.direction = 1;
+    this.hpBarMaxWidth = width;
 
     this.sprite.body.setVelocityX(this.speed * this.direction);
 
-    this.type = 'enemy'; // 기본 type
+    this.type = 'enemy';
   }
 
   update() {
@@ -43,9 +44,9 @@ export default class EnemyBase {
     }
 
     if (this.direction > 0) {
-      this.sprite.setFlipX(true); // 왼쪽으로 갈 땐 뒤집기
+      this.sprite.setFlipX(true);
     } else {
-      this.sprite.setFlipX(false); // 오른쪽으로 갈 땐 원래대로
+      this.sprite.setFlipX(false);
     }
 
     // HP바 위치 동기화
@@ -56,16 +57,39 @@ export default class EnemyBase {
   takeDamage(amount = 1) {
     if (this.isDead) return;
 
+    // 🔹 쿨다운 체크 (너무 빠르게 연속으로 맞지 않도록)
+    const currentTime = this.scene.time.now;
+    if (currentTime - this.lastDamageTime < this.damageCooldown) {
+      console.log(`[Enemy] ⏱️ Damage on cooldown (${currentTime - this.lastDamageTime}ms)`);
+      return; // 쿨다운 중이면 무시
+    }
+    this.lastDamageTime = currentTime;
+
     this.hp -= amount;
+    console.log(`[Enemy] 💔 Took ${amount} damage. HP: ${this.hp}/${this.maxHP}`);
+
+    // 🔹 HP바 업데이트
+    const hpPercent = Math.max(0, this.hp / this.maxHP);
+    this.hpBar.width = this.hpBarMaxWidth * hpPercent;
+
+    // HP바 색상 변경 (초록 -> 노랑 -> 빨강)
+    if (hpPercent > 0.6) {
+      this.hpBar.setFillStyle(0x00ff00); // 초록
+    } else if (hpPercent > 0.3) {
+      this.hpBar.setFillStyle(0xffff00); // 노랑
+    } else {
+      this.hpBar.setFillStyle(0xff0000); // 빨강
+    }
 
     if (this.hp <= 0) {
       this.isDead = true;
+      console.log(`[Enemy] 💀 Died!`);
 
       // 죽는 순간 움직임 멈추기
       if (this.sprite.body) {
         this.sprite.body.setVelocity(0, 0);
       }
-      this.direction = 0; // update에서 velocity가 다시 바뀌지 않도록
+      this.direction = 0;
 
       // HP바 숨기기
       if (this.hpBar) this.hpBar.visible = false;
