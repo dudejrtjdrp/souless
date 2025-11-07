@@ -44,7 +44,8 @@ export default class CharacterBase {
     this.sprite.setDepth(this.config.depth);
     this.sprite.setCollideWorldBounds(this.config.collideWorldBounds);
 
-    this.baseY = y;
+    this.baseX = x; // 스폰 X
+    this.baseY = y; // 스폰 Y
   }
 
   setupPhysics() {
@@ -135,6 +136,21 @@ export default class CharacterBase {
     this.updateMovement(input);
     this.updateState(input);
     this.onUpdate(input); // 커스텀 업데이트
+    this.checkRespawn(); // 추가
+  }
+
+  checkRespawn() {
+    // 바닥 아래로 떨어지면 리셋
+    if (this.sprite.y > this.scene.scale.height + 50) {
+      this.respawn();
+      return;
+    }
+
+    // 다른 collider와 겹치는지 확인 (Physics overlap)
+    // scene에 collider 그룹이 있다고 가정
+    if (this.scene.physics.overlap(this.sprite, this.scene.colliderGroup)) {
+      this.respawn();
+    }
   }
 
   updateGroundState() {
@@ -173,6 +189,13 @@ export default class CharacterBase {
   // 각 캐릭터가 추가 업데이트 로직 구현
   onUpdate(input) {
     // 하위 클래스에서 구현
+  }
+
+  respawn() {
+    this.sprite.setPosition(this.baseX, 100);
+    this.sprite.setVelocity(0, 0);
+    this.stateMachine.changeState('idle');
+    this.movement.resetJumpCount();
   }
 
   destroy() {

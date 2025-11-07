@@ -5,6 +5,7 @@ import EnemyManager from '../controllers/EnemyManager.js';
 import { MAPS } from '../config/maps.js';
 import EnemyAssetLoader from '../utils/EnemyAssetLoader.js';
 import CharacterFactory from '../characters/base/CharacterFactory.js';
+import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -14,7 +15,8 @@ export default class GameScene extends Phaser.Scene {
   init(data) {
     this.currentMapKey = data.mapKey || 'dark_cave';
     this.mapConfig = MAPS[this.currentMapKey];
-    this.selectedCharacter = data.characterType || 'soul';
+    // this.selectedCharacter = data.characterType || 'soul';
+    this.selectedCharacter = data.characterType || 'monk';
   }
 
   preload() {
@@ -26,18 +28,7 @@ export default class GameScene extends Phaser.Scene {
       this.load.image(layer.key, layer.path);
     });
 
-    // 캐릭터 스프라이트 로드
-    this.load.spritesheet('soul', '/assets/characters/soul_spritesheet.png', {
-      frameWidth: 32,
-      frameHeight: 32,
-    });
-
-    // 다른 캐릭터들도 필요시 로드
-    // this.load.spritesheet('soldier', '/assets/characters/soldier.png', {
-    //   frameWidth: 32,
-    //   frameHeight: 32,
-    // });
-
+    CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
   }
 

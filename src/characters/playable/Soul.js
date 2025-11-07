@@ -23,6 +23,13 @@ export default class Soul extends CharacterBase {
     this.isJumping = false;
   }
 
+  static preload(scene) {
+    scene.load.spritesheet('soul', '/assets/characters/soul_spritesheet.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
+  }
+
   getAnimationConfig() {
     return {
       spriteKey: 'soul',
