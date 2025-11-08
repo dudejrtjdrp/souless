@@ -1,128 +1,133 @@
 import CharacterBase from '../base/CharacterBase.js';
+import { CharacterDataAdapter } from '../../utils/CharacterDataAdapter.js';
+import { SkillSystem } from '../systems/SkillSystem.js';
 import MagicSystem from '../systems/MagicSystem.js';
 
-export default class Magician extends CharacterBase {
-  constructor(scene, x, y) {
-    const config = {
-      spriteKey: 'magician',
-      scale: 1,
-      walkSpeed: 180,
-      runSpeed: 300,
-      jumpPower: 350, // 가벼워서 점프력 높음
-      maxJumps: 3, // 마법으로 공중 점프 가능
-      bodySize: { width: 20, height: 32 },
-      bodyOffset: { x: 6, y: 0 },
-      attackHitbox: { width: 60, height: 40 }, // 원거리 공격
-      attackDuration: 400,
+export default class magician extends CharacterBase {
+  constructor(scene, x, y, options = {}) {
+    const config = CharacterDataAdapter.buildConfig('magician', options);
+
+    const portals = {
+      x: scene.mapModel.getPortal()[0].x,
+      y: scene.mapModel.getPortal()[0].y,
     };
 
-    super(scene, x, y, config);
+    let bodyOffsetY = 0;
+    if (config.collisionBox) {
+      bodyOffsetY = config.collisionBox.offset.y / config.spriteScale;
+    }
 
-    // Magician만의 시스템
+    super(scene, portals.x, portals.y - bodyOffsetY, config);
+
+    const skillsData = CharacterDataAdapter.getSkillsData('magician');
+    this.skillSystem = new SkillSystem(scene, this, skillsData);
     this.magicSystem = new MagicSystem(scene, this.sprite);
-    this.mana = 100;
-    this.maxMana = 100;
+
+    // 콤보 관련 변수 초기화
+    this.comboCount = 0;
+    this.lastComboTime = 0;
+    this.comboWindow = 450; // 콤보 허용 시간(ms)
+
+    this.maxHealth = 120;
+    this.health = 120;
+    this.maxMana = 150;
+    this.mana = 150;
   }
 
-  getAnimationConfig() {
-    return {
-      spriteKey: 'magician',
-      animations: [
-        { key: 'idle', start: 0, end: 3, frameRate: 3, repeat: -1 },
-        { key: 'walk', start: 8, end: 13, frameRate: 8, repeat: -1 },
-        { key: 'run', start: 14, end: 19, frameRate: 10, repeat: -1 },
-        { key: 'jump', start: 20, end: 23, frameRate: 8, repeat: 0 },
-        { key: 'attack', start: 24, end: 29, frameRate: 12, repeat: 0 },
-        { key: 'cast', start: 30, end: 37, frameRate: 10, repeat: 0 }, // 마법 시전
-        { key: 'teleport', start: 38, end: 43, frameRate: 15, repeat: 0 },
-      ],
-    };
-  }
-
-  initSystems() {
-    super.initSystems();
-    this.magicSystem = new MagicSystem(this.scene, this.sprite);
-  }
-
-  // 마법 공격
-  castSpell(spellType = 'fireball') {
-    if (this.mana < 20) {
-      console.log('Not enough mana!');
-      return;
-    }
-
-    this.mana -= 20;
-    this.stateMachine.changeState('cast');
-    this.magicSystem.castSpell(spellType, this.sprite.flipX);
-  }
-
-  // 순간이동
-  teleport(direction) {
-    if (this.mana < 30) {
-      console.log('Not enough mana!');
-      return;
-    }
-
-    this.mana -= 30;
-    this.stateMachine.changeState('teleport');
-
-    const distance = 150;
-    const targetX = direction === 'left' ? this.sprite.x - distance : this.sprite.x + distance;
-
-    this.scene.tweens.add({
-      targets: this.sprite,
-      x: targetX,
-      duration: 200,
-      ease: 'Power2',
-      onComplete: () => {
-        this.stateMachine.changeState('idle');
-      },
+  static preload(scene) {
+    scene.load.spritesheet('magician', '/assets/characters/magician_spritesheet.png', {
+      frameWidth: 288,
+      frameHeight: 128,
     });
   }
 
-  // 마나 회복
+  getAnimationConfig() {
+    return CharacterDataAdapter.getAnimationConfig('magician');
+  }
+
   onUpdate(input) {
-    // 서있을 때 마나 자동 회복
-    if (this.stateMachine.isState('idle') && this.mana < this.maxMana) {
-      this.mana += 0.1;
+    if (this.movement) {
+      this.movement.update();
     }
+
+    this.skillSystem.update(this.scene.game.loop.delta);
+
+    // 상태가 잠겨있으면 입력 무시
+    if (this.stateMachine.isStateLocked()) {
+      return;
+    }
+
+    // 공격 처리
+    if (input.isAttackPressed) {
+      if (!this.movement.isOnGround()) {
+        this.performAirAttack();
+      } else {
+        this.performComboAttack();
+      }
+    }
+
+    // 스킬 키바인딩 (원래대로)
+    if (input.isQPressed) this.useSkillWithFeedback('fireball');
+    if (input.isWPressed) this.useSkillWithFeedback('ice_shard');
+    if (input.isEPressed) this.useSkillWithFeedback('meditate');
+    if (input.isRPressed) this.useSkillWithFeedback('lightning');
+    if (input.isSPressed) this.useSkillWithFeedback('roll');
   }
 
-  handleInput(input) {
-    super.handleInput(input);
+  performComboAttack() {
+    const now = this.scene.time.now;
 
-    // 마법 시전 (예: Q키)
-    if (this.scene.spellKey && Phaser.Input.Keyboard.JustDown(this.scene.spellKey)) {
-      this.castSpell('fireball');
+    // 콤보 타임아웃 체크
+    if (now - this.lastComboTime > this.comboWindow) {
+      this.comboCount = 0;
     }
 
-    // 순간이동 (예: E키)
-    if (this.scene.teleportKey && Phaser.Input.Keyboard.JustDown(this.scene.teleportKey)) {
-      const direction = this.sprite.flipX ? 'left' : 'right';
-      this.teleport(direction);
-    }
-  }
+    const comboSkills = ['attack', 'attack_2', 'attack_3'];
+    const skillName = comboSkills[this.comboCount];
 
-  takeDamage(amount) {
-    // 마법사는 체력 대신 마나로 피해를 흡수할 수 있음
-    if (this.mana >= amount * 2) {
-      this.mana -= amount * 2;
-      console.log(`Magician absorbed damage with mana. Mana: ${this.mana}`);
+    // 스킬 사용 시도
+    const used = this.skillSystem.useSkill(skillName);
+
+    if (used) {
+      this.comboCount = (this.comboCount + 1) % comboSkills.length;
+      this.lastComboTime = now;
     } else {
-      console.log(`Magician took ${amount} damage!`);
-      this.onDeath();
+      // 사용 실패 시 콤보 초기화
+      this.comboCount = 0;
     }
   }
 
-  onDeath() {
-    console.log('Magician died!');
-    // 죽을 때 폭발 이펙트
-    this.magicSystem.createExplosion(this.sprite.x, this.sprite.y);
-    this.destroy();
+  performAirAttack() {
+    this.skillSystem.useSkill('air_attack');
+  }
+
+  useSkillWithFeedback(skillName) {
+    const skill = this.skillSystem.getSkill(skillName);
+    if (!skill) return;
+
+    if (skill.isOnCooldown()) {
+      console.log(`${skillName} cooldown: ${Math.ceil(skill.cooldownRemaining / 1000)}s`);
+      return;
+    }
+
+    if (!this.skillSystem.useSkill(skillName)) {
+      console.log(`Cannot use ${skillName}`);
+    }
+  }
+
+  onStateChange(oldState, newState) {
+    // 공격 상태가 끝나면 콤보 초기화 (안정성을 위해)
+    if (oldState.includes('attack') && newState === 'idle') {
+      // 딜레이 후 콤보 초기화 (원래 코드 유지)
+      this.scene.time.delayedCall(1000, () => {
+        this.comboCount = 0;
+      });
+    }
   }
 
   destroy() {
-    super.destroy();
+    if (this.skillSystem) this.skillSystem.destroy();
     if (this.magicSystem) this.magicSystem.destroy();
+    super.destroy();
   }
 }

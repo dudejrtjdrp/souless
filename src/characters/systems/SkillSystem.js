@@ -114,8 +114,8 @@ export class SkillSystem {
     // 애니메이션 재생
     this.character.stateMachine.changeState(config.animation);
 
-    // 기본 공격(attack, attack_2, attack_3, air_attack)인 경우 AttackSystem 활성화
-    const basicAttacks = ['attack', 'attack_2', 'attack_3', 'air_attack'];
+    // 기본 공격(attack,  air_attack)인 경우 AttackSystem 활성화
+    const basicAttacks = ['attack', 'air_attack'];
     if (basicAttacks.includes(name)) {
       // AttackSystem 활성화
       if (this.character.attackSystem) {

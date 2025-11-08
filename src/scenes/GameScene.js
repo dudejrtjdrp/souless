@@ -1,4 +1,3 @@
-// scenes/GameScene.js
 import Phaser from 'phaser';
 import MapModel from '../models/map/MapModel.js';
 import EnemyManager from '../controllers/EnemyManager.js';
