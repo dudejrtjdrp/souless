@@ -16,12 +16,6 @@ export default class Monk extends CharacterBase {
     this.skillSystem = new SkillSystem(scene, this, skillsData);
     this.magicSystem = new MagicSystem(scene, this.sprite);
 
-    // A 공격 콤보 관련
-    this.comboSequence = ['attack', 'attack_2', 'attack_3'];
-    this.comboIndex = 0;
-    this.lastComboTime = 0;
-    this.comboWindow = 2000; // 2초
-
     // 상태 변수
     this.maxHealth = 120;
     this.health = 120;
@@ -69,7 +63,7 @@ export default class Monk extends CharacterBase {
       { key: 'Q', skill: 'attack_2', pressed: input.isQPressed },
       { key: 'W', skill: 'attack_3', pressed: input.isWPressed },
       { key: 'E', skill: 'meditate', pressed: input.isEPressed },
-      { key: 'R', skill: 'lightning', pressed: input.isRPressed },
+      { key: 'R', skill: 'special_attack', pressed: input.isRPressed },
       { key: 'S', skill: 'roll', pressed: input.isSPressed },
     ];
 

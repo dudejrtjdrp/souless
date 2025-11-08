@@ -20,7 +20,7 @@ export default class CharacterBase {
     this.isInvincible = false;
     this.invincibleTimer = null;
 
-    // ✅ 스킬 히트박스 (중복 제거)
+    // 스킬 히트박스 (중복 제거)
     this.activeSkillHitbox = null;
 
     this.initSprite(x, y);
@@ -147,54 +147,9 @@ export default class CharacterBase {
   }
 
   checkSkillHit(target) {
-    if (!this.activeSkillHitbox) return false;
-
-    const skill = this.activeSkillHitbox;
-    const elapsed = Date.now() - skill.startTime;
-    if (elapsed > skill.config.duration) {
-      this.activeSkillHitbox = null;
-      return false;
-    }
-
-    // hitbox가 없는 스킬(예: dash)은 히트 체크 안함
-    if (!skill.config.size || !skill.config.offset) {
-      return false;
-    }
-
-    const facingRight = !this.sprite.flipX;
-    const offsetX = facingRight ? skill.config.offset.x : -skill.config.offset.x;
-
-    const hitboxX = this.sprite.x + offsetX;
-    const hitboxY = this.sprite.y + skill.config.offset.y;
-
-    const hitbox = new Phaser.Geom.Rectangle(
-      hitboxX - skill.config.size.width / 2,
-      hitboxY - skill.config.size.height / 2,
-      skill.config.size.width,
-      skill.config.size.height,
-    );
-
-    let targetBounds;
-    if (target.getBounds) {
-      targetBounds = target.getBounds();
-    } else if (target.body) {
-      targetBounds = new Phaser.Geom.Rectangle(
-        target.body.x,
-        target.body.y,
-        target.body.width,
-        target.body.height,
-      );
-    } else {
-      return false;
-    }
-
-    if (Phaser.Geom.Rectangle.Overlaps(hitbox, targetBounds)) {
-      return {
-        hit: true,
-        damage: skill.config.damage || 0,
-        knockback: skill.config.knockback || { x: 0, y: 0 }, // 기본값 제공
-        effects: skill.config.effects || [],
-      };
+    // SkillSystem에 위임
+    if (this.skillSystem) {
+      return this.skillSystem.checkSkillHit(target);
     }
     return false;
   }
@@ -208,9 +163,11 @@ export default class CharacterBase {
   }
 
   isUsingSkill() {
-    return this.activeSkillHitbox !== null;
+    if (this.skillSystem) {
+      return this.skillSystem.getActiveSkillHitbox() !== null;
+    }
+    return false;
   }
-
   takeDamage(amount) {
     if (this.isInvincible) return;
 
@@ -340,32 +297,28 @@ export default class CharacterBase {
       }
 
       // 스킬 히트박스 (파란색)
-      if (this.isUsingSkill() && this.activeSkillHitbox) {
-        const skill = this.activeSkillHitbox;
-        // ✅ size와 offset이 있는 경우만 그리기
-        if (skill.config.size && skill.config.offset) {
-          const facingRight = !this.sprite.flipX;
-          const offsetX = facingRight ? skill.config.offset.x : -skill.config.offset.x;
-
-          const hitboxX = this.sprite.x + offsetX - skill.config.size.width / 2;
-          const hitboxY = this.sprite.y + skill.config.offset.y - skill.config.size.height / 2;
-
-          this.debugGraphics.lineStyle(2, 0x0000ff, 0.8);
-          this.debugGraphics.strokeRect(
-            hitboxX,
-            hitboxY,
-            skill.config.size.width,
-            skill.config.size.height,
-          );
+      if (this.skillSystem) {
+        const activeSkillHitbox = this.skillSystem.getActiveSkillHitbox();
+        if (activeSkillHitbox) {
+          const boundsArray = activeSkillHitbox.getHitboxBounds();
+          if (boundsArray) {
+            this.debugGraphics.lineStyle(2, 0x0000ff, 0.8);
+            // ✅ 배열이면 모두 그리기
+            if (Array.isArray(boundsArray)) {
+              boundsArray.forEach((bounds) => {
+                this.debugGraphics.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);
+              });
+            } else {
+              this.debugGraphics.strokeRect(
+                boundsArray.x,
+                boundsArray.y,
+                boundsArray.width,
+                boundsArray.height,
+              );
+            }
+          }
         }
       }
-
-      // 상태 텍스트
-      const stateText = `State: ${this.stateMachine.getCurrentState()} ${
-        this.stateMachine.isStateLocked() ? '(LOCKED)' : ''
-      }`;
-      this.debugGraphics.fillStyle(0xffffff, 1);
-      // 텍스트는 별도 Text 객체로 표시하는 것이 좋습니다
     }
   }
 

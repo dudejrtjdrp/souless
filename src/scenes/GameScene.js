@@ -96,7 +96,7 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager.enemies.forEach((enemy) => {
       const enemyTarget = enemy.sprite || enemy;
 
-      // 기본 공격 체크
+      // 기본 공격 체크 (단일 타겟)
       if (this.player.isAttacking && this.player.isAttacking()) {
         if (this.player.checkAttackHit(enemyTarget)) {
           const damage = 10;
@@ -107,38 +107,35 @@ export default class GameScene extends Phaser.Scene {
         }
       }
 
-      // ⭐ 스킬 히트 체크
+      // ⭐ 스킬 히트 체크 (범위 공격)
       if (this.player.isUsingSkill && this.player.isUsingSkill()) {
-        const skillHit = this.player.checkSkillHit(enemyTarget);
+        const skillHit = this.player.checkSkillHit(enemy); // ✅ enemy 전체 객체 전달 (ID 추적용)
         if (skillHit && skillHit.hit) {
           if (enemy.takeDamage) {
             enemy.takeDamage(skillHit.damage);
 
             // 넉백 적용
             if (skillHit.knockback && enemyTarget.body) {
-              const facingRight = this.player.sprite.flipX ? false : true;
+              const facingRight = !this.player.sprite.flipX;
               const knockbackX = facingRight ? skillHit.knockback.x : -skillHit.knockback.x;
-              enemyTarget.setVelocityX(knockbackX);
-              enemyTarget.setVelocityY(skillHit.knockback.y);
+              enemyTarget.body.setVelocityX(knockbackX);
+              enemyTarget.body.setVelocityY(skillHit.knockback.y);
             }
 
             // 이펙트 적용
             if (skillHit.effects) {
               if (skillHit.effects.includes('stun')) {
-                console.log('스턴 효과!');
-                // 스턴 로직 구현
+                console.log('⚡ 스턴 효과!');
               }
               if (skillHit.effects.includes('burn')) {
-                console.log('화상 효과!');
-                // 화상 로직 구현
+                console.log('🔥 화상 효과!');
               }
               if (skillHit.effects.includes('knockdown')) {
-                console.log('넉다운 효과!');
-                // 넉다운 로직 구현
+                console.log('💫 넉다운 효과!');
               }
             }
 
-            console.log(`스킬 히트! ${skillHit.damage} 데미지`, skillHit);
+            console.log(`✨ 스킬 히트! ${skillHit.damage} 데미지`, enemy.constructor.name);
           }
         }
       }

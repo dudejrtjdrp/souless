@@ -26,54 +26,69 @@ export const CharacterData = {
         type: 'melee',
         damage: 10,
         hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
-        duration: 400,
+        duration: 400, // 히트박스 활성 시간
         animation: 'attack',
+        frameRate: 6, // ✅ 원하는 재생 속도
         knockback: { x: 100, y: 0 },
       },
       attack_2: {
         type: 'melee',
         damage: 15,
-        hitbox: { width: 60, height: 40, offsetX: 40, offsetY: 0 },
-        duration: 450,
+        hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
+        duration: 700,
         animation: 'attack_2',
+        frameRate: 8, // ✅ 원하는 재생 속도
         knockback: { x: 150, y: -50 },
-        cooldown: 5000,
+        cooldown: 0,
         cost: { mana: 20 },
       },
       attack_3: {
         type: 'melee',
         damage: 25,
-        hitbox: { width: 70, height: 45, offsetX: 45, offsetY: 0 },
+        hitbox: [
+          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+          { width: 70, height: 90, offsetX: 130, offsetY: 60 },
+        ],
+        hitboxDelay: 300,
         duration: 500,
         animation: 'attack_3',
+        frameRate: 12, // ✅ 원하는 재생 속도
         knockback: { x: 200, y: -100 },
         effects: ['stun'],
-        cooldown: 5000,
+        cooldown: 0,
         cost: { mana: 20 },
       },
       air_attack: {
-        type: 'skill',
+        type: 'melee',
         damage: 20,
-        hitbox: { width: 55, height: 50, offsetX: 200, offsetY: 0 },
+        hitbox: { width: 55, height: 50, offsetX: 5, offsetY: 0 },
+        hitboxDelay: 100,
         duration: 450,
         animation: 'air_attack',
+        frameRate: 12, // ✅ 원하는 재생 속도
         knockback: { x: 120, y: 150 },
       },
       special_attack: {
-        type: 'skill',
+        type: 'instant',
         damage: 35,
-        hitbox: { width: 80, height: 60, offsetX: 50, offsetY: 0 },
-        duration: 600,
+        hitboxDelay: 100,
+        hitbox: [
+          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+          { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+        ],
+        duration: 1500,
         animation: 'special_attack',
+        frameRate: 15, // ✅ 원하는 재생 속도
         knockback: { x: 250, y: -150 },
         effects: ['burn'],
-        cooldown: 5000,
+        cooldown: 0,
         cost: { mana: 20 },
       },
       roll: {
         type: 'movement',
         duration: 400,
         animation: 'roll',
+        frameRate: 10, // ✅ 원하는 재생 속도
         invincible: true,
         distance: 150,
         cooldown: 3000,
@@ -82,6 +97,7 @@ export const CharacterData = {
         type: 'buff',
         duration: 2000,
         animation: 'meditate',
+        frameRate: 8, // ✅ 원하는 재생 속도
         effects: ['heal', 'mana_regen'],
         healAmount: 20,
         manaAmount: 30,
@@ -91,6 +107,7 @@ export const CharacterData = {
         type: 'projectile',
         damage: 30,
         animation: 'special_attack',
+        frameRate: 30, // ✅ 원하는 재생 속도
         cooldown: 3000,
         cost: { mana: 15 },
       },
@@ -98,6 +115,7 @@ export const CharacterData = {
         type: 'projectile',
         damage: 20,
         animation: 'special_attack',
+        frameRate: 30, // ✅ 원하는 재생 속도
         effects: ['slow'],
         cooldown: 2500,
         cost: { mana: 12 },
@@ -106,8 +124,9 @@ export const CharacterData = {
         type: 'instant',
         damage: 40,
         animation: 'special_attack',
+        frameRate: 30, // ✅ 원하는 재생 속도
         hitbox: { width: 100, height: 200, offsetX: 80, offsetY: -50 },
-        duration: 200,
+        duration: 1000,
         effects: ['stun'],
         cooldown: 4000,
         cost: { mana: 25 },
@@ -121,18 +140,17 @@ export const CharacterData = {
       { key: 'jump_down', frames: { start: 76, end: 77 }, frameRate: 4, repeat: 0 },
       { key: 'air_attack', frames: { start: 101, end: 106 }, frameRate: 12, repeat: 0 },
       { key: 'attack', frames: { start: 126, end: 130 }, frameRate: 6, repeat: 0 },
-      { key: 'attack_2', frames: { start: 155, end: 162 }, frameRate: 8, repeat: 0 },
-      { key: 'attack_3', frames: { start: 187, end: 199 }, frameRate: 12, repeat: 0 },
-      { key: 'special_attack', frames: { start: 46, end: 49 }, frameRate: 12, repeat: 0 },
-      { key: 'meditate', frames: { start: 50, end: 53 }, frameRate: 6, repeat: -1 },
-      { key: 'roll', frames: { start: 54, end: 57 }, frameRate: 10, repeat: 0 },
-      { key: 'defend', frames: { start: 58, end: 61 }, frameRate: 8, repeat: -1 },
-      { key: 'take_hit', frames: { start: 62, end: 65 }, frameRate: 8, repeat: 0 },
-      { key: 'death', frames: { start: 66, end: 71 }, frameRate: 6, repeat: 0 },
+      { key: 'attack_2', frames: { start: 155, end: 161 }, frameRate: 8, repeat: 0 },
+      { key: 'attack_3', frames: { start: 187, end: 197 }, frameRate: 12, repeat: 0 },
+      { key: 'special_attack', frames: { start: 201, end: 230 }, frameRate: 30, repeat: 0 },
+      { key: 'meditate', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
+      { key: 'roll', frames: { start: 251, end: 255 }, frameRate: 10, repeat: 0 },
+      { key: 'defend', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
+      { key: 'take_hit', frames: { start: 301, end: 306 }, frameRate: 8, repeat: 0 },
+      { key: 'death', frames: { start: 326, end: 340 }, frameRate: 15, repeat: 0 },
     ],
   },
 
-  // ✅ Soul: attack 하나 + dash만
   soul: {
     sprite: {
       key: 'soul',
@@ -156,22 +174,22 @@ export const CharacterData = {
       comboWindow: 400,
     },
     skills: {
-      // ✅ 단일 공격만
       attack: {
         type: 'melee',
         damage: 15,
         hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0 },
         duration: 400,
         animation: 'attack',
+        frameRate: 12, // ✅ 4프레임 / 12fps = 333ms
         knockback: { x: 100, y: 0 },
       },
-      // ✅ 이동 스킬: 대시
       dash: {
         type: 'movement',
         distance: 200,
         speed: 600,
         duration: 300,
-        animation: 'run',
+        animation: 'run', // ✅ soul-run으로 자동 변환됨
+        frameRate: 10,
         invincible: true,
         cooldown: 2000,
       },
