@@ -11,15 +11,39 @@ export default class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
-  init(data) {
-    // this.currentMapKey = data.mapKey || 'dark_cave';
+  init(data = {}) {
+    // ✅ data가 없어도 기본값 설정
     this.currentMapKey = data.mapKey || 'forest';
     this.selectedCharacter = data.characterType || 'monk';
-    // this.selectedCharacter = data.characterType || 'soul';
+
+    console.log('🎮 GameScene init:', {
+      mapKey: this.currentMapKey,
+      character: this.selectedCharacter,
+    });
+
+    // ✅ MAPS에서 config 가져오기
     this.mapConfig = MAPS[this.currentMapKey];
+
+    if (!this.mapConfig) {
+      console.error(`❌ Map config not found for key: "${this.currentMapKey}"`);
+      console.log('Available maps:', Object.keys(MAPS));
+      // 기본값으로 forest 사용
+      this.currentMapKey = 'forest';
+      this.mapConfig = MAPS['forest'];
+    }
+
+    console.log('✅ Map config loaded:', this.mapConfig.name);
   }
 
   preload() {
+    // ✅ mapConfig가 없으면 에러
+    if (!this.mapConfig) {
+      console.error('❌ mapConfig is undefined in preload!');
+      return;
+    }
+
+    console.log('📦 Preloading assets for:', this.currentMapKey);
+
     this.mapModel = new MapModel(this, this.currentMapKey, this.mapConfig, true);
     this.mapModel.preload();
 
@@ -27,16 +51,25 @@ export default class GameScene extends Phaser.Scene {
       this.load.image(layer.key, layer.path);
     });
 
+    // 캐릭터 & 적 에셋
     CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
+
+    // 포탈 애니메이션 이미지 로드
+    for (let i = 1; i <= 16; i++) {
+      this.load.image(`holy_vfx_02_${i}`, `assets/portal/Holy VFX 02 ${i}.png`);
+    }
   }
 
   create() {
+    // ✅ 페이드 인 효과 (씬이 시작될 때)
+    this.cameras.main.fadeIn(400, 0, 0, 0);
+
     this.physics.world.gravity.y = this.mapConfig.gravity;
     const mapScale = this.mapConfig.mapScale || 1;
 
-    // 맵 생성
-    const { spawn, collisionGround, collisionLayer } = this.mapModel.create();
+    // 맵 생성 (포탈도 여기서 생성됨)
+    const { spawn } = this.mapModel.create();
 
     // 배경 레이어 생성
     this.mapConfig.layers.forEach((layer, index) => {
@@ -45,20 +78,13 @@ export default class GameScene extends Phaser.Scene {
       img.setDepth(this.mapConfig.depths.backgroundStart + index);
     });
 
-    // 포탈 생성
-    this.mapModel.createPortals();
-
-    const portals = [this.mapModel.getPortal()[0].x, this.mapModel.getPortal()[0].y];
-
     // 🎮 플레이어 생성
     this.player = CharacterFactory.create(this, this.selectedCharacter, spawn.x, spawn.y, {
       scale: this.mapConfig.playerScale || 1,
-      portals: portals,
     });
-
     this.player.sprite.setDepth(this.mapConfig.depths.player);
 
-    // 맵에 플레이어 추가 (충돌 설정)
+    // 맵에 플레이어 추가 (충돌)
     this.mapModel.addPlayer(this.player.sprite);
 
     // 카메라 설정
@@ -74,111 +100,43 @@ export default class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.player) return;
 
-    // 플레이어 업데이트
     this.player.update();
 
-    // 포탈 체크
-    this.checkPortals();
+    // 포탈 자동 업데이트
+    this.mapModel.update(this.player.sprite);
 
-    // 적 업데이트
-    if (this.enemyManager) {
-      this.enemyManager.update(time, delta);
-    }
+    if (this.enemyManager) this.enemyManager.update(time, delta);
 
-    // ⭐ 충돌 체크 (기본 공격 + 스킬)
     this.checkAttackCollisions();
   }
 
   checkAttackCollisions() {
-    if (!this.enemyManager?.enemies) return;
-    if (!this.player) return;
+    if (!this.enemyManager?.enemies || !this.player) return;
 
     this.enemyManager.enemies.forEach((enemy) => {
       const enemyTarget = enemy.sprite || enemy;
 
-      // 기본 공격 체크 (단일 타겟)
       if (this.player.isAttacking && this.player.isAttacking()) {
-        if (this.player.checkAttackHit(enemyTarget)) {
-          const damage = 10;
-          if (enemy.takeDamage) {
-            enemy.takeDamage(damage);
-            console.log(`💥 기본 공격 히트! ${damage} 데미지`);
-          }
+        if (this.player.checkAttackHit(enemyTarget) && enemy.takeDamage) {
+          enemy.takeDamage(10);
         }
       }
 
-      // ⭐ 스킬 히트 체크 (범위 공격)
       if (this.player.isUsingSkill && this.player.isUsingSkill()) {
-        const skillHit = this.player.checkSkillHit(enemy); // ✅ enemy 전체 객체 전달 (ID 추적용)
-        if (skillHit && skillHit.hit) {
-          if (enemy.takeDamage) {
-            enemy.takeDamage(skillHit.damage);
+        const skillHit = this.player.checkSkillHit(enemy);
+        if (skillHit?.hit && enemy.takeDamage) {
+          enemy.takeDamage(skillHit.damage);
 
-            // 넉백 적용
-            if (skillHit.knockback && enemyTarget.body) {
-              const facingRight = !this.player.sprite.flipX;
-              const knockbackX = facingRight ? skillHit.knockback.x : -skillHit.knockback.x;
-              enemyTarget.body.setVelocityX(knockbackX);
-              enemyTarget.body.setVelocityY(skillHit.knockback.y);
-            }
-
-            // 이펙트 적용
-            if (skillHit.effects) {
-              if (skillHit.effects.includes('stun')) {
-                console.log('⚡ 스턴 효과!');
-              }
-              if (skillHit.effects.includes('burn')) {
-                console.log('🔥 화상 효과!');
-              }
-              if (skillHit.effects.includes('knockdown')) {
-                console.log('💫 넉다운 효과!');
-              }
-            }
-
-            console.log(`✨ 스킬 히트! ${skillHit.damage} 데미지`, enemy.constructor.name);
+          // 넉백
+          if (skillHit.knockback && enemyTarget.body) {
+            const facingRight = !this.player.sprite.flipX;
+            enemyTarget.body.setVelocityX(
+              facingRight ? skillHit.knockback.x : -skillHit.knockback.x,
+            );
+            enemyTarget.body.setVelocityY(skillHit.knockback.y);
           }
         }
       }
-    });
-  }
-
-  checkPortals() {
-    this.mapModel.portals.forEach((portal) => {
-      const playerBounds = this.player.sprite.getBounds();
-      const portalBounds = portal.getBounds();
-
-      if (Phaser.Geom.Rectangle.Overlaps(playerBounds, portalBounds)) {
-        const cursors = this.input.keyboard.createCursorKeys();
-
-        if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
-          const targetMap = portal.targetMap;
-          if (!MAPS[targetMap]) {
-            console.warn(`포탈 targetMap이 존재하지 않음: ${targetMap}`);
-            return;
-          }
-          console.log(`포탈 이동! ${targetMap}로 이동`);
-          this.changeMap(targetMap);
-        }
-      }
-    });
-  }
-
-  changeMap(newMapKey) {
-    // 정리
-    if (this.mapModel) {
-      this.mapModel.destroy();
-    }
-    if (this.enemyManager) {
-      this.enemyManager.destroy();
-    }
-    if (this.player) {
-      this.player.destroy();
-    }
-
-    // 새 맵으로 재시작
-    this.scene.restart({
-      mapKey: newMapKey,
-      characterType: this.selectedCharacter,
     });
   }
 }

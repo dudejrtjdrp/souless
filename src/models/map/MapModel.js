@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import Portal from './Portal.js';
 
 export default class MapModel {
   constructor(scene, mapKey, config, debug = false) {
@@ -9,13 +10,19 @@ export default class MapModel {
 
     this.tiledMap = null;
     this.collisionGround = null;
-    this.collisionLayer = null; // Tiled Collision 레이어
-    this.entityColliders = []; // 충돌 추적
+    this.collisionLayer = null;
+    this.entityColliders = [];
+    this.portals = [];
   }
 
   preload() {
     this.loadMapJSON();
     this.loadTilesets();
+
+    // 포탈 애니메이션 이미지 로드
+    for (let i = 1; i <= 16; i++) {
+      this.scene.load.image(`holy_vfx_02_${i}`, `assets/portal/Holy VFX 02 ${i}.png`);
+    }
   }
 
   loadMapJSON() {
@@ -30,16 +37,18 @@ export default class MapModel {
 
   create() {
     this.createTilemap();
-    const tilesets = this.addTilesets();
-    // this.createAllLayers(tilesets);
+    this.addTilesets();
     this.setupWorldBounds();
     this.createFixedCollisionGround();
     const spawn = this.calculateSpawn();
+
+    this.createPortals(); // 포탈 생성
 
     return {
       spawn,
       collisionGround: this.collisionGround,
       collisionLayer: this.collisionLayer,
+      portals: this.portals,
     };
   }
 
@@ -51,46 +60,6 @@ export default class MapModel {
     return this.config.tilesets.map(({ nameInTiled, key }) =>
       this.tiledMap.addTilesetImage(nameInTiled, key),
     );
-  }
-
-  createLayer(layerName, index, tilesets, cameraWidth, cameraHeight) {
-    const layer = this.tiledMap.createLayer(layerName, tilesets);
-    if (!layer) return;
-
-    layer.setScale(this.config.mapScale);
-
-    // Collision 레이어 처리
-    if (layerName === 'Collision') {
-      layer.setVisible(false);
-      this.collisionLayer = layer;
-      // 모든 타일에 충돌 활성화
-      layer.setCollisionByExclusion([-1]);
-    }
-
-    if (layerName === 'Background') {
-      this.createBackgroundImage(index, cameraWidth, cameraHeight, layer);
-    }
-  }
-
-  createBackgroundImage(index, cameraWidth, cameraHeight, layer = null) {
-    const imageConfig = this.config.layers[index];
-    if (!imageConfig) return;
-
-    const bg = this.scene.add.image(0, 0, imageConfig.key).setOrigin(0, 0);
-    const scale = this.calculateBackgroundScale(bg, cameraWidth, cameraHeight);
-
-    bg.setScale(scale);
-    bg.setScrollFactor(0);
-    bg.setDepth(this.config.depths.backgroundStart + index * 10);
-
-    const scaledHeight = bg.height * scale;
-    bg.y = cameraHeight - scaledHeight;
-  }
-
-  calculateBackgroundScale(bg, cameraWidth, cameraHeight) {
-    const scaleY = cameraHeight / bg.height;
-    const scaledWidth = bg.width * scaleY;
-    return scaledWidth < cameraWidth ? cameraWidth / bg.width : scaleY;
   }
 
   setupWorldBounds() {
@@ -106,23 +75,23 @@ export default class MapModel {
     };
   }
 
-  getPortal() {
-    return this.portals || [];
-  }
-
   calculateSpawn() {
     const { width, height } = this.getScaledMapSize();
-    const spawnX = this.calculateSpawnX(width);
-    const spawnY = this.config.spawn.y;
-    return { x: spawnX, y: spawnY };
-  }
+    const { x, y, offsetY } = this.config.spawn;
 
-  calculateSpawnX(width) {
-    const { x } = this.config.spawn;
-    const { mapScale } = this.config;
-    if (x === 'left') return 50 * mapScale;
-    if (x === 'right') return width - 50 * mapScale;
-    return x;
+    let spawnX = x;
+    if (x === 'left') {
+      spawnX = 50 * this.config.mapScale;
+    } else if (x === 'right') {
+      spawnX = width - 50 * this.config.mapScale;
+    }
+
+    let spawnY = y;
+    if (y === 'bottom') {
+      spawnY = height - (offsetY || 0);
+    }
+
+    return { x: spawnX, y: spawnY };
   }
 
   createFixedCollisionGround() {
@@ -138,10 +107,8 @@ export default class MapModel {
       0x00ff00,
       0,
     );
-
     this.scene.physics.add.existing(this.collisionGround, true);
 
-    // 명시적으로 static body 설정
     if (this.collisionGround.body) {
       this.collisionGround.body.immovable = true;
       this.collisionGround.body.moves = false;
@@ -150,83 +117,89 @@ export default class MapModel {
     this.collisionGround.setDepth(this.config.depths.collision || 10);
   }
 
-  // 플레이어 추가
-  addPlayer(playerSprite) {
-    if (!playerSprite || !playerSprite.body) {
-      return false;
-    }
-
-    playerSprite.setDepth(this.config.depths.player || 50);
-    return this.addEntityCollision(playerSprite, 'Player');
-  }
-
-  // 적 추가
-  addEnemy(enemySprite) {
-    if (!enemySprite || !enemySprite.body) {
-      return false;
-    }
-
-    enemySprite.setDepth(this.config.depths.enemy || this.config.depths.player || 50);
-    return this.addEntityCollision(enemySprite, 'Enemy');
-  }
-
-  // 엔티티 충돌 추가 (통합)
-  addEntityCollision(entitySprite, entityType = 'Entity') {
-    if (!this.collisionGround) {
-      return false;
-    }
-
-    // 물리 설정
-    entitySprite.body.setAllowGravity(true);
-    entitySprite.body.setCollideWorldBounds(true); // body에 적용
-
-    // 1. CollisionGround와 충돌
-    const groundCollider = this.scene.physics.add.collider(entitySprite, this.collisionGround);
-    this.entityColliders.push(groundCollider);
-
-    // 2. Collision 레이어와 충돌 (있으면)
-    if (this.collisionLayer) {
-      const layerCollider = this.scene.physics.add.collider(entitySprite, this.collisionLayer);
-      this.entityColliders.push(layerCollider);
-    }
-
-    return true;
-  }
-
   createPortals() {
-    this.portals = [];
-
     if (!this.config.portals) return;
 
-    this.config.portals.forEach((p) => {
-      // 포탈은 플레이어와 충돌 체크용 Rectangle
-      const portal = this.scene.add.rectangle(
-        p.x,
-        p.y,
-        p.width,
-        p.height,
-        0x00ff00,
-        0.5, // 디버그용 투명도
-      );
-      this.scene.physics.add.existing(portal, true); // 정적 바디
+    // ✅ 포탈 높이 고정값 (텔레포트 스프라이트 크기)
+    const PORTAL_HEIGHT_OFFSET = -35; // 원하는 값으로 조정
 
-      portal.targetMap = p.targetMap;
-      portal.targetSpawn = p.targetSpawn;
+    this.config.portals.forEach(({ x, y, width, height, targetMap, targetSpawn }) => {
+      // 포탈은 y 좌표에서 고정값만큼 위에 생성
+      const portalY = y - PORTAL_HEIGHT_OFFSET;
+
+      const portal = new Portal(this.scene, x, portalY, targetMap, targetSpawn);
+
+      if (width && height) {
+        portal.setDisplaySize(width, height);
+      }
 
       this.portals.push(portal);
     });
   }
-  destroy() {
-    this.entityColliders.forEach((collider) => {
-      if (collider) {
-        collider.destroy();
-      }
-    });
-    this.entityColliders = [];
 
-    this.tiledMap?.destroy();
-    this.collisionGround?.destroy();
-    this.collisionLayer = null;
-    this.collisionGround = null;
+  getPortal(index) {
+    if (!this.portals || this.portals.length === 0) {
+      console.warn('No portals available');
+      return null;
+    }
+
+    if (index >= 0 && index < this.portals.length) {
+      return this.portals[index];
+    }
+
+    console.warn(`Portal index ${index} out of range (0-${this.portals.length - 1})`);
+    return null;
+  }
+
+  getAllPortals() {
+    return this.portals;
+  }
+
+  getPortalByTarget(targetMap) {
+    return this.portals.find((portal) => portal.targetMap === targetMap);
+  }
+
+  getNearestPortal(x, y) {
+    if (this.portals.length === 0) return null;
+
+    let nearest = this.portals[0];
+    let minDistance = Phaser.Math.Distance.Between(x, y, nearest.x, nearest.y);
+
+    for (let i = 1; i < this.portals.length; i++) {
+      const distance = Phaser.Math.Distance.Between(x, y, this.portals[i].x, this.portals[i].y);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearest = this.portals[i];
+      }
+    }
+
+    return nearest;
+  }
+
+  update(player) {
+    this.portals.forEach((portal) => portal.update(player));
+  }
+
+  addPlayer(playerSprite) {
+    if (!playerSprite || !playerSprite.body) return false;
+    playerSprite.setDepth(this.config.depths.player || 50);
+    return this.addEntityCollision(playerSprite, 'Player');
+  }
+
+  addEnemy(enemySprite) {
+    if (!enemySprite || !enemySprite.body) return false;
+    enemySprite.setDepth(this.config.depths.enemy || this.config.depths.player || 50);
+    return this.addEntityCollision(enemySprite, 'Enemy');
+  }
+
+  addEntityCollision(entitySprite) {
+    if (!this.collisionGround) return false;
+
+    entitySprite.body.setAllowGravity(true);
+    entitySprite.body.setCollideWorldBounds(true);
+    const groundCollider = this.scene.physics.add.collider(entitySprite, this.collisionGround);
+    this.entityColliders.push(groundCollider);
+
+    return groundCollider;
   }
 }

@@ -143,8 +143,8 @@ export const MAPS = {
         targetSpawn: { x: 'left', y: 'bottom' },
       },
       {
-        x: 1600,
-        y: 300,
+        x: 2500,
+        y: 2164, // ✅ 300 → 2164로 수정 (바닥에 배치)
         width: 64,
         height: 64,
         targetMap: 'village_map',
