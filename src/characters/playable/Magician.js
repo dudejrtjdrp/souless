@@ -61,8 +61,6 @@ export default class magician extends CharacterBase {
     if (input.isAttackPressed) {
       if (!this.movement.isOnGround()) {
         this.performAirAttack();
-      } else {
-        this.performComboAttack();
       }
     }
 
@@ -72,29 +70,6 @@ export default class magician extends CharacterBase {
     if (input.isEPressed) this.useSkillWithFeedback('meditate');
     if (input.isRPressed) this.useSkillWithFeedback('lightning');
     if (input.isSPressed) this.useSkillWithFeedback('roll');
-  }
-
-  performComboAttack() {
-    const now = this.scene.time.now;
-
-    // 콤보 타임아웃 체크
-    if (now - this.lastComboTime > this.comboWindow) {
-      this.comboCount = 0;
-    }
-
-    const comboSkills = ['attack', 'attack_2', 'attack_3'];
-    const skillName = comboSkills[this.comboCount];
-
-    // 스킬 사용 시도
-    const used = this.skillSystem.useSkill(skillName);
-
-    if (used) {
-      this.comboCount = (this.comboCount + 1) % comboSkills.length;
-      this.lastComboTime = now;
-    } else {
-      // 사용 실패 시 콤보 초기화
-      this.comboCount = 0;
-    }
   }
 
   performAirAttack() {

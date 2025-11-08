@@ -26,10 +26,11 @@ export const CharacterData = {
         type: 'melee',
         damage: 10,
         hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
-        duration: 400, // 히트박스 활성 시간
+        duration: 400,
         animation: 'attack',
-        frameRate: 6, // ✅ 원하는 재생 속도
+        frameRate: 6,
         knockback: { x: 100, y: 0 },
+        targetType: 'single',
       },
       attack_2: {
         type: 'melee',
@@ -37,10 +38,11 @@ export const CharacterData = {
         hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
         duration: 700,
         animation: 'attack_2',
-        frameRate: 8, // ✅ 원하는 재생 속도
+        frameRate: 8,
         knockback: { x: 150, y: -50 },
         cooldown: 0,
         cost: { mana: 20 },
+        targetType: 'single',
       },
       attack_3: {
         type: 'melee',
@@ -52,11 +54,12 @@ export const CharacterData = {
         hitboxDelay: 300,
         duration: 500,
         animation: 'attack_3',
-        frameRate: 12, // ✅ 원하는 재생 속도
+        frameRate: 12,
         knockback: { x: 200, y: -100 },
         effects: ['stun'],
         cooldown: 0,
         cost: { mana: 20 },
+        targetType: 'multi',
       },
       air_attack: {
         type: 'melee',
@@ -65,8 +68,9 @@ export const CharacterData = {
         hitboxDelay: 100,
         duration: 450,
         animation: 'air_attack',
-        frameRate: 12, // ✅ 원하는 재생 속도
+        frameRate: 12,
         knockback: { x: 120, y: 150 },
+        targetType: 'single',
       },
       special_attack: {
         type: 'instant',
@@ -78,58 +82,64 @@ export const CharacterData = {
         ],
         duration: 1500,
         animation: 'special_attack',
-        frameRate: 15, // ✅ 원하는 재생 속도
+        frameRate: 15,
         knockback: { x: 250, y: -150 },
         effects: ['burn'],
         cooldown: 0,
         cost: { mana: 20 },
+        targetType: 'multi',
       },
       roll: {
         type: 'movement',
         duration: 400,
         animation: 'roll',
-        frameRate: 10, // ✅ 원하는 재생 속도
+        frameRate: 10,
         invincible: true,
         distance: 150,
         cooldown: 3000,
+        targetType: 'single',
       },
       meditate: {
         type: 'buff',
         duration: 2000,
         animation: 'meditate',
-        frameRate: 8, // ✅ 원하는 재생 속도
+        frameRate: 8,
         effects: ['heal', 'mana_regen'],
         healAmount: 20,
         manaAmount: 30,
         cooldown: 10000,
+        targetType: 'single',
       },
       fireball: {
         type: 'projectile',
         damage: 30,
         animation: 'special_attack',
-        frameRate: 30, // ✅ 원하는 재생 속도
+        frameRate: 30,
         cooldown: 3000,
         cost: { mana: 15 },
+        targetType: 'multi',
       },
       ice_shard: {
         type: 'projectile',
         damage: 20,
         animation: 'special_attack',
-        frameRate: 30, // ✅ 원하는 재생 속도
+        frameRate: 30,
         effects: ['slow'],
         cooldown: 2500,
         cost: { mana: 12 },
+        targetType: 'multi',
       },
       lightning: {
         type: 'instant',
         damage: 40,
         animation: 'special_attack',
-        frameRate: 30, // ✅ 원하는 재생 속도
+        frameRate: 30,
         hitbox: { width: 100, height: 200, offsetX: 80, offsetY: -50 },
         duration: 1000,
         effects: ['stun'],
         cooldown: 4000,
         cost: { mana: 25 },
+        targetType: 'multi',
       },
     },
     animations: [
@@ -180,18 +190,20 @@ export const CharacterData = {
         hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0 },
         duration: 400,
         animation: 'attack',
-        frameRate: 12, // ✅ 4프레임 / 12fps = 333ms
+        frameRate: 12,
         knockback: { x: 100, y: 0 },
+        targetType: 'single',
       },
       dash: {
         type: 'movement',
         distance: 200,
         speed: 600,
         duration: 300,
-        animation: 'run', // ✅ soul-run으로 자동 변환됨
+        animation: 'run',
         frameRate: 10,
         invincible: true,
         cooldown: 2000,
+        targetType: 'single',
       },
     },
     animations: [

@@ -20,10 +20,10 @@ export default class AttackSystem {
       this.hitboxSize.width,
       this.hitboxSize.height,
       0xff0000,
-      0,
+      0.3,
     );
 
-    this.hitbox.setVisible(false);
+    this.hitbox.setVisible(true); // ✅ 디버그용
     this.scene.physics.add.existing(this.hitbox);
     this.hitbox.body.setAllowGravity(false);
   }
@@ -83,7 +83,6 @@ export default class AttackSystem {
     return this.active;
   }
 
-  // 디버그용 - CharacterBase에서 사용
   getHitboxBounds() {
     if (!this.active) return null;
     return this.hitbox.getBounds();

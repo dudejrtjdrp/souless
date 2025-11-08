@@ -159,7 +159,7 @@ export default class CharacterBase {
   }
 
   isAttacking() {
-    return this.stateMachine.isState('attack') && this.attackSystem.isActive();
+    return this.attackSystem.isActive();
   }
 
   isUsingSkill() {

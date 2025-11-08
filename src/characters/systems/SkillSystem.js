@@ -228,7 +228,7 @@ export class SkillSystem {
 
     const config = skill.config;
 
-    // ✅ 공중 상태 체크 (air_attack 제외하고 지상에서만 스킬 사용 가능)
+    // 공중 상태 체크 (air_attack 제외하고 지상에서만 스킬 사용 가능)
     const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
     const airAllowedSkills = ['air_attack', 'roll']; // roll도 허용 스킬에 포함
     if (isInAir && !airAllowedSkills.includes(skillName)) {
@@ -236,7 +236,7 @@ export class SkillSystem {
       return false;
     }
 
-    // ✅ 스킬 사용 시 즉시 이동 중단 (movement 타입 제외)
+    // 스킬 사용 시 즉시 이동 중단 (movement 타입 제외)
     if (config.type !== 'movement' && this.character.sprite.body) {
       this.character.sprite.body.setVelocityX(0);
     }
@@ -263,11 +263,11 @@ export class SkillSystem {
   }
 
   handleMeleeSkill(name, config) {
-    // ✅ frameRate로 애니메이션 재생 (castTime 자동 계산)
     const frameRate = config.frameRate || 10;
     this.playAnimationWithDuration(config.animation, frameRate);
 
     const basicAttacks = ['attack'];
+
     if (basicAttacks.includes(name)) {
       if (this.character.attackSystem) {
         this.character.attackSystem.activate();
@@ -278,21 +278,17 @@ export class SkillSystem {
         const delay = config.hitboxDelay || 0;
 
         if (delay > 0) {
-          console.log(`[SkillSystem] ${name} hitbox will activate after ${delay}ms`);
           this.scene.time.delayedCall(delay, () => {
             skillHitbox.activate();
-            console.log(`[SkillSystem] Activated hitbox for ${name}`);
           });
         } else {
           skillHitbox.activate();
-          console.log(`[SkillSystem] Activated hitbox for ${name}`);
         }
       }
     }
   }
 
   handleProjectileSkill(name, config) {
-    // ✅ frameRate로 애니메이션 재생
     const frameRate = config.frameRate || 10;
     this.playAnimationWithDuration(config.animation, frameRate);
 
@@ -301,12 +297,11 @@ export class SkillSystem {
     if (this.character.magicSystem) {
       this.character.magicSystem.castSpell(name, isLeft);
     } else {
-      console.warn(`MagicSystem not initialized for projectile skill: ${name}`);
+      console.warn(`해당 스킬이 없습니다: ${name}`);
     }
   }
 
   handleMovementSkill(name, config) {
-    // ✅ frameRate로 애니메이션 재생
     const frameRate = config.frameRate || 10;
     this.playAnimationWithDuration(config.animation, frameRate);
 
@@ -328,7 +323,6 @@ export class SkillSystem {
   }
 
   handleBuffSkill(name, config) {
-    // ✅ frameRate로 애니메이션 재생
     const frameRate = config.frameRate || 10;
     this.playAnimationWithDuration(config.animation, frameRate);
 
@@ -343,7 +337,6 @@ export class SkillSystem {
   }
 
   handleInstantSkill(name, config) {
-    // ✅ frameRate로 애니메이션 재생
     const frameRate = config.frameRate || 10;
     this.playAnimationWithDuration(config.animation, frameRate);
 
@@ -352,20 +345,17 @@ export class SkillSystem {
       const delay = config.hitboxDelay || 0;
 
       if (delay > 0) {
-        console.log(`[SkillSystem] ${name} hitbox will activate after ${delay}ms`);
         this.scene.time.delayedCall(delay, () => {
           skillHitbox.activate();
-          console.log(`[SkillSystem] Activated hitbox for instant skill ${name}`);
         });
       } else {
         skillHitbox.activate();
-        console.log(`[SkillSystem] Activated hitbox for instant skill ${name}`);
       }
     }
   }
 
   /**
-   * ✅ 애니메이션을 지정된 frameRate로 재생하고, castTime 자동 계산
+   * 애니메이션을 지정된 frameRate로 재생하고, castTime 자동 계산
    * @param {string} animationKey - 재생할 애니메이션 키
    * @param {number} frameRate - 원하는 프레임 레이트 (fps)
    * @returns {number} castTime - 애니메이션 총 재생 시간 (밀리초)
@@ -378,30 +368,21 @@ export class SkillSystem {
       return 0;
     }
 
-    // ✅ prefix 확인 및 추가
     let finalAnimKey = animationKey;
 
-    // sprite.texture.key에서 캐릭터 타입 가져오기
     const characterType = sprite.texture.key; // 'soul', 'monk' 등
     const prefixedKey = `${characterType}-${animationKey}`;
 
-    // ✅ prefixed 키가 존재하는지 직접 확인
     const animManager = sprite.anims.animationManager;
     const hasAnimation = animManager.anims.has(prefixedKey);
 
     if (hasAnimation) {
       finalAnimKey = prefixedKey;
     } else {
-      // 원본 키도 확인
       if (!animManager.anims.has(animationKey)) {
         console.error(
           `[SkillSystem] Animation '${animationKey}' and '${prefixedKey}' do not exist`,
         );
-
-        // ✅ 디버그: 사용 가능한 애니메이션 목록 출력
-        const availableAnims = Array.from(animManager.anims.keys());
-        console.log('[SkillSystem] Available animations:', availableAnims);
-
         return 0;
       }
       finalAnimKey = animationKey;
@@ -416,19 +397,11 @@ export class SkillSystem {
 
     const frameCount = anim.frames.length;
 
-    // ✅ frameRate로부터 castTime 계산
+    // frameRate로부터 castTime 계산
     const castTime = (frameCount / frameRate) * 1000;
 
-    console.log(
-      `[SkillSystem] Playing ${finalAnimKey}: ${frameCount} frames at ${frameRate} fps → ${castTime.toFixed(
-        0,
-      )}ms`,
-    );
-
-    // ✅ 애니메이션 재생
     sprite.anims.play(finalAnimKey, true);
 
-    // ✅ frameRate 설정
     if (sprite.anims.currentAnim) {
       sprite.anims.currentAnim.frameRate = frameRate;
       sprite.anims.msPerFrame = 1000 / frameRate;
@@ -448,7 +421,7 @@ export class SkillSystem {
           this.character.stateMachine.isLocked = false;
           this.character.stateMachine.lockTimer = null;
 
-          // ✅ 애니메이션 종료 후 idle/jump로 전환
+          //  애니메이션 종료 후 idle/jump로 전환
           const onGround = this.character.sprite.body?.touching.down || false;
           if (this.character.stateMachine.changeState) {
             this.character.stateMachine.changeState(onGround ? 'idle' : 'jump');
@@ -465,7 +438,6 @@ export class SkillSystem {
       if (hitbox.isActive()) {
         const result = hitbox.checkHit(target);
         if (result) {
-          console.log(`[SkillSystem] Hit detected with skill ${name}`);
           return result;
         }
       }

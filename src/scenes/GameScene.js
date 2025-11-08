@@ -42,8 +42,6 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
-    console.log('📦 Preloading assets for:', this.currentMapKey);
-
     this.mapModel = new MapModel(this, this.currentMapKey, this.mapConfig, true);
     this.mapModel.preload();
 
@@ -62,7 +60,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // ✅ 페이드 인 효과 (씬이 시작될 때)
+    // 페이드 인 효과 (씬이 시작될 때)
     this.cameras.main.fadeIn(400, 0, 0, 0);
 
     this.physics.world.gravity.y = this.mapConfig.gravity;
@@ -78,7 +76,7 @@ export default class GameScene extends Phaser.Scene {
       img.setDepth(this.mapConfig.depths.backgroundStart + index);
     });
 
-    // 🎮 플레이어 생성
+    // 플레이어 생성
     this.player = CharacterFactory.create(this, this.selectedCharacter, spawn.x, spawn.y, {
       scale: this.mapConfig.playerScale || 1,
     });
@@ -98,26 +96,40 @@ export default class GameScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    if (!this.player) return;
+    if (!this.player) {
+      return;
+    }
 
     this.player.update();
-
-    // 포탈 자동 업데이트
     this.mapModel.update(this.player.sprite);
 
-    if (this.enemyManager) this.enemyManager.update(time, delta);
+    if (this.enemyManager) {
+      this.enemyManager.update(time, delta);
+    }
 
     this.checkAttackCollisions();
   }
 
   checkAttackCollisions() {
-    if (!this.enemyManager?.enemies || !this.player) return;
+    if (!this.enemyManager) {
+      return;
+    }
 
-    this.enemyManager.enemies.forEach((enemy) => {
+    if (!this.enemyManager.enemies) {
+      return;
+    }
+
+    if (!this.player) {
+      return;
+    }
+
+    this.enemyManager.enemies.forEach((enemy, index) => {
       const enemyTarget = enemy.sprite || enemy;
 
       if (this.player.isAttacking && this.player.isAttacking()) {
-        if (this.player.checkAttackHit(enemyTarget) && enemy.takeDamage) {
+        const hit = this.player.checkAttackHit(enemyTarget);
+
+        if (hit && enemy.takeDamage) {
           enemy.takeDamage(10);
         }
       }
@@ -127,7 +139,6 @@ export default class GameScene extends Phaser.Scene {
         if (skillHit?.hit && enemy.takeDamage) {
           enemy.takeDamage(skillHit.damage);
 
-          // 넉백
           if (skillHit.knockback && enemyTarget.body) {
             const facingRight = !this.player.sprite.flipX;
             enemyTarget.body.setVelocityX(
