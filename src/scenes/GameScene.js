@@ -2,7 +2,7 @@
 import Phaser from 'phaser';
 import MapModel from '../models/map/MapModel.js';
 import EnemyManager from '../controllers/EnemyManager.js';
-import { MAPS } from '../config/maps.js';
+import { MAPS } from '../config/mapData.js';
 import EnemyAssetLoader from '../utils/EnemyAssetLoader.js';
 import CharacterFactory from '../characters/base/CharacterFactory.js';
 import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
@@ -13,10 +13,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.currentMapKey = data.mapKey || 'dark_cave';
-    this.mapConfig = MAPS[this.currentMapKey];
+    // this.currentMapKey = data.mapKey || 'dark_cave';
+    this.currentMapKey = data.mapKey || 'forest';
     this.selectedCharacter = data.characterType || 'monk';
     // this.selectedCharacter = data.characterType || 'soul';
+    this.mapConfig = MAPS[this.currentMapKey];
   }
 
   preload() {
@@ -45,18 +46,21 @@ export default class GameScene extends Phaser.Scene {
       img.setDepth(this.mapConfig.depths.backgroundStart + index);
     });
 
+    // 포탈 생성
+    this.mapModel.createPortals();
+
+    const portals = [this.mapModel.getPortal()[0].x, this.mapModel.getPortal()[0].y];
+
     // 🎮 플레이어 생성
     this.player = CharacterFactory.create(this, this.selectedCharacter, spawn.x, spawn.y, {
       scale: this.mapConfig.playerScale || 1,
+      portals: portals,
     });
 
     this.player.sprite.setDepth(this.mapConfig.depths.player);
 
     // 맵에 플레이어 추가 (충돌 설정)
     this.mapModel.addPlayer(this.player.sprite);
-
-    // 포탈 생성
-    this.mapModel.createPortals();
 
     // 카메라 설정
     const camera = this.cameras.main;
@@ -66,16 +70,6 @@ export default class GameScene extends Phaser.Scene {
     // 적 매니저 생성
     this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
     this.enemyManager.createInitial();
-
-    console.log('GameScene created with character:', this.selectedCharacter);
-    console.log('Player collision body:', {
-      width: this.player.sprite.body.width,
-      height: this.player.sprite.body.height,
-      offset: {
-        x: this.player.sprite.body.offset.x,
-        y: this.player.sprite.body.offset.y,
-      },
-    });
   }
 
   update(time, delta) {
@@ -132,20 +126,20 @@ export default class GameScene extends Phaser.Scene {
             // 이펙트 적용
             if (skillHit.effects) {
               if (skillHit.effects.includes('stun')) {
-                console.log('⚡ 스턴 효과!');
+                console.log('스턴 효과!');
                 // 스턴 로직 구현
               }
               if (skillHit.effects.includes('burn')) {
-                console.log('🔥 화상 효과!');
+                console.log('화상 효과!');
                 // 화상 로직 구현
               }
               if (skillHit.effects.includes('knockdown')) {
-                console.log('💫 넉다운 효과!');
+                console.log('넉다운 효과!');
                 // 넉다운 로직 구현
               }
             }
 
-            console.log(`✨ 스킬 히트! ${skillHit.damage} 데미지`, skillHit);
+            console.log(`스킬 히트! ${skillHit.damage} 데미지`, skillHit);
           }
         }
       }

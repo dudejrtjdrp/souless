@@ -8,16 +8,15 @@ export default class StateMachine {
     this.previousState = null;
 
     this.isLocked = false;
-    this.lockDuration = 0;
+    this.lockTimer = null;
+    this.animCompleteHandler = null;
   }
 
   changeState(newState) {
-    // 잠금 상태면 변경 불가
     if (this.isLocked && newState !== this.currentState) {
       return false;
     }
 
-    // 같은 상태면 변경 안함
     if (this.currentState === newState) {
       return false;
     }
@@ -25,54 +24,129 @@ export default class StateMachine {
     this.previousState = this.currentState;
     this.currentState = newState;
 
-    // 애니메이션 존재 여부 확인
     if (!this.animManager.exists(newState)) {
       console.warn(`Animation '${newState}' does not exist`);
       return false;
     }
 
-    // 애니메이션 재생
     this.animManager.play(this.sprite, newState);
 
-    // 콜백 호출
     if (this.onStateChangeCallback) {
       this.onStateChangeCallback(this.previousState, this.currentState);
     }
 
-    // 공격 상태면 잠금
-    if (newState === 'attack') {
-      this.lock(500);
-      this.setupAttackComplete();
-    }
+    this.setupStateLock(newState);
 
     return true;
   }
 
-  setupAttackComplete() {
-    // 공격 애니메이션이 끝나면 자동으로 idle로
-    this.sprite.once('animationcomplete', () => {
-      if (this.currentState === 'attack') {
-        this.unlock();
-        this.changeState('idle');
-      }
-    });
+  setupStateLock(state) {
+    this.clearLock();
+
+    // 접두사 제거
+    const baseState = state.includes('-') ? state.split('-')[1] : state;
+
+    const lockStates = [
+      'attack',
+      'attack_1',
+      'attack_2',
+      'attack_3',
+      'air_attack',
+      'attack_air',
+      'special_attack',
+      'skill_punch',
+      'skill_kick',
+      'skill_meditation',
+      'skill_special',
+      'meditate',
+      'roll',
+      'fireball',
+      'ice_shard',
+      'lightning',
+    ];
+
+    if (lockStates.includes(baseState)) {
+      this.isLocked = true;
+
+      this.animCompleteHandler = () => {
+        if (this.currentState === state) {
+          this.unlock();
+          const onGround = this.sprite.body?.touching.down || false;
+          this.changeState(onGround ? 'idle' : 'jump');
+        }
+      };
+
+      this.sprite.once('animationcomplete', this.animCompleteHandler);
+
+      const maxDuration = this.getStateDuration(baseState);
+      this.lockTimer = setTimeout(() => {
+        if (this.isLocked && this.currentState === state) {
+          console.warn(`State '${state}' exceeded max duration, force unlocking`);
+          this.unlock();
+          const onGround = this.sprite.body?.touching.down || false;
+          this.changeState(onGround ? 'idle' : 'jump');
+        }
+      }, maxDuration);
+    }
+  }
+
+  getStateDuration(state) {
+    const baseState = state.includes('-') ? state.split('-')[1] : state;
+
+    const durations = {
+      attack: 600,
+      attack_1: 600,
+      attack_2: 650,
+      attack_3: 700,
+      air_attack: 650,
+      attack_air: 650,
+      special_attack: 800,
+      skill_punch: 800,
+      skill_kick: 800,
+      skill_meditation: 2500,
+      skill_special: 1000,
+      meditate: 2500,
+      roll: 600,
+      fireball: 600,
+      ice_shard: 600,
+      lightning: 400,
+    };
+
+    return durations[baseState] || 1000;
+  }
+
+  clearLock() {
+    if (this.lockTimer) {
+      clearTimeout(this.lockTimer);
+      this.lockTimer = null;
+    }
+
+    if (this.animCompleteHandler) {
+      this.sprite.off('animationcomplete', this.animCompleteHandler);
+      this.animCompleteHandler = null;
+    }
   }
 
   lock(duration) {
+    this.clearLock();
     this.isLocked = true;
-    this.lockDuration = duration;
 
-    setTimeout(() => {
+    this.lockTimer = setTimeout(() => {
       this.unlock();
     }, duration);
   }
 
   unlock() {
+    this.clearLock();
     this.isLocked = false;
   }
 
   isState(state) {
     return this.currentState === state;
+  }
+
+  isStateLocked() {
+    return this.isLocked;
   }
 
   getCurrentState() {
@@ -81,5 +155,12 @@ export default class StateMachine {
 
   getPreviousState() {
     return this.previousState;
+  }
+
+  destroy() {
+    this.clearLock();
+    this.sprite = null;
+    this.animManager = null;
+    this.onStateChangeCallback = null;
   }
 }

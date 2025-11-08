@@ -1,4 +1,3 @@
-// characters/systems/AttackSystem.js
 export default class AttackSystem {
   constructor(scene, sprite, hitboxSize, duration, offset) {
     this.scene = scene;
@@ -9,7 +8,7 @@ export default class AttackSystem {
 
     this.active = false;
     this.hitbox = null;
-    this.hasHitThisAttack = false; // 이번 공격에서 히트 발생 여부
+    this.hasHitThisAttack = false;
 
     this.createHitbox();
   }
@@ -31,9 +30,9 @@ export default class AttackSystem {
 
   activate() {
     this.active = true;
-    this.hasHitThisAttack = false; // 새 공격 시작 - 플래그 초기화
+    this.hasHitThisAttack = false;
     this.updateHitboxPosition();
-    this.hitbox.setVisible(false);
+
     this.scene.time.delayedCall(this.duration, () => {
       this.deactivate();
     });
@@ -41,8 +40,7 @@ export default class AttackSystem {
 
   deactivate() {
     this.active = false;
-    this.hitbox.setVisible(false);
-    this.hasHitThisAttack = false; // 비활성화 시에도 초기화
+    this.hasHitThisAttack = false;
   }
 
   updateHitboxPosition() {
@@ -56,17 +54,13 @@ export default class AttackSystem {
   }
 
   checkHit(target) {
-    if (!this.active) return false;
-    if (!target) return false;
-
-    // 이미 이번 공격에서 누군가를 맞췄으면 더 이상 체크 안함
-    if (this.hasHitThisAttack) {
+    if (!this.active || !target || this.hasHitThisAttack) {
       return false;
     }
 
     const targetSprite = target.sprite || target;
 
-    if (!targetSprite || typeof targetSprite.getBounds !== 'function') {
+    if (!targetSprite?.getBounds) {
       return false;
     }
 
@@ -78,7 +72,7 @@ export default class AttackSystem {
     const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2);
 
     if (hit) {
-      this.hasHitThisAttack = true; // 플래그 설정 - 더 이상 히트 불가
+      this.hasHitThisAttack = true;
       return true;
     }
 
@@ -89,16 +83,15 @@ export default class AttackSystem {
     return this.active;
   }
 
+  // 디버그용 - CharacterBase에서 사용
+  getHitboxBounds() {
+    if (!this.active) return null;
+    return this.hitbox.getBounds();
+  }
+
   destroy() {
     if (this.hitbox) {
       this.hitbox.destroy();
-    }
-  }
-
-  setDebug(visible) {
-    if (this.hitbox) {
-      this.hitbox.setAlpha(visible ? 0.3 : 0);
-      this.hitbox.setVisible(visible);
     }
   }
 }

@@ -135,8 +135,8 @@ export const MAPS = {
     },
     portals: [
       {
-        x: 800,
-        y: 400,
+        x: 200,
+        y: 2164,
         width: 64,
         height: 64,
         targetMap: 'cave_map',

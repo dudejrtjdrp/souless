@@ -1,5 +1,3 @@
-import Phaser from 'phaser';
-
 export default class MagicSystem {
   constructor(scene, casterSprite) {
     this.scene = scene;
@@ -10,14 +8,11 @@ export default class MagicSystem {
   castSpell(spellType, isLeft) {
     switch (spellType) {
       case 'fireball':
-        this.createFireball(isLeft);
-        break;
-      case 'ice':
-        this.createIceSpike(isLeft);
-        break;
+        return this.createFireball(isLeft);
+      case 'ice_shard': // 추가
+        return this.createIceSpike(isLeft);
       case 'lightning':
-        this.createLightning(isLeft);
-        break;
+        return this.createLightning(isLeft);
     }
   }
 
@@ -33,7 +28,6 @@ export default class MagicSystem {
 
     this.projectiles.push(fireball);
 
-    // 2초 후 제거
     this.scene.time.delayedCall(2000, () => {
       const index = this.projectiles.indexOf(fireball);
       if (index > -1) this.projectiles.splice(index, 1);
@@ -84,33 +78,6 @@ export default class MagicSystem {
     });
 
     return lightning;
-  }
-
-  createExplosion(x, y) {
-    const explosion = this.scene.add.circle(x, y, 20, 0xff0000, 0.8);
-
-    this.scene.tweens.add({
-      targets: explosion,
-      scale: 3,
-      alpha: 0,
-      duration: 500,
-      onComplete: () => explosion.destroy(),
-    });
-  }
-
-  checkProjectileHit(target) {
-    for (let i = this.projectiles.length - 1; i >= 0; i--) {
-      const proj = this.projectiles[i];
-
-      if (
-        Phaser.Geom.Intersects.RectangleToRectangle(proj.getBounds(), target.sprite.getBounds())
-      ) {
-        this.projectiles.splice(i, 1);
-        proj.destroy();
-        return true;
-      }
-    }
-    return false;
   }
 
   destroy() {

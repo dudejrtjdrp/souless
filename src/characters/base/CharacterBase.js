@@ -5,51 +5,50 @@ import AttackSystem from '../systems/AttackSystem.js';
 import MovementController from '../systems/MovementController.js';
 import InputHandler from '../systems/InputHandler.js';
 import CharacterNormalizer from '../../utils/CharacterNormalizer.js';
+import { SkillSystem } from '../systems/SkillSystem.js';
 
-// 모든 캐릭터의 베이스 클래스
 export default class CharacterBase {
   constructor(scene, x, y, config) {
     this.scene = scene;
     this.config = this.getDefaultConfig();
-    Object.assign(this.config, config);
+    Object.assign(this.config, config || {});
 
-    // ⭐ 스킬 시스템 초기화 (스프라이트 생성 전에!)
-    this.skillHitboxes = {};
+    this.maxHealth = 100;
+    this.health = 100;
+    this.maxMana = 100;
+    this.mana = 100;
+    this.isInvincible = false;
+    this.invincibleTimer = null;
+
+    // ✅ 스킬 히트박스 (중복 제거)
     this.activeSkillHitbox = null;
 
     this.initSprite(x, y);
-    this.applyNormalization(); // 스프라이트 생성 후 정규화
+    this.applyNormalization();
     this.initSystems();
     this.setupPhysics();
+
+    // 디버그
+    this.debugGraphics = null;
+    if (this.config.debug) {
+      this.debugGraphics = this.scene.add.graphics();
+    }
   }
 
-  // 기본 설정 (각 캐릭터가 오버라이드 가능)
   getDefaultConfig() {
     return {
       spriteKey: 'character',
-      spriteScale: 1, // ⭐ 시각적 크기 조정 (자유롭게 설정)
+      spriteScale: 1,
       depth: 100,
       collideWorldBounds: true,
-
-      // ⭐ 충돌 박스 설정 (각 캐릭터가 오버라이드 가능)
-      collisionBox: null, // HitboxConfig로 설정
-
-      // ⭐ 공격 히트박스 설정 (각 캐릭터가 오버라이드 가능)
-      attackHitbox: null, // HitboxConfig로 설정
-
-      // ⭐ 스킬 히트박스 설정 (각 캐릭터가 오버라이드 가능)
-      skillHitboxes: {}, // { skillName: HitboxConfig }
-
-      // 디버그 모드 (충돌 박스 시각화)
+      collisionBox: null,
+      attackHitbox: null,
+      skillHitboxes: {},
       debug: false,
-
-      // 이동 설정
       walkSpeed: 200,
       runSpeed: 350,
       jumpPower: 300,
       maxJumps: 2,
-
-      // 공격 설정
       attackDuration: 500,
     };
   }
@@ -58,34 +57,17 @@ export default class CharacterBase {
     this.sprite = this.scene.physics.add.sprite(x, y, this.config.spriteKey, 0);
     this.sprite.setDepth(this.config.depth);
     this.sprite.setCollideWorldBounds(this.config.collideWorldBounds);
-
-    // 시각적 스케일 적용 (충돌 박스와 무관)
     this.sprite.setScale(this.config.spriteScale);
-
     this.baseX = x;
     this.baseY = y;
-
-    console.log(`[${this.config.spriteKey}] 스프라이트 생성:`, {
-      scale: this.config.spriteScale.toFixed(3),
-      displaySize: {
-        width: this.sprite.displayWidth.toFixed(1),
-        height: this.sprite.displayHeight.toFixed(1),
-      },
-    });
   }
 
-  // 핵심: 충돌 박스를 설정
   applyNormalization() {
-    // 충돌 박스 설정이 없으면 Soul 기준 사용
     if (!this.config.collisionBox) {
-      const normalized = CharacterNormalizer.getStandardizedConfig(
-        this.config.spriteScale,
-        null, // Soul 기본 오프셋 사용
-      );
+      const normalized = CharacterNormalizer.getStandardizedConfig(this.config.spriteScale, null);
       this.config.bodySize = normalized.bodySize;
       this.config.bodyOffset = normalized.bodyOffset;
     } else {
-      // 캐릭터별 커스텀 충돌 박스 사용
       const collisionBox = this.config.collisionBox;
       this.config.bodySize = {
         width: collisionBox.size.width / this.config.spriteScale,
@@ -97,38 +79,25 @@ export default class CharacterBase {
       };
     }
 
-    // 공격 히트박스 설정
     if (this.config.attackHitbox) {
       this.config.attackHitboxSize = this.config.attackHitbox.size;
       this.config.attackHitboxOffset = this.config.attackHitbox.offset;
       this.config.attackDuration = this.config.attackHitbox.duration;
     } else {
-      // Soul 기본값
       this.config.attackHitboxSize = { width: 40, height: 30 };
       this.config.attackHitboxOffset = { x: 30, y: 0 };
     }
 
-    // 디버그 정보 출력
-    if (this.config.debug) {
-    }
+    this.config.skillHitboxes = this.config.skillHitboxes || {};
   }
 
   setupPhysics() {
     const { width, height } = this.config.bodySize;
     const { x, y } = this.config.bodyOffset;
-
-    // 스케일 역보정된 값 설정
-    this.sprite.body.setSize(width, height);
-    this.sprite.body.setOffset(x, y);
-
-    console.log(`[${this.config.spriteKey}] Physics 설정:`, {
-      spriteScale: this.config.spriteScale.toFixed(3),
-      setSize: { width: width.toFixed(1), height: height.toFixed(1) },
-      actualBodySize: {
-        width: this.sprite.body.width.toFixed(1),
-        height: this.sprite.body.height.toFixed(1),
-      },
-    });
+    if (this.sprite.body) {
+      this.sprite.body.setSize(width, height);
+      this.sprite.body.setOffset(x, y);
+    }
   }
 
   initSystems() {
@@ -163,74 +132,36 @@ export default class CharacterBase {
     this.stateMachine.changeState('idle');
   }
 
-  // 각 캐릭터가 반드시 구현해야 하는 메서드
   getAnimationConfig() {
-    throw new Error('getAnimationConfig() must be implemented');
+    throw new Error('getAnimationConfig() must be implemented by subclass');
   }
 
-  // 상태 변경 시 호출
   onStateChange(oldState, newState) {
-    // 하위 클래스에서 추가 로직 구현
+    // 하위 클래스에서 확장 가능
   }
 
-  // 공통 메서드들
   jump() {
     if (this.movement.jump()) {
       this.stateMachine.changeState('jump');
     }
   }
 
-  attack() {
-    if (this.stateMachine.isState('attack')) return;
-
-    this.stateMachine.changeState('attack');
-    this.attackSystem.activate();
-  }
-
-  /**
-   * ⭐ 스킬 사용 (히트박스 커스터마이징)
-   * @param {string} skillName - 스킬 이름
-   * @param {string} animationKey - 애니메이션 키
-   */
-  useSkill(skillName, animationKey) {
-    if (this.activeSkillHitbox) return; // 이미 스킬 사용 중
-
-    const skillConfig = this.config.skillHitboxes[skillName];
-    if (!skillConfig) {
-      console.warn(`스킬 설정을 찾을 수 없습니다: ${skillName}`);
-      return;
-    }
-
-    // 애니메이션 재생
-    this.stateMachine.changeState(animationKey);
-
-    // 스킬 히트박스 활성화
-    this.activeSkillHitbox = {
-      name: skillName,
-      config: skillConfig,
-      startTime: Date.now(),
-    };
-
-    console.log(`✨ 스킬 사용: ${skillName}`, skillConfig);
-  }
-
-  /**
-   * 스킬 히트박스 체크
-   */
   checkSkillHit(target) {
     if (!this.activeSkillHitbox) return false;
 
     const skill = this.activeSkillHitbox;
     const elapsed = Date.now() - skill.startTime;
-
-    // 지속 시간 초과
     if (elapsed > skill.config.duration) {
       this.activeSkillHitbox = null;
       return false;
     }
 
-    // 히트박스 계산
-    const facingRight = this.sprite.flipX ? false : true;
+    // hitbox가 없는 스킬(예: dash)은 히트 체크 안함
+    if (!skill.config.size || !skill.config.offset) {
+      return false;
+    }
+
+    const facingRight = !this.sprite.flipX;
     const offsetX = facingRight ? skill.config.offset.x : -skill.config.offset.x;
 
     const hitboxX = this.sprite.x + offsetX;
@@ -243,7 +174,6 @@ export default class CharacterBase {
       skill.config.size.height,
     );
 
-    // 타겟의 bounds 가져오기
     let targetBounds;
     if (target.getBounds) {
       targetBounds = target.getBounds();
@@ -255,20 +185,17 @@ export default class CharacterBase {
         target.body.height,
       );
     } else {
-      console.warn('Target has no bounds or body');
       return false;
     }
 
     if (Phaser.Geom.Rectangle.Overlaps(hitbox, targetBounds)) {
-      console.log(`💥 스킬 히트: ${skill.name}`, skill.config.damage);
       return {
         hit: true,
-        damage: skill.config.damage,
-        knockback: skill.config.knockback,
-        effects: skill.config.effects,
+        damage: skill.config.damage || 0,
+        knockback: skill.config.knockback || { x: 0, y: 0 }, // 기본값 제공
+        effects: skill.config.effects || [],
       };
     }
-
     return false;
   }
 
@@ -285,45 +212,105 @@ export default class CharacterBase {
   }
 
   takeDamage(amount) {
-    console.log(`${this.constructor.name} took ${amount} damage`);
-  }
+    if (this.isInvincible) return;
 
-  // 메인 업데이트
-  update() {
-    const input = this.inputHandler.getInputState();
+    this.health = Math.max(0, this.health - amount);
+    console.log(
+      `${this.constructor.name} took ${amount} damage (HP: ${this.health}/${this.maxHealth})`,
+    );
 
-    this.updateGroundState();
-    this.handleInput(input);
-    this.updateMovement(input);
-    this.updateState(input);
-    this.onUpdate(input);
-  }
-
-  updateGroundState() {
-    if (this.movement.isOnGround()) {
-      this.movement.resetJumpCount();
-      if (this.stateMachine.isState('jump')) {
-        this.stateMachine.changeState('idle');
-      }
+    if (this.health <= 0) {
+      this.onDeath();
     }
   }
 
+  heal(amount) {
+    this.health = Math.min(this.maxHealth, this.health + amount);
+    console.log(
+      `${this.constructor.name} healed ${amount} HP (HP: ${this.health}/${this.maxHealth})`,
+    );
+  }
+
+  restoreMana(amount) {
+    this.mana = Math.min(this.maxMana, this.mana + amount);
+  }
+
+  consumeMana(amount) {
+    if (this.mana < amount) return false;
+    this.mana -= amount;
+    return true;
+  }
+
+  setInvincible(duration) {
+    this.isInvincible = true;
+
+    if (this.invincibleTimer) {
+      clearTimeout(this.invincibleTimer);
+    }
+
+    this.invincibleTimer = setTimeout(() => {
+      this.isInvincible = false;
+    }, duration);
+  }
+
+  onDeath() {
+    console.log(`${this.constructor.name} died`);
+    // 하위 클래스에서 구현
+  }
+
+  update() {
+    const input = this.inputHandler.getInputState();
+
+    // 1. 상태가 잠겨있지 않을 때만 입력 처리
+    if (!this.stateMachine.isStateLocked()) {
+      this.handleInput(input);
+      this.updateMovement(input);
+      this.updateState(input);
+    }
+
+    // 2. 하위 클래스 업데이트
+    if (typeof this.onUpdate === 'function') {
+      this.onUpdate(input);
+    }
+
+    // 4. 디버그 시각화
+    this.renderDebug();
+  }
+
   handleInput(input) {
-    if (input.isJumpPressed) this.jump();
-    if (input.isAttackPressed) this.attack();
+    // 점프만 여기서 처리
+    if (input.isJumpPressed) {
+      this.jump();
+    }
+    // 공격/스킬은 onUpdate에서 처리
   }
 
   updateMovement(input) {
-    this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
+    // 잠금 상태가 아닐 때만 좌우 이동
+    if (!this.stateMachine.isStateLocked()) {
+      this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
+    }
   }
 
   updateState(input) {
-    if (this.stateMachine.isState('attack')) return;
+    // 잠금 상태면 상태 변경 안함
+    if (this.stateMachine.isStateLocked()) {
+      return;
+    }
 
     const onGround = this.movement.isOnGround();
 
     if (!onGround) {
-      this.stateMachine.changeState('jump');
+      // ✅ 점프 방향에 따라 다른 상태
+      const velocityY = this.sprite.body.velocity.y;
+
+      if (velocityY < 0) {
+        // 올라가는 중
+        this.stateMachine.changeState('jump');
+      } else {
+        // 내려오는 중
+        this.stateMachine.changeState('jump_down');
+      }
     } else if (input.isMoving) {
       const newState = input.isRunning ? 'run' : 'walk';
       this.stateMachine.changeState(newState);
@@ -332,15 +319,61 @@ export default class CharacterBase {
     }
   }
 
-  // 각 캐릭터가 추가 업데이트 로직 구현
-  onUpdate(input) {
-    // 하위 클래스에서 구현
+  renderDebug() {
+    if (this.config.debug && this.debugGraphics) {
+      this.debugGraphics.clear();
+
+      // 몸체 박스 (초록색)
+      const b = this.sprite.body;
+      if (b) {
+        this.debugGraphics.lineStyle(2, 0x00ff00, 0.8);
+        this.debugGraphics.strokeRect(b.x, b.y, b.width, b.height);
+      }
+
+      // 공격 히트박스 (빨간색)
+      if (this.isAttacking()) {
+        const hitbox = this.attackSystem.getHitboxBounds();
+        if (hitbox) {
+          this.debugGraphics.lineStyle(2, 0xff0000, 0.8);
+          this.debugGraphics.strokeRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height);
+        }
+      }
+
+      // 스킬 히트박스 (파란색)
+      if (this.isUsingSkill() && this.activeSkillHitbox) {
+        const skill = this.activeSkillHitbox;
+        // ✅ size와 offset이 있는 경우만 그리기
+        if (skill.config.size && skill.config.offset) {
+          const facingRight = !this.sprite.flipX;
+          const offsetX = facingRight ? skill.config.offset.x : -skill.config.offset.x;
+
+          const hitboxX = this.sprite.x + offsetX - skill.config.size.width / 2;
+          const hitboxY = this.sprite.y + skill.config.offset.y - skill.config.size.height / 2;
+
+          this.debugGraphics.lineStyle(2, 0x0000ff, 0.8);
+          this.debugGraphics.strokeRect(
+            hitboxX,
+            hitboxY,
+            skill.config.size.width,
+            skill.config.size.height,
+          );
+        }
+      }
+
+      // 상태 텍스트
+      const stateText = `State: ${this.stateMachine.getCurrentState()} ${
+        this.stateMachine.isStateLocked() ? '(LOCKED)' : ''
+      }`;
+      this.debugGraphics.fillStyle(0xffffff, 1);
+      // 텍스트는 별도 Text 객체로 표시하는 것이 좋습니다
+    }
   }
 
   destroy() {
+    if (this.inputHandler) this.inputHandler.destroy();
+    if (this.stateMachine) this.stateMachine.destroy();
     if (this.sprite) this.sprite.destroy();
     if (this.attackSystem) this.attackSystem.destroy();
     if (this.debugGraphics) this.debugGraphics.destroy();
-    if (this.debugText) this.debugText.destroy();
   }
 }

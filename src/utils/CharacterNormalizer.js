@@ -1,13 +1,7 @@
-// utils/CharacterNormalizer.js
+// 모든 캐릭터를 Soul 기준 크기로 통일
 
-/**
- * 🎯 캐릭터 정규화 시스템 v2
- * 모든 캐릭터를 Soul 기준 크기로 통일
- * - 시각적 크기는 수동 조정
- * - 충돌 박스는 항상 고정
- */
 export default class CharacterNormalizer {
-  // ⭐ Soul 기준 스펙 (모든 캐릭터가 이 크기로 통일됨)
+  //  Soul 기준 스펙 (모든 캐릭터가 이 크기로 통일됨)
   static STANDARD_SPEC = {
     // 충돌 박스 (게임 내 절대 픽셀 크기)
     bodySize: { width: 24, height: 30 },

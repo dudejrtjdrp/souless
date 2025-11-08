@@ -1,48 +1,24 @@
 import CharacterBase from '../base/CharacterBase.js';
-import HitboxConfig from '../systems/HitBoxConfig.js';
+import { CharacterDataAdapter } from '../../utils/CharacterDataAdapter.js';
+import { SkillSystem } from '../systems/SkillSystem.js';
 
 export default class Soul extends CharacterBase {
   constructor(scene, x, y, options = {}) {
-    const config = {
-      spriteKey: 'soul',
-
-      // 시각적 크기 조정
-      spriteScale: options.spriteScale || 2.0,
-
-      // 충돌 박스 설정 (절대 픽셀 크기)
-      collisionBox: HitboxConfig.createCollisionBox(
-        32, // width - Soul과 동일
-        64, // height - Soul과 동일
-        16, // offsetX - 캐릭터 중앙에 맞게 조정
-        0, // offsetY - 발 위치에 맞게 조정
-      ),
-
-      // 기본 공격 히트박스
-      attackHitbox: HitboxConfig.createAttackHitbox(
-        50, // width - Monk는 조금 더 넓게
-        35, // height
-        35, // offsetX - 앞쪽으로
-        0, // offsetY - 중앙
-        500, // duration (ms)
-      ),
-
-      // 디버그 모드
-      debug: false,
-
-      // 이동 설정
-      walkSpeed: options.walkSpeed || 200,
-      runSpeed: options.runSpeed || 350,
-      jumpPower: options.jumpPower || 300,
-      maxJumps: options.maxJumps || 2,
-
-      // 공격 설정
-      attackDuration: 500,
-    };
-
+    // ✅ CharacterData.js에서 설정 불러오기
+    const config = CharacterDataAdapter.buildConfig('soul', options);
     super(scene, x, y, config);
 
+    // ✅ SkillSystem 초기화
+    const skillsData = CharacterDataAdapter.getSkillsData('soul');
+    this.skillSystem = new SkillSystem(scene, this, skillsData);
+
+    this.maxHealth = 100;
+    this.health = 100;
+    this.maxMana = 80;
+    this.mana = 80;
+
     this.walkTween = null;
-    this.isJumping = false;
+    this.isDashing = false;
   }
 
   static preload(scene) {
@@ -53,29 +29,72 @@ export default class Soul extends CharacterBase {
   }
 
   getAnimationConfig() {
-    return {
-      spriteKey: 'soul',
-      animations: [
-        { key: 'idle', frames: { start: 0, end: 1 }, frameRate: 3, repeat: -1 },
-        { key: 'walk', frames: { start: 25, end: 32 }, frameRate: 6, repeat: -1 },
-        { key: 'run', frames: { start: 25, end: 32 }, frameRate: 10, repeat: -1 },
-        { key: 'jump', frames: { start: 41, end: 48 }, frameRate: 8, repeat: 0 },
-        { key: 'attack', frames: { start: 65, end: 71 }, frameRate: 12, repeat: 0 },
-      ],
-    };
+    // ✅ CharacterData.js에서 애니메이션 설정 불러오기
+    return CharacterDataAdapter.getAnimationConfig('soul');
+  }
+
+  onUpdate(input) {
+    // ✅ SkillSystem 업데이트
+    this.skillSystem.update(this.scene.game.loop.delta);
+
+    // ✅ 공격 처리
+    if (input.isAttackPressed) {
+      this.performAttack();
+    }
+
+    // ✅ Q키로 대시
+    if (input.isQPressed && !this.isDashing) {
+      this.performDash();
+    }
+  }
+
+  performAttack() {
+    this.skillSystem.useSkill('attack');
+  }
+
+  performDash() {
+    const skill = this.skillSystem.getSkill('dash');
+    if (!skill) return;
+
+    if (skill.isOnCooldown()) {
+      console.log(`Dash cooldown: ${Math.ceil(skill.cooldownRemaining / 1000)}s`);
+      return;
+    }
+
+    if (this.skillSystem.useSkill('dash')) {
+      this.isDashing = true;
+
+      // 대시 이동
+      const direction = this.sprite.flipX ? -1 : 1;
+      this.sprite.setVelocityX(direction * 600);
+
+      this.scene.time.delayedCall(300, () => {
+        this.isDashing = false;
+        if (this.sprite.body) {
+          this.sprite.setVelocityX(0);
+        }
+      });
+    }
+  }
+
+  onStateChange(oldState, newState) {
+    if (newState === 'walk' || newState === 'run') {
+      this.startWalkTween();
+    } else {
+      this.stopWalkTween();
+    }
   }
 
   startWalkTween() {
     if (this.walkTween) return;
-
-    // this.walkTween = this.scene.tweens.add({
-    //   targets: this.sprite,
-    //   y: `+=1`,
-    //   duration: 250,
-    //   yoyo: true,
-    //   repeat: -1,
-    //   ease: 'Sine.easeInOut',
-    // });
+    this.walkTween = this.scene.tweens.add({
+      targets: this.sprite,
+      y: this.sprite.y - 2,
+      duration: 200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
   }
 
   stopWalkTween() {
@@ -86,30 +105,9 @@ export default class Soul extends CharacterBase {
     }
   }
 
-  onStateChange(oldState, newState) {
-    if (newState === 'walk' || newState === 'run') {
-      this.startWalkTween();
-    } else {
-      this.stopWalkTween();
-    }
-
-    if (newState === 'jump') {
-      this.isJumping = true;
-    } else if (oldState === 'jump') {
-      this.isJumping = false;
-    }
-  }
-
-  changeState(state) {
-    this.stateMachine.changeState(state);
-  }
-
-  onUpdate(input) {
-    // Soul 전용 로직
-  }
-
   destroy() {
     this.stopWalkTween();
+    if (this.skillSystem) this.skillSystem.destroy();
     super.destroy();
   }
 }

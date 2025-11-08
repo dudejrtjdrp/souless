@@ -106,6 +106,10 @@ export default class MapModel {
     };
   }
 
+  getPortal() {
+    return this.portals || [];
+  }
+
   calculateSpawn() {
     const { width, height } = this.getScaledMapSize();
     const spawnX = this.calculateSpawnX(width);

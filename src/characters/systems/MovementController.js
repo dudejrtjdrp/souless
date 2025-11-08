@@ -9,8 +9,7 @@ export default class MovementController {
     };
 
     this.jumpCount = 0;
-    this.groundCheckDelay = 100; // 착지 감지 딜레이
-    this.lastGroundTime = 0;
+    this.wasOnGround = false;
   }
 
   handleHorizontalMovement(cursors, isRunning) {
@@ -25,6 +24,16 @@ export default class MovementController {
     } else {
       this.sprite.setVelocityX(0);
     }
+  }
+
+  update() {
+    const isCurrentlyOnGround = this.isOnGround();
+
+    if (isCurrentlyOnGround && !this.wasOnGround) {
+      this.resetJumpCount();
+    }
+
+    this.wasOnGround = isCurrentlyOnGround;
   }
 
   jump() {
