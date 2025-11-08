@@ -15,12 +15,11 @@ export default class GameScene extends Phaser.Scene {
   init(data) {
     this.currentMapKey = data.mapKey || 'dark_cave';
     this.mapConfig = MAPS[this.currentMapKey];
-    // this.selectedCharacter = data.characterType || 'soul';
     this.selectedCharacter = data.characterType || 'monk';
+    // this.selectedCharacter = data.characterType || 'soul';
   }
 
   preload() {
-    // 맵 로드
     this.mapModel = new MapModel(this, this.currentMapKey, this.mapConfig, true);
     this.mapModel.preload();
 
@@ -46,7 +45,7 @@ export default class GameScene extends Phaser.Scene {
       img.setDepth(this.mapConfig.depths.backgroundStart + index);
     });
 
-    // 🎮 플레이어 생성 (CharacterFactory 사용)
+    // 🎮 플레이어 생성
     this.player = CharacterFactory.create(this, this.selectedCharacter, spawn.x, spawn.y, {
       scale: this.mapConfig.playerScale || 1,
     });
@@ -69,6 +68,14 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager.createInitial();
 
     console.log('GameScene created with character:', this.selectedCharacter);
+    console.log('Player collision body:', {
+      width: this.player.sprite.body.width,
+      height: this.player.sprite.body.height,
+      offset: {
+        x: this.player.sprite.body.offset.x,
+        y: this.player.sprite.body.offset.y,
+      },
+    });
   }
 
   update(time, delta) {
@@ -80,34 +87,67 @@ export default class GameScene extends Phaser.Scene {
     // 포탈 체크
     this.checkPortals();
 
-    // 적 업데이트 (여기서 공격 체크도 함께 처리됨)
+    // 적 업데이트
     if (this.enemyManager) {
       this.enemyManager.update(time, delta);
     }
+
+    // ⭐ 충돌 체크 (기본 공격 + 스킬)
+    this.checkAttackCollisions();
   }
 
   checkAttackCollisions() {
-    if (!this.player.isAttacking()) return;
+    if (!this.enemyManager?.enemies) return;
+    if (!this.player) return;
 
-    // 적들과 충돌 체크
-    this.enemyManager?.enemies?.forEach((enemy) => {
-      if (this.player.checkAttackHit(enemy.sprite || enemy)) {
-        const damage = this.mapConfig.enemies?.attackDamage || 10;
+    this.enemyManager.enemies.forEach((enemy) => {
+      const enemyTarget = enemy.sprite || enemy;
 
-        // 적이 takeDamage 메서드가 있는지 확인
-        if (enemy.takeDamage) {
-          enemy.takeDamage(damage);
-        } else {
-          console.log('Enemy hit but no takeDamage method');
-          // 간단히 제거하거나 효과 추가
-          const sprite = enemy.sprite || enemy;
-          sprite.setTint(0xff0000);
-          this.time.delayedCall(100, () => {
-            sprite.clearTint();
-          });
+      // 기본 공격 체크
+      if (this.player.isAttacking && this.player.isAttacking()) {
+        if (this.player.checkAttackHit(enemyTarget)) {
+          const damage = 10;
+          if (enemy.takeDamage) {
+            enemy.takeDamage(damage);
+            console.log(`💥 기본 공격 히트! ${damage} 데미지`);
+          }
         }
+      }
 
-        console.log('Hit enemy!', damage, 'damage');
+      // ⭐ 스킬 히트 체크
+      if (this.player.isUsingSkill && this.player.isUsingSkill()) {
+        const skillHit = this.player.checkSkillHit(enemyTarget);
+        if (skillHit && skillHit.hit) {
+          if (enemy.takeDamage) {
+            enemy.takeDamage(skillHit.damage);
+
+            // 넉백 적용
+            if (skillHit.knockback && enemyTarget.body) {
+              const facingRight = this.player.sprite.flipX ? false : true;
+              const knockbackX = facingRight ? skillHit.knockback.x : -skillHit.knockback.x;
+              enemyTarget.setVelocityX(knockbackX);
+              enemyTarget.setVelocityY(skillHit.knockback.y);
+            }
+
+            // 이펙트 적용
+            if (skillHit.effects) {
+              if (skillHit.effects.includes('stun')) {
+                console.log('⚡ 스턴 효과!');
+                // 스턴 로직 구현
+              }
+              if (skillHit.effects.includes('burn')) {
+                console.log('🔥 화상 효과!');
+                // 화상 로직 구현
+              }
+              if (skillHit.effects.includes('knockdown')) {
+                console.log('💫 넉다운 효과!');
+                // 넉다운 로직 구현
+              }
+            }
+
+            console.log(`✨ 스킬 히트! ${skillHit.damage} 데미지`, skillHit);
+          }
+        }
       }
     });
   }
@@ -118,8 +158,6 @@ export default class GameScene extends Phaser.Scene {
       const portalBounds = portal.getBounds();
 
       if (Phaser.Geom.Rectangle.Overlaps(playerBounds, portalBounds)) {
-        // InputHandler가 이미 키 입력을 처리하므로
-        // 직접 체크는 필요없지만 호환성을 위해 유지
         const cursors = this.input.keyboard.createCursorKeys();
 
         if (Phaser.Input.Keyboard.JustDown(cursors.up)) {
@@ -131,18 +169,6 @@ export default class GameScene extends Phaser.Scene {
           console.log(`포탈 이동! ${targetMap}로 이동`);
           this.changeMap(targetMap);
         }
-      }
-    });
-  }
-
-  checkAttackCollisions() {
-    if (!this.player.isAttacking()) return;
-
-    // 적들과 충돌 체크
-    this.enemyManager?.enemies?.forEach((enemy) => {
-      if (this.player.checkAttackHit(enemy.sprite || enemy)) {
-        const damage = this.mapConfig.enemies.attackDamage || 1;
-        enemy.takeDamage(damage);
       }
     });
   }

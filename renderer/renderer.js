@@ -10,7 +10,7 @@ const config = {
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
-    arcade: { debug: false },
+    arcade: { debug: true },
   },
   scene: [GameScene, SoulScene],
   scale: {

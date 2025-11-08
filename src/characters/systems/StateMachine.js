@@ -1,4 +1,3 @@
-// characters/systems/StateMachine.js
 export default class StateMachine {
   constructor(sprite, animManager, onStateChangeCallback) {
     this.sprite = sprite;

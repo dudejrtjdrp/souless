@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 
-// Magician의 마법 시스템
 export default class MagicSystem {
   constructor(scene, casterSprite) {
     this.scene = scene;

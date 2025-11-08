@@ -1,4 +1,3 @@
-// characters/systems/InputHandler.js
 export default class InputHandler {
   constructor(scene) {
     this.scene = scene;
@@ -22,7 +21,7 @@ export default class InputHandler {
     const keys = this.keys;
 
     const currentSpaceDown = keys.space.isDown || keys.z.isDown;
-    const currentAttackDown = keys.a.isDown; // X키로 공격
+    const currentAttackDown = keys.a.isDown;
 
     const isJumpPressed = currentSpaceDown && !this.prevState.space;
     const isAttackPressed = currentAttackDown && !this.prevState.attack;

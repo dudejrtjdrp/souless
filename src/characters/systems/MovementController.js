@@ -1,4 +1,3 @@
-// systems/MovementController.js
 export default class MovementController {
   constructor(sprite, config) {
     this.sprite = sprite;
