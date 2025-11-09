@@ -3,6 +3,7 @@ import Soul from '../playable/Soul.js';
 import Soldier from '../playable/Soldier.js';
 import Magician from '../playable/Magician.js';
 import Monk from '../playable/Monk.js';
+import Assassin from '../playable/Assassin.js';
 
 export default class CharacterFactory {
   static create(scene, type, x, y, options = {}) {
@@ -11,6 +12,7 @@ export default class CharacterFactory {
       soldier: Soldier,
       magician: Magician,
       monk: Monk,
+      assassin: Assassin,
     };
 
     const CharacterClass = characterMap[type.toLowerCase()];
@@ -27,6 +29,6 @@ export default class CharacterFactory {
   }
 
   static getAvailableTypes() {
-    return ['soul', 'soldier', 'magician', 'monk'];
+    return ['soul', 'soldier', 'assassin', 'magician', 'monk'];
   }
 }

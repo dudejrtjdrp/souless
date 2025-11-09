@@ -14,7 +14,8 @@ export default class GameScene extends Phaser.Scene {
   init(data = {}) {
     // ✅ data가 없어도 기본값 설정
     this.currentMapKey = data.mapKey || 'forest';
-    this.selectedCharacter = data.characterType || 'monk';
+    // this.selectedCharacter = data.characterType || 'monk';
+    this.selectedCharacter = data.characterType || 'assassin';
 
     console.log('🎮 GameScene init:', {
       mapKey: this.currentMapKey,
