@@ -26,7 +26,12 @@ export default class MapModel {
   }
 
   loadMapJSON() {
-    this.scene.load.tilemapTiledJSON(this.mapKey, this.config.mapPath);
+    // mapPath가 있을 때만 로드
+    if (this.config.mapPath) {
+      this.scene.load.tilemapTiledJSON(this.mapKey, this.config.mapPath);
+    } else {
+      console.log(`⚠️ No tilemap for ${this.mapKey}, using layers only`);
+    }
   }
 
   loadTilesets() {
@@ -53,13 +58,26 @@ export default class MapModel {
   }
 
   createTilemap() {
-    this.tiledMap = this.scene.make.tilemap({ key: this.mapKey });
+    // mapPath가 있을 때만 생성
+    if (this.config.mapPath) {
+      this.tiledMap = this.scene.make.tilemap({ key: this.mapKey });
+    } else {
+      // 타일맵 없이 빈 객체 생성
+      this.tiledMap = {
+        widthInPixels: 3200, // 기본 너비
+        heightInPixels: 2400, // 기본 높이
+      };
+    }
   }
 
   addTilesets() {
-    return this.config.tilesets.map(({ nameInTiled, key }) =>
-      this.tiledMap.addTilesetImage(nameInTiled, key),
-    );
+    // tiledMap이 실제 Tilemap 객체일 때만 실행
+    if (this.tiledMap && this.tiledMap.addTilesetImage) {
+      return this.config.tilesets.map(({ nameInTiled, key }) =>
+        this.tiledMap.addTilesetImage(nameInTiled, key),
+      );
+    }
+    return [];
   }
 
   setupWorldBounds() {

@@ -6,7 +6,7 @@ export const MAPS = {
     key: 'cave',
     name: 'Parallax Cave',
     mapScale: 1,
-    mapPath: '/assets/map/parallax_cave/cave_map.json',
+    mapPath: '/assets/map/parallax_cave/map.json',
     camera: {
       offsetY: 150,
     },
@@ -57,10 +57,7 @@ export const MAPS = {
       patrolRangeX: 100,
       minPlayerDistance: 200,
     },
-    // 🆕 포탈 데이터 자동 생성
-    get portals() {
-      return generateMapPortals('cave');
-    },
+    portals: generateMapPortals('cave'),
   },
 
   forest: {
@@ -121,10 +118,7 @@ export const MAPS = {
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
-    // 🆕 포탈 데이터 자동 생성
-    get portals() {
-      return generateMapPortals('forest');
-    },
+    portals: generateMapPortals('forest'),
   },
 
   dark_cave: {
@@ -180,9 +174,15 @@ export const MAPS = {
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
-    // 🆕 포탈 데이터 자동 생성
-    get portals() {
-      return generateMapPortals('dark_cave');
-    },
+    portals: generateMapPortals('dark_cave'),
   },
 };
+
+// 🎯 디버그: 포탈 정보 출력 (개발 중)
+if (import.meta.env.DEV) {
+  console.log('=== Map Portal Info ===');
+  console.log('Cave portals:', MAPS.cave.portals);
+  console.log('Forest portals:', MAPS.forest.portals);
+  console.log('Dark cave portals:', MAPS.dark_cave.portals);
+  console.log('======================');
+}

@@ -67,25 +67,36 @@ export default class Portal extends Phaser.GameObjects.Sprite {
 
   onPlayerEnter(player) {
     this.isPlayerInside = true;
-    console.log(`✨ Player entered portal: ${this.portalId}`);
 
-    if (this.cooldown || !this.connectionInfo) return;
+    // 🎯 쿨다운 중이거나 Scene이 전환 중이면 무시
+    if (this.cooldown || !this.connectionInfo) {
+      return;
+    }
+
+    // 🎯 Scene이 이미 전환 중이면 무시 (전역 플래그)
+    if (this.scene.isPortalTransitioning) {
+      return;
+    }
+
+    console.log(`✨ Player entered portal: ${this.portalId}`);
 
     // GameScene의 onPortalEnter 호출
     if (this.scene.onPortalEnter) {
       this.cooldown = true;
+      this.scene.isPortalTransitioning = true; // 🎯 전역 플래그 설정
 
-      // 목적지 포탈 정보 전달
-      this.scene.onPortalEnter({
-        sourcePortalId: this.portalId,
-        targetPortalId: this.targetPortalId,
-        targetMap: this.connectionInfo.targetMap,
-        targetPosition: this.connectionInfo.targetPosition,
-      });
+      // 🎯 수정: targetPortalId를 명확히 전달
+      this.scene.onPortalEnter(
+        this.connectionInfo.targetMap, // 다음 맵 키
+        this.targetPortalId, // 다음 맵에서 스폰될 포탈 ID
+      );
 
-      // 쿨다운 리셋
-      this.scene.time.delayedCall(1000, () => {
+      // 쿨다운 리셋 (Scene이 바뀌면 의미 없지만 안전장치)
+      this.scene.time.delayedCall(2000, () => {
         this.cooldown = false;
+        if (this.scene.isPortalTransitioning) {
+          this.scene.isPortalTransitioning = false;
+        }
       });
     }
   }

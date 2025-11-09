@@ -74,11 +74,11 @@ export default class CharacterSwitchManager {
     const stateKey = `${mapKey}_${characterType}`;
     const state = this.characterStates.get(stateKey);
 
+    console.log(state);
     if (!state) {
       console.log(`📂 No saved state for ${characterType} at ${mapKey} - will use default spawn`);
       return null;
     }
-
     console.log(`📂 Loaded state for ${characterType} at ${mapKey}:`, state);
     return state;
   }

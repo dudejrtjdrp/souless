@@ -4,11 +4,9 @@ import { SkillSystem } from '../systems/SkillSystem.js';
 
 export default class Soul extends CharacterBase {
   constructor(scene, x, y, options = {}) {
-    // ✅ CharacterData.js에서 설정 불러오기
     const config = CharacterDataAdapter.buildConfig('soul', options);
     super(scene, x, y, config);
 
-    // ✅ SkillSystem 초기화
     const skillsData = CharacterDataAdapter.getSkillsData('soul');
     this.skillSystem = new SkillSystem(scene, this, skillsData);
 
@@ -29,20 +27,23 @@ export default class Soul extends CharacterBase {
   }
 
   getAnimationConfig() {
-    // ✅ CharacterData.js에서 애니메이션 설정 불러오기
     return CharacterDataAdapter.getAnimationConfig('soul');
   }
 
+  // ✅ updateMovement 오버라이드
+  updateMovement(input) {
+    if (!this.stateMachine.isStateLocked() && !this.isDashing) {
+      this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
+    }
+  }
+
   onUpdate(input) {
-    // ✅ SkillSystem 업데이트
     this.skillSystem.update(this.scene.game.loop.delta);
 
-    // ✅ 공격 처리
     if (input.isAttackPressed) {
       this.performAttack();
     }
 
-    // ✅ Q키로 대시
     if (input.isQPressed && !this.isDashing) {
       this.performDash();
     }
@@ -64,13 +65,21 @@ export default class Soul extends CharacterBase {
     if (this.skillSystem.useSkill('dash')) {
       this.isDashing = true;
 
-      // 대시 이동
       const direction = this.sprite.flipX ? -1 : 1;
       this.sprite.setVelocityX(direction * 600);
 
       this.scene.time.delayedCall(300, () => {
         this.isDashing = false;
-        if (this.sprite.body) {
+
+        // ✅ 대시 끝날 때 현재 입력 상태 확인해서 속도 설정
+        const input = this.inputHandler.getInputState();
+        const speed = input.isRunning ? this.config.runSpeed : this.config.walkSpeed;
+
+        if (input.cursors.left.isDown) {
+          this.sprite.setVelocityX(-speed);
+        } else if (input.cursors.right.isDown) {
+          this.sprite.setVelocityX(speed);
+        } else {
           this.sprite.setVelocityX(0);
         }
       });
@@ -78,35 +87,10 @@ export default class Soul extends CharacterBase {
   }
 
   onStateChange(oldState, newState) {
-    if (newState === 'walk' || newState === 'run') {
-      this.startWalkTween();
-    } else {
-      this.stopWalkTween();
-    }
-  }
-
-  startWalkTween() {
-    if (this.walkTween) return;
-    this.walkTween = this.scene.tweens.add({
-      targets: this.sprite,
-      y: this.sprite.y - 2,
-      duration: 200,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
-    });
-  }
-
-  stopWalkTween() {
-    if (this.walkTween) {
-      this.walkTween.stop();
-      this.walkTween = null;
-      this.sprite.y = this.baseY;
-    }
+    // 필요시 구현
   }
 
   destroy() {
-    this.stopWalkTween();
     if (this.skillSystem) this.skillSystem.destroy();
     super.destroy();
   }

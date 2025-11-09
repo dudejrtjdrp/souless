@@ -219,6 +219,8 @@ export default class CharacterBase {
   update() {
     const input = this.inputHandler.getInputState();
 
+    this.movement.update();
+
     if (!this.stateMachine.isStateLocked()) {
       this.handleInput(input);
       this.updateMovement(input);

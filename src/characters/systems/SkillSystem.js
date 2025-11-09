@@ -236,6 +236,7 @@ export class SkillSystem {
     const config = skill.config;
 
     const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
+
     const airAllowedSkills = ['air_attack', 'roll'];
     if (isInAir && !airAllowedSkills.includes(skillName)) {
       return false;

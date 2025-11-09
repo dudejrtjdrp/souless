@@ -372,6 +372,7 @@ export const CharacterData = {
       { key: 'walk', frames: { start: 25, end: 32 }, frameRate: 6, repeat: -1 },
       { key: 'run', frames: { start: 25, end: 32 }, frameRate: 10, repeat: -1 },
       { key: 'jump', frames: { start: 41, end: 48 }, frameRate: 8, repeat: 0 },
+      { key: 'jump_down', frames: { start: 41, end: 48 }, frameRate: 8, repeat: 0 },
       { key: 'attack', frames: { start: 65, end: 68 }, frameRate: 12, repeat: 0 },
     ],
   },

@@ -29,14 +29,16 @@ export default class MovementController {
   update() {
     const isCurrentlyOnGround = this.isOnGround();
 
-    if (isCurrentlyOnGround && !this.wasOnGround) {
-      this.resetJumpCount();
+    // 착지 시점 감지
+    if (isCurrentlyOnGround) {
+      this.jumpCount = 0; // 지상에 있으면 항상 점프 횟수 초기화
     }
 
     this.wasOnGround = isCurrentlyOnGround;
   }
 
   jump() {
+    // 점프 제한 체크
     if (this.jumpCount >= this.config.maxJumps) {
       return false;
     }
@@ -48,10 +50,6 @@ export default class MovementController {
 
   isOnGround() {
     return this.sprite.body.blocked.down || this.sprite.body.touching.down;
-  }
-
-  resetJumpCount() {
-    this.jumpCount = 0;
   }
 
   getVelocity() {
