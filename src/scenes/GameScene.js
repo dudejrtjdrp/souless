@@ -103,7 +103,6 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.fadeIn(400, 0, 0, 0);
 
     this.physics.world.gravity.y = this.mapConfig.gravity;
-    const mapScale = this.mapConfig.mapScale || 1;
 
     const { spawn, portals } = this.mapModel.create();
 
@@ -111,11 +110,29 @@ export default class GameScene extends Phaser.Scene {
     const spawnPosition = this.determineSpawnPosition(spawn, portals);
     console.log('📍 Spawn position:', spawnPosition);
 
-    this.mapConfig.layers.forEach((layer, index) => {
-      const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
-      img.setScale(mapScale);
-      img.setDepth(this.mapConfig.depths.backgroundStart + index);
-    });
+    // 🎯 레이어 생성 (자동 스케일 적용)
+    if (this.mapConfig.layers && this.mapConfig.layers.length > 0) {
+      const autoScale = this.mapModel.config.autoScale;
+      const mapScale = this.mapConfig.mapScale || 1;
+
+      this.mapConfig.layers.forEach((layer, index) => {
+        const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
+
+        // 자동 스케일이 있으면 사용, 없으면 mapScale 사용
+        if (autoScale) {
+          img.setScale(autoScale);
+          console.log(`📐 Layer ${layer.key} scaled to ${autoScale.toFixed(2)}`);
+        } else {
+          img.setScale(mapScale);
+        }
+
+        img.setDepth(this.mapConfig.depths.backgroundStart + index);
+      });
+    }
+
+    // 카메라 오프셋 설정 (자동 또는 수동)
+    const cameraOffsetY =
+      this.mapConfig.camera?.offsetY || this.mapModel.AUTO_CONFIG.DEFAULT_CAMERA_OFFSET_Y;
 
     // 캐릭터 전환 매니저 초기화
     this.characterSwitchManager = new CharacterSwitchManager(this);
@@ -154,48 +171,61 @@ export default class GameScene extends Phaser.Scene {
    * 🎯 Spawn 위치 결정 로직
    */
   determineSpawnPosition(defaultSpawn, portals) {
+    let rawPosition = null;
+
     // 1️⃣ 세이브 파일이 없으면 → 첫 번째 포탈 위치
     if (!this.savedSpawnData) {
-      // PortalManager로 현재 맵의 첫 번째 포탈 찾기
       const firstPortalConfig = PortalManager.getPortalsByMap(this.currentMapKey)[0];
 
       if (firstPortalConfig) {
         console.log('🌀 Spawning at first portal:', firstPortalConfig);
-        return {
+        rawPosition = {
           x: firstPortalConfig.sourcePosition.x,
           y: firstPortalConfig.sourcePosition.y,
         };
+      } else {
+        console.log('📍 Spawning at default spawn (no portals)');
+        rawPosition = defaultSpawn;
       }
-
-      // 포탈도 없으면 기본 spawn
-      console.log('📍 Spawning at default spawn (no portals)');
-      return defaultSpawn;
     }
-
     // 2️⃣ 포탈을 통해 왔으면 → 해당 포탈 위치
-    if (this.savedSpawnData.fromPortal && this.savedSpawnData.portalId) {
-      // PortalManager로 포탈 정보 가져오기
+    else if (this.savedSpawnData.fromPortal && this.savedSpawnData.portalId) {
       const targetPortal = PortalManager.getPortal(this.savedSpawnData.portalId);
 
       if (targetPortal && targetPortal.sourceMap === this.currentMapKey) {
         console.log('🌀 Spawning at portal:', targetPortal);
-        return {
+        rawPosition = {
           x: targetPortal.sourcePosition.x,
           y: targetPortal.sourcePosition.y,
         };
+      } else {
+        console.warn('⚠️ Portal not found, using default spawn');
+        rawPosition = defaultSpawn;
       }
-      console.warn('⚠️ Portal not found, using default spawn');
     }
-
     // 3️⃣ 맵 내에서 캐릭터 전환했으면 → 저장된 위치
-    if (this.savedSpawnData.x !== undefined && this.savedSpawnData.y !== undefined) {
+    else if (this.savedSpawnData.x !== undefined && this.savedSpawnData.y !== undefined) {
       console.log('📍 Spawning at saved position:', this.savedSpawnData);
-      return { x: this.savedSpawnData.x, y: this.savedSpawnData.y };
+      rawPosition = { x: this.savedSpawnData.x, y: this.savedSpawnData.y };
+    }
+    // 4️⃣ 그 외의 경우 기본 spawn
+    else {
+      console.log('📍 Spawning at default spawn');
+      rawPosition = defaultSpawn;
     }
 
-    // 4️⃣ 그 외의 경우 기본 spawn
-    console.log('📍 Spawning at default spawn');
-    return defaultSpawn;
+    // ✅ autoScale 모드일 때는 Y 좌표를 안전한 위치로 조정
+    if (this.mapModel.config.autoScale && rawPosition) {
+      const groundY = this.mapModel.getGroundY();
+      // 포탈 Y 좌표가 ground 근처이면 위로 올림
+      if (rawPosition.y >= groundY - 100) {
+        const adjustedY = groundY - 150; // 땅 위 150px
+        console.log(`✅ Adjusted spawn Y: ${rawPosition.y} → ${adjustedY} (ground: ${groundY})`);
+        rawPosition.y = adjustedY;
+      }
+    }
+
+    return rawPosition;
   }
 
   /**
@@ -263,13 +293,25 @@ export default class GameScene extends Phaser.Scene {
    * 플레이어 캐릭터 생성
    */
   createPlayer(characterType, x, y, restoreState = false) {
-    if (this.savedSpawnData) {
-      this.characterOffsetY = this.savedSpawnData['physics'].offsetY;
-    }
-    this.characterOffsetY = 100;
-    console.log(y - this.characterOffsetY - 35);
+    // ✅ savedSpawnData가 있고 physics 정보가 있을 때만 오프셋 적용
+    let finalY = y;
 
-    this.player = CharacterFactory.create(this, characterType, x, y - this.characterOffsetY - 35, {
+    if (this.savedSpawnData && this.savedSpawnData['physics']) {
+      const offsetY = this.savedSpawnData['physics'].offsetY || 100;
+      // autoScale이 아닐 때만 오프셋 적용
+      if (!this.mapModel.config.autoScale) {
+        finalY = y - offsetY - 35;
+      }
+    }
+
+    console.log('🎮 Creating player:', {
+      originalY: y,
+      finalY: finalY,
+      autoScale: this.mapModel.config.autoScale,
+      hasSavedData: !!this.savedSpawnData,
+    });
+
+    this.player = CharacterFactory.create(this, characterType, x, finalY, {
       scale: this.mapConfig.playerScale || 1,
     });
     this.player.sprite.setDepth(this.mapConfig.depths.player);
@@ -277,13 +319,13 @@ export default class GameScene extends Phaser.Scene {
     // 플레이어 collider 생성 및 저장
     this.playerCollider = this.mapModel.addPlayer(this.player.sprite);
 
-    // ✅ 3초 동안 캐릭터 전환 불가
+    // ✅ 캐릭터 전환 쿨다운
     this.isCharacterSwitchOnCooldown = true;
     this.time.delayedCall(1800, () => {
       this.isCharacterSwitchOnCooldown = false;
     });
 
-    // 저장된 상태 복원 (체력, 마나, 스킬 쿨타임만)
+    // 저장된 상태 복원
     if (restoreState) {
       const savedState = this.characterSwitchManager.loadCharacterState(characterType);
       this.characterSwitchManager.applyStateToCharacter(this.player, savedState, false);

@@ -5,6 +5,7 @@ import Slime from '../characters/enemies/Slime.js';
 import Bat from '../characters/enemies/Bat.js';
 import PurpleMonkey from '../characters/enemies/PurpleMonkey.js';
 
+// ✅ 이 부분이 파일 상단에 있어야 해요
 const enemyClassMap = { Slime, Canine, Bat, PurpleMonkey };
 
 export default class EnemyManager {
@@ -19,7 +20,16 @@ export default class EnemyManager {
     const worldBounds = scene.physics.world.bounds;
     this.spawnMinX = 50;
     this.spawnMaxX = worldBounds.width - 50;
-    this.spawnY = mapConfig.enemies.yFixed;
+
+    // ✅ autoScale 모드면 MapModel에서 안전한 Y 좌표 계산
+    if (mapModel.config.autoScale) {
+      const groundY = mapModel.getGroundY ? mapModel.getGroundY() : worldBounds.height - 200;
+      this.spawnY = groundY - 100; // 땅 위 100px
+      console.log('🎯 EnemyManager spawn Y (autoScale):', this.spawnY);
+    } else {
+      this.spawnY = mapConfig.enemies.yFixed;
+      console.log('🎯 EnemyManager spawn Y (fixed):', this.spawnY);
+    }
   }
 
   createInitial() {
@@ -136,7 +146,7 @@ export default class EnemyManager {
       return;
     }
 
-    // 위쪽에 생성
+    // ✅ spawnY 사용 (constructor에서 계산됨)
     const enemy = new EnemyClass(this.scene, x, this.spawnY);
 
     if (!enemy || !enemy.sprite) {

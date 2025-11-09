@@ -5,18 +5,9 @@ export const MAPS = {
   cave: {
     key: 'cave',
     name: 'Parallax Cave',
-    mapScale: 3,
-    mapPath: '/assets/map/parallax_cave/map.json',
     camera: {
       offsetY: 150,
     },
-    tilesets: [
-      {
-        key: 'cave_tiles',
-        imagePath: '/assets/map/parallax_cave/cave_tiles.png',
-        nameInTiled: 'CaveTiles',
-      },
-    ],
     layerNames: ['Background1', 'Background2', 'Midground', 'Collision', 'Foreground'],
     layers: [
       { key: 'cave_layer1', path: '/assets/map/parallax_cave/1.png' },
@@ -29,11 +20,6 @@ export const MAPS = {
       { key: 'cave_layer8', path: '/assets/map/parallax_cave/8fx.png' },
       { key: 'cave_layer9', path: '/assets/map/parallax_cave/9.png' },
     ],
-    collision: {
-      key: 'cave_collision',
-      path: '/assets/map/parallax_cave/9.png',
-      groundHeight: 200,
-    },
     spawn: {
       x: 'left',
       y: 2170,
@@ -53,7 +39,6 @@ export const MAPS = {
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
-      yFixed: 2169,
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
