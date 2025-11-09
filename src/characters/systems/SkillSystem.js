@@ -116,6 +116,67 @@ export class SkillHitbox {
     });
   }
 
+  activateSequence(sequence) {
+    if (!sequence || sequence.length === 0) return;
+
+    this.active = true;
+    this.hitEnemies.clear();
+
+    const activeHitboxes = [];
+
+    sequence.forEach((step, index) => {
+      this.scene.time.delayedCall(step.delay || 0, () => {
+        // 임시 히트박스 생성
+        const tempHitbox = this.scene.add.rectangle(
+          0,
+          0,
+          step.hitbox.width,
+          step.hitbox.height,
+          0xff0000,
+          0.4,
+        );
+        this.scene.physics.add.existing(tempHitbox);
+        tempHitbox.body.setAllowGravity(false);
+
+        const flipX = this.sprite.flipX;
+        const offsetX = flipX ? -step.hitbox.offsetX : step.hitbox.offsetX;
+        tempHitbox.setPosition(this.sprite.x + offsetX, this.sprite.y + step.hitbox.offsetY);
+
+        // 각 단계마다 독립적인 데미지와 설정
+        const tempHitboxData = {
+          rect: tempHitbox,
+          offsetX: step.hitbox.offsetX,
+          offsetY: step.hitbox.offsetY,
+          damage: step.damage || this.config.damage,
+          knockback: step.knockback || this.config.knockback,
+          effects: step.effects || this.config.effects,
+        };
+
+        this.hitboxes.push(tempHitboxData);
+        activeHitboxes.push(tempHitboxData);
+
+        // 히트박스 유지 시간 200ms
+        this.scene.time.delayedCall(200, () => {
+          const idx = this.hitboxes.indexOf(tempHitboxData);
+          if (idx > -1) {
+            this.hitboxes.splice(idx, 1);
+          }
+          const activeIdx = activeHitboxes.indexOf(tempHitboxData);
+          if (activeIdx > -1) {
+            activeHitboxes.splice(activeIdx, 1);
+          }
+          tempHitbox.destroy();
+        });
+      });
+    });
+
+    // 전체 시퀀스 종료 시 비활성화
+    const totalDuration = Math.max(...sequence.map((s) => s.delay || 0)) + 300;
+    this.scene.time.delayedCall(totalDuration, () => {
+      this.deactivate();
+    });
+  }
+
   deactivate() {
     this.active = false;
     this.hitEnemies.clear();
@@ -150,12 +211,12 @@ export class SkillHitbox {
 
     const enemyId = targetSprite.name || targetSprite;
 
-    // ✅ single 타입: 이미 아무 적이라도 맞췄으면 더 이상 못 맞춤
+    // single 타입: 이미 아무 적이라도 맞췄으면 더 이상 못 맞춤
     if (this.config.targetType === 'single' && this.hitEnemies.size > 0) {
       return false;
     }
 
-    // ✅ single 타입이면서 이미 이 적을 맞췄으면 못 맞춤
+    // single 타입이면서 이미 이 적을 맞췄으면 못 맞춤
     if (this.config.targetType === 'single' && this.hitEnemies.has(enemyId)) {
       return false;
     }
@@ -169,14 +230,14 @@ export class SkillHitbox {
       const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds, targetBounds);
 
       if (hit) {
-        // ✅ 타격 기록
         this.hitEnemies.add(enemyId);
 
+        // 각 히트박스의 독립적인 데미지와 설정 반환
         return {
           hit: true,
-          damage: this.config.damage || 0,
-          knockback: this.config.knockback || { x: 0, y: 0 },
-          effects: this.config.effects || [],
+          damage: hitbox.damage || this.config.damage || 0,
+          knockback: hitbox.knockback || this.config.knockback || { x: 0, y: 0 },
+          effects: hitbox.effects || this.config.effects || [],
           targetType: this.config.targetType,
         };
       }
@@ -215,7 +276,11 @@ export class SkillSystem {
     for (const [name, config] of Object.entries(skillsData)) {
       this.skills.set(name, new Skill(name, config));
 
-      if ((config.type === 'melee' || config.type === 'instant') && config.hitbox) {
+      // hitbox 또는 hitboxSequence가 있으면 SkillHitbox 생성
+      if (
+        (config.type === 'melee' || config.type === 'instant') &&
+        (config.hitbox || config.hitboxSequence)
+      ) {
         const skillHitbox = new SkillHitbox(scene, character.sprite, name, config);
         this.skillHitboxes.set(name, skillHitbox);
       }
@@ -271,24 +336,16 @@ export class SkillSystem {
     const frameRate = config.frameRate || 10;
     this.playAnimationWithDuration(config.animation, frameRate);
 
-    const basicAttacks = ['attack'];
+    const skillHitbox = this.skillHitboxes.get(name);
+    if (skillHitbox) {
+      const delay = config.hitboxDelay || 0;
 
-    if (basicAttacks.includes(name)) {
-      if (this.character.attackSystem) {
-        this.character.attackSystem.activate();
-      }
-    } else {
-      const skillHitbox = this.skillHitboxes.get(name);
-      if (skillHitbox) {
-        const delay = config.hitboxDelay || 0;
-
-        if (delay > 0) {
-          this.scene.time.delayedCall(delay, () => {
-            skillHitbox.activate();
-          });
-        } else {
+      if (delay > 0) {
+        this.scene.time.delayedCall(delay, () => {
           skillHitbox.activate();
-        }
+        });
+      } else {
+        skillHitbox.activate();
       }
     }
   }
@@ -347,14 +404,19 @@ export class SkillSystem {
 
     const skillHitbox = this.skillHitboxes.get(name);
     if (skillHitbox) {
-      const delay = config.hitboxDelay || 0;
-
-      if (delay > 0) {
-        this.scene.time.delayedCall(delay, () => {
-          skillHitbox.activate();
-        });
+      // hitboxSequence가 있으면 시퀀스 실행
+      if (config.hitboxSequence) {
+        skillHitbox.activateSequence(config.hitboxSequence);
       } else {
-        skillHitbox.activate();
+        // 기존 방식
+        const delay = config.hitboxDelay || 0;
+        if (delay > 0) {
+          this.scene.time.delayedCall(delay, () => {
+            skillHitbox.activate();
+          });
+        } else {
+          skillHitbox.activate();
+        }
       }
     }
   }

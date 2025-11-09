@@ -74,11 +74,17 @@ export const CharacterData = {
       },
       special_attack: {
         type: 'instant',
-        damage: 35,
-        hitboxDelay: 100,
-        hitbox: [
-          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
-          { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            damage: 10,
+          },
+          {
+            delay: 200,
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            damage: 15,
+          },
         ],
         duration: 1500,
         animation: 'special_attack',
@@ -131,10 +137,20 @@ export const CharacterData = {
       },
       lightning: {
         type: 'instant',
-        damage: 40,
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            damage: 10,
+          },
+          {
+            delay: 200,
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            damage: 15,
+          },
+        ],
         animation: 'special_attack',
         frameRate: 30,
-        hitbox: { width: 100, height: 200, offsetX: 80, offsetY: -50 },
         duration: 1000,
         effects: ['stun'],
         cooldown: 4000,
@@ -191,7 +207,8 @@ export const CharacterData = {
         animation: 'attack',
         frameRate: 6,
         knockback: { x: 100, y: 0 },
-        targetType: 'single',
+        cooldown: 200,
+        targetType: 'multi',
       },
       attack_2: {
         type: 'melee',
@@ -206,13 +223,19 @@ export const CharacterData = {
         targetType: 'multi',
       },
       attack_3: {
-        type: 'melee',
-        damage: 25,
-        hitbox: [
-          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
-          { width: 70, height: 90, offsetX: 130, offsetY: 60 },
+        type: 'instant',
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            damage: 10,
+          },
+          {
+            delay: 200,
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            damage: 15,
+          },
         ],
-        hitboxDelay: 300,
         duration: 500,
         animation: 'attack_3',
         frameRate: 12,
@@ -235,11 +258,17 @@ export const CharacterData = {
       },
       special_attack: {
         type: 'instant',
-        damage: 35,
-        hitboxDelay: 100,
-        hitbox: [
-          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
-          { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            damage: 10,
+          },
+          {
+            delay: 200,
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            damage: 15,
+          },
         ],
         duration: 1500,
         animation: 'special_attack',
@@ -292,10 +321,20 @@ export const CharacterData = {
       },
       lightning: {
         type: 'instant',
-        damage: 40,
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            damage: 10,
+          },
+          {
+            delay: 200,
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            damage: 15,
+          },
+        ],
         animation: 'special_attack',
         frameRate: 30,
-        hitbox: { width: 100, height: 200, offsetX: 80, offsetY: -50 },
         duration: 1000,
         effects: ['stun'],
         cooldown: 4000,
@@ -351,6 +390,7 @@ export const CharacterData = {
         hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0 },
         duration: 400,
         animation: 'attack',
+        cooldown: 500,
         frameRate: 12,
         knockback: { x: 100, y: 0 },
         targetType: 'single',

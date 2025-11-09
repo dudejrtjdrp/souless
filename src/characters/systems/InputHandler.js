@@ -15,6 +15,9 @@ export default class InputHandler {
       e: scene.input.keyboard.addKey('E'), // 명상
       r: scene.input.keyboard.addKey('R'), // 특수
       s: scene.input.keyboard.addKey('S'), // 보조
+      backQuote: scene.input.keyboard.addKey('BACKTICK'), // ` 키
+      tab: scene.input.keyboard.addKey('TAB'), // Tab 키
+      l: scene.input.keyboard.addKey('L'), // L 키
     };
 
     // 이전 상태 저장 (엣지 감지용)
@@ -26,6 +29,9 @@ export default class InputHandler {
       e: false,
       r: false,
       s: false,
+      backQuote: false,
+      tab: false,
+      l: false,
     };
   }
 
@@ -40,6 +46,9 @@ export default class InputHandler {
     const currentE = keys.e.isDown;
     const currentR = keys.r.isDown;
     const currentS = keys.s.isDown;
+    const currentBackQuote = keys.backQuote.isDown;
+    const currentTab = keys.tab.isDown;
+    const currentL = keys.l.isDown;
 
     // 엣지 감지 (down edge: false -> true)
     const isJumpPressed = currentSpaceDown && !this.prevState.space;
@@ -49,6 +58,9 @@ export default class InputHandler {
     const isEPressed = currentE && !this.prevState.e;
     const isRPressed = currentR && !this.prevState.r;
     const isSPressed = currentS && !this.prevState.s;
+    const isBackQuotePressed = currentBackQuote && !this.prevState.backQuote;
+    const isTabPressed = currentTab && !this.prevState.tab;
+    const isLPressed = currentL && !this.prevState.l;
 
     // 이전 상태 갱신
     this.prevState.space = currentSpaceDown;
@@ -58,6 +70,9 @@ export default class InputHandler {
     this.prevState.e = currentE;
     this.prevState.r = currentR;
     this.prevState.s = currentS;
+    this.prevState.backQuote = currentBackQuote;
+    this.prevState.tab = currentTab;
+    this.prevState.l = currentL;
 
     return {
       cursors,
@@ -70,6 +85,9 @@ export default class InputHandler {
       isEPressed,
       isRPressed,
       isSPressed,
+      isBackQuotePressed, // ` 키
+      isTabPressed, // Tab 키
+      isLPressed, // L 키
       // 키를 계속 누르고 있는지 확인
       isJumpHeld: currentSpaceDown,
       isAttackHeld: currentAttackDown,

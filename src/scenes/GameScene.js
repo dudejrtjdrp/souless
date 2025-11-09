@@ -8,6 +8,7 @@ import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
 import CharacterSwitchManager from '../systems/CharacterSwitchManager.js';
 import SaveManager from '../utils/SaveManager.js';
 import { PortalManager } from '../config/portalData.js';
+import InputHandler from '../characters/systems/InputHandler.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -131,6 +132,8 @@ export default class GameScene extends Phaser.Scene {
     // 적 매니저 생성
     this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
     this.enemyManager.createInitial();
+
+    this.inputHandler = new InputHandler(this);
 
     // 캐릭터 전환 키 입력 설정
     this.setupCharacterSwitchInput();
@@ -267,6 +270,12 @@ export default class GameScene extends Phaser.Scene {
     // 플레이어 collider 생성 및 저장
     this.playerCollider = this.mapModel.addPlayer(this.player.sprite);
 
+    // ✅ 3초 동안 캐릭터 전환 불가
+    this.isCharacterSwitchOnCooldown = true;
+    this.time.delayedCall(1800, () => {
+      this.isCharacterSwitchOnCooldown = false;
+    });
+
     // 저장된 상태 복원 (체력, 마나, 스킬 쿨타임만)
     if (restoreState) {
       const savedState = this.characterSwitchManager.loadCharacterState(characterType);
@@ -278,25 +287,24 @@ export default class GameScene extends Phaser.Scene {
    * 캐릭터 전환 키 입력 설정
    */
   setupCharacterSwitchInput() {
-    // ` (백틱) 키로 다음 캐릭터
-    this.input.keyboard.on('keydown-BACK_QUOTE', () => {
-      this.switchCharacter('next');
-    });
-
-    // Tab 키로 이전 캐릭터
-    this.input.keyboard.on('keydown-TAB', (event) => {
-      event.preventDefault();
-      this.switchCharacter('prev');
-    });
-    this.input.keyboard.on('keydown-L', () => {
-      console.log('🗑 Clearing all saved data in localStorage!');
-      localStorage.clear();
-      SaveManager.clear();
-      // 화면 안내
-      if (this.switchText) {
-        this.switchText.setText('🗑 All save data cleared! Reload the page.');
-      }
-    });
+    // const input = InputHandler.getInputState();
+    // // ` (백틱) 키로 다음 캐릭터
+    // if (input.isBackQuotePressed) {
+    //   this.switchCharacter('next');
+    // }
+    // // Tab 키로 이전 캐릭터
+    // if (input.isTabPressed) {
+    //   this.switchCharacter('prev');
+    // }
+    // // L 키로 저장 데이터 삭제
+    // if (input.isLPressed) {
+    //   console.log('🗑 Clearing all saved data in localStorage!');
+    //   localStorage.clear();
+    //   SaveManager.clear();
+    //   if (this.switchText) {
+    //     this.switchText.setText('🗑 All save data cleared! Reload the page.');
+    //   }
+    // }
   }
 
   /**
@@ -439,6 +447,27 @@ export default class GameScene extends Phaser.Scene {
     // UI 업데이트
     if (this.switchText && time % 100 < delta) {
       this.updateSwitchUI();
+    }
+
+    const input = this.inputHandler.getInputState();
+
+    // ` (백틱) 키로 다음 캐릭터
+    if (input.isBackQuotePressed && !this.isCharacterSwitchOnCooldown) {
+      this.switchCharacter('next');
+    }
+
+    // Tab 키로 이전 캐릭터
+    if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
+      this.switchCharacter('prev');
+    }
+
+    if (input.isLPressed) {
+      console.log('🗑 Clearing all saved data in localStorage!');
+      localStorage.clear();
+      SaveManager.clear();
+      if (this.switchText) {
+        this.switchText.setText('🗑 All save data cleared! Reload the page.');
+      }
     }
 
     // 🎯 주기적으로 위치 저장 (선택사항 - 5초마다)
