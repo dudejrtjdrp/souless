@@ -120,21 +120,18 @@ export default class MapModel {
   createPortals() {
     if (!this.config.portals) return;
 
-    // ✅ 포탈 높이 고정값 (텔레포트 스프라이트 크기)
-    const PORTAL_HEIGHT_OFFSET = -35; // 원하는 값으로 조정
-
-    this.config.portals.forEach(({ x, y, width, height, targetMap, targetSpawn }) => {
-      // 포탈은 y 좌표에서 고정값만큼 위에 생성
-      const portalY = y - PORTAL_HEIGHT_OFFSET;
-
-      const portal = new Portal(this.scene, x, portalY, targetMap, targetSpawn);
-
-      if (width && height) {
-        portal.setDisplaySize(width, height);
-      }
-
+    this.config.portals.forEach((portalData) => {
+      // 🆕 포탈 데이터 객체 전달 (ID 포함)
+      const portal = new Portal(this.scene, portalData);
       this.portals.push(portal);
     });
+
+    console.log(`✅ Created ${this.portals.length} portals for map: ${this.mapKey}`);
+  }
+
+  getPortalById(portalId) {
+    console.log(this.getPortalById);
+    return this.portals.find((portal) => portal.portalId === portalId);
   }
 
   getPortal(index) {

@@ -1,4 +1,3 @@
-// characters/base/CharacterFactory.js
 import Soul from '../playable/Soul.js';
 import Soldier from '../playable/Soldier.js';
 import Magician from '../playable/Magician.js';
@@ -29,6 +28,6 @@ export default class CharacterFactory {
   }
 
   static getAvailableTypes() {
-    return ['soul', 'soldier', 'assassin', 'magician', 'monk'];
+    return ['soul', 'assassin', 'monk'];
   }
 }

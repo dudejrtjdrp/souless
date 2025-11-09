@@ -7,15 +7,8 @@ export default class Monk extends CharacterBase {
   constructor(scene, x, y, options = {}) {
     const config = CharacterDataAdapter.buildConfig('monk', options);
 
-    // ✅ 수정: getPortal(0)으로 첫 번째 포탈 가져오기
-    const portal = scene.mapModel.getPortal(0);
-    const bodyOffsetY = config.collisionBox ? config.collisionBox.offset.y / config.spriteScale : 0;
-
-    // 포탈이 있으면 포탈 위치, 없으면 전달받은 x, y 사용
-    const spawnX = portal ? portal.x : x;
-    const spawnY = portal ? portal.y - bodyOffsetY - 35 : y;
-
-    super(scene, spawnX, spawnY, config);
+    // ✅ 수정: 전달받은 x, y를 그대로 사용 (포탈 위치 강제 제거)
+    super(scene, x, y, config);
 
     // SkillSystem 초기화
     const skillsData = CharacterDataAdapter.getSkillsData('monk');

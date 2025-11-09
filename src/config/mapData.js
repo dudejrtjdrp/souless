@@ -1,3 +1,6 @@
+// src/config/mapData.js
+import { generateMapPortals } from './portalData.js';
+
 export const MAPS = {
   cave: {
     key: 'cave',
@@ -45,34 +48,19 @@ export const MAPS = {
       ui: 1000,
       enemy: 100,
     },
-    // 🟢 적 관련 설정
     enemies: {
       types: ['Slime', 'Goblin', 'Bat'],
       initialCount: 10,
       maxCount: 15,
-      respawnInterval: 5000, // ms
-      yFixed: 2150, // 바닥 고정
+      respawnInterval: 5000,
+      yFixed: 2150,
       patrolRangeX: 100,
-      minPlayerDistance: 200, // 리젠 시 플레이어 근처 피하기
+      minPlayerDistance: 200,
     },
-    portals: [
-      {
-        x: 800,
-        y: 400,
-        width: 64,
-        height: 64,
-        targetMap: 'cave_map',
-        targetSpawn: { x: 'left', y: 'bottom' },
-      },
-      {
-        x: 1600,
-        y: 300,
-        width: 64,
-        height: 64,
-        targetMap: 'village_map',
-        targetSpawn: { x: 'right', y: 'bottom' },
-      },
-    ],
+    // 🆕 포탈 데이터 자동 생성
+    get portals() {
+      return generateMapPortals('cave');
+    },
   },
 
   forest: {
@@ -119,38 +107,24 @@ export const MAPS = {
     playerScale: 2,
     depths: {
       backgroundStart: 0,
-      tilemapStart: 50, // 타일맵은 background 위
+      tilemapStart: 50,
       player: 100,
-      enemy: 90, // enemy는 타일보다 위지만 player보다 약간 낮게
+      enemy: 90,
       ui: 1000,
     },
     enemies: {
       types: ['Slime', 'Goblin', 'Bat'],
       initialCount: 20,
       maxCount: 35,
-      respawnInterval: 5000, // ms
-      yFixed: 2169, // 바닥 고정
+      respawnInterval: 5000,
+      yFixed: 2169,
       patrolRangeX: 100,
-      minPlayerDistance: 100, // 리젠 시 플레이어 근처 피하기
+      minPlayerDistance: 100,
     },
-    portals: [
-      {
-        x: 200,
-        y: 2164,
-        width: 64,
-        height: 64,
-        targetMap: 'cave_map',
-        targetSpawn: { x: 'left', y: 'bottom' },
-      },
-      {
-        x: 2500,
-        y: 2164, // ✅ 300 → 2164로 수정 (바닥에 배치)
-        width: 64,
-        height: 64,
-        targetMap: 'village_map',
-        targetSpawn: { x: 'right', y: 'bottom' },
-      },
-    ],
+    // 🆕 포탈 데이터 자동 생성
+    get portals() {
+      return generateMapPortals('forest');
+    },
   },
 
   dark_cave: {
@@ -192,37 +166,23 @@ export const MAPS = {
     playerScale: 2,
     depths: {
       backgroundStart: 0,
-      tilemapStart: 50, // 타일맵은 background 위
+      tilemapStart: 50,
       player: 100,
-      enemy: 90, // enemy는 타일보다 위지만 player보다 약간 낮게
+      enemy: 90,
       ui: 1000,
     },
     enemies: {
       types: ['Slime', 'Goblin', 'Bat', 'PurpleMonkey'],
       initialCount: 20,
       maxCount: 35,
-      respawnInterval: 5000, // ms
-      yFixed: 895, // 바닥 고정
+      respawnInterval: 5000,
+      yFixed: 895,
       patrolRangeX: 100,
-      minPlayerDistance: 100, // 리젠 시 플레이어 근처 피하기
+      minPlayerDistance: 100,
     },
-    portals: [
-      {
-        x: 800,
-        y: 895,
-        width: 64,
-        height: 64,
-        targetMap: 'forest',
-        targetSpawn: { x: 'left', y: 'bottom' },
-      },
-      {
-        x: 1600,
-        y: 895,
-        width: 64,
-        height: 64,
-        targetMap: 'village_map',
-        targetSpawn: { x: 'right', y: 'bottom' },
-      },
-    ],
+    // 🆕 포탈 데이터 자동 생성
+    get portals() {
+      return generateMapPortals('dark_cave');
+    },
   },
 };
