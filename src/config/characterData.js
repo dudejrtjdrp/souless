@@ -42,7 +42,7 @@ export const CharacterData = {
         knockback: { x: 150, y: -50 },
         cooldown: 0,
         cost: { mana: 20 },
-        targetType: 'single',
+        targetType: 'multi',
       },
       attack_3: {
         type: 'melee',

@@ -20,7 +20,6 @@ export default class CharacterBase {
     this.isInvincible = false;
     this.invincibleTimer = null;
 
-    // 스킬 히트박스 (중복 제거)
     this.activeSkillHitbox = null;
 
     this.initSprite(x, y);
@@ -28,7 +27,6 @@ export default class CharacterBase {
     this.initSystems();
     this.setupPhysics();
 
-    // 디버그
     this.debugGraphics = null;
     if (this.config.debug) {
       this.debugGraphics = this.scene.add.graphics();
@@ -112,12 +110,16 @@ export default class CharacterBase {
       this.onStateChange.bind(this),
     );
 
+    // ✅ targetType 전달
+    const attackTargetType = this.config.skills?.attack?.targetType || 'single';
+
     this.attackSystem = new AttackSystem(
       this.scene,
       this.sprite,
       this.config.attackHitboxSize,
       this.config.attackDuration,
       this.config.attackHitboxOffset,
+      attackTargetType,
     );
 
     this.movement = new MovementController(this.sprite, {
@@ -147,7 +149,6 @@ export default class CharacterBase {
   }
 
   checkSkillHit(target) {
-    // SkillSystem에 위임
     if (this.skillSystem) {
       return this.skillSystem.checkSkillHit(target);
     }
@@ -168,6 +169,7 @@ export default class CharacterBase {
     }
     return false;
   }
+
   takeDamage(amount) {
     if (this.isInvincible) return;
 
@@ -212,45 +214,37 @@ export default class CharacterBase {
 
   onDeath() {
     console.log(`${this.constructor.name} died`);
-    // 하위 클래스에서 구현
   }
 
   update() {
     const input = this.inputHandler.getInputState();
 
-    // 1. 상태가 잠겨있지 않을 때만 입력 처리
     if (!this.stateMachine.isStateLocked()) {
       this.handleInput(input);
       this.updateMovement(input);
       this.updateState(input);
     }
 
-    // 2. 하위 클래스 업데이트
     if (typeof this.onUpdate === 'function') {
       this.onUpdate(input);
     }
 
-    // 4. 디버그 시각화
     this.renderDebug();
   }
 
   handleInput(input) {
-    // 점프만 여기서 처리
     if (input.isJumpPressed) {
       this.jump();
     }
-    // 공격/스킬은 onUpdate에서 처리
   }
 
   updateMovement(input) {
-    // 잠금 상태가 아닐 때만 좌우 이동
     if (!this.stateMachine.isStateLocked()) {
       this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
     }
   }
 
   updateState(input) {
-    // 잠금 상태면 상태 변경 안함
     if (this.stateMachine.isStateLocked()) {
       return;
     }
@@ -258,14 +252,11 @@ export default class CharacterBase {
     const onGround = this.movement.isOnGround();
 
     if (!onGround) {
-      // ✅ 점프 방향에 따라 다른 상태
       const velocityY = this.sprite.body.velocity.y;
 
       if (velocityY < 0) {
-        // 올라가는 중
         this.stateMachine.changeState('jump');
       } else {
-        // 내려오는 중
         this.stateMachine.changeState('jump_down');
       }
     } else if (input.isMoving) {
@@ -280,14 +271,12 @@ export default class CharacterBase {
     if (this.config.debug && this.debugGraphics) {
       this.debugGraphics.clear();
 
-      // 몸체 박스 (초록색)
       const b = this.sprite.body;
       if (b) {
         this.debugGraphics.lineStyle(2, 0x00ff00, 0.8);
         this.debugGraphics.strokeRect(b.x, b.y, b.width, b.height);
       }
 
-      // 공격 히트박스 (빨간색)
       if (this.isAttacking()) {
         const hitbox = this.attackSystem.getHitboxBounds();
         if (hitbox) {
@@ -296,14 +285,12 @@ export default class CharacterBase {
         }
       }
 
-      // 스킬 히트박스 (파란색)
       if (this.skillSystem) {
         const activeSkillHitbox = this.skillSystem.getActiveSkillHitbox();
         if (activeSkillHitbox) {
           const boundsArray = activeSkillHitbox.getHitboxBounds();
           if (boundsArray) {
             this.debugGraphics.lineStyle(2, 0x0000ff, 0.8);
-            // ✅ 배열이면 모두 그리기
             if (Array.isArray(boundsArray)) {
               boundsArray.forEach((bounds) => {
                 this.debugGraphics.strokeRect(bounds.x, bounds.y, bounds.width, bounds.height);

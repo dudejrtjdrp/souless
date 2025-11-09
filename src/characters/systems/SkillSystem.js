@@ -106,9 +106,9 @@ export class SkillHitbox {
     this.updatePosition();
 
     this.hitboxes.forEach((h) => {
-      h.rect.setVisible(true); // 반드시 visible 먼저!
-      h.rect.setFillStyle(0xff0000, 0.4); // 빨강으로 활성화 표시
-      this.scene.children.bringToTop(h.rect); // 혹시 가려질 경우 대비
+      h.rect.setVisible(true);
+      h.rect.setFillStyle(0xff0000, 0.4);
+      this.scene.children.bringToTop(h.rect);
     });
 
     this.scene.time.delayedCall(this.config.duration, () => {
@@ -121,8 +121,7 @@ export class SkillHitbox {
     this.hitEnemies.clear();
 
     this.hitboxes.forEach((h) => {
-      h.rect.setFillStyle(0x00ff00, 0.15); // 연한 초록색으로 비활성 표시
-      // visible을 false로 하지 말고 색만 바꿔!
+      h.rect.setFillStyle(0x00ff00, 0.15);
     });
   }
 
@@ -151,7 +150,13 @@ export class SkillHitbox {
 
     const enemyId = targetSprite.name || targetSprite;
 
-    if (this.hitEnemies.has(enemyId)) {
+    // ✅ single 타입: 이미 아무 적이라도 맞췄으면 더 이상 못 맞춤
+    if (this.config.targetType === 'single' && this.hitEnemies.size > 0) {
+      return false;
+    }
+
+    // ✅ single 타입이면서 이미 이 적을 맞췄으면 못 맞춤
+    if (this.config.targetType === 'single' && this.hitEnemies.has(enemyId)) {
       return false;
     }
 
@@ -164,13 +169,15 @@ export class SkillHitbox {
       const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds, targetBounds);
 
       if (hit) {
+        // ✅ 타격 기록
         this.hitEnemies.add(enemyId);
-        console.log(`[SkillHitbox] Hit enemy ${enemyId}, total hit: ${this.hitEnemies.size}`);
+
         return {
           hit: true,
           damage: this.config.damage || 0,
           knockback: this.config.knockback || { x: 0, y: 0 },
           effects: this.config.effects || [],
+          targetType: this.config.targetType,
         };
       }
     }
@@ -228,15 +235,12 @@ export class SkillSystem {
 
     const config = skill.config;
 
-    // 공중 상태 체크 (air_attack 제외하고 지상에서만 스킬 사용 가능)
     const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
-    const airAllowedSkills = ['air_attack', 'roll']; // roll도 허용 스킬에 포함
+    const airAllowedSkills = ['air_attack', 'roll'];
     if (isInAir && !airAllowedSkills.includes(skillName)) {
-      console.log(`[SkillSystem] Cannot use ${skillName} in air`);
       return false;
     }
 
-    // 스킬 사용 시 즉시 이동 중단 (movement 타입 제외)
     if (config.type !== 'movement' && this.character.sprite.body) {
       this.character.sprite.body.setVelocityX(0);
     }
@@ -354,12 +358,6 @@ export class SkillSystem {
     }
   }
 
-  /**
-   * 애니메이션을 지정된 frameRate로 재생하고, castTime 자동 계산
-   * @param {string} animationKey - 재생할 애니메이션 키
-   * @param {number} frameRate - 원하는 프레임 레이트 (fps)
-   * @returns {number} castTime - 애니메이션 총 재생 시간 (밀리초)
-   */
   playAnimationWithDuration(animationKey, frameRate) {
     const sprite = this.character.sprite;
 
@@ -370,7 +368,7 @@ export class SkillSystem {
 
     let finalAnimKey = animationKey;
 
-    const characterType = sprite.texture.key; // 'soul', 'monk' 등
+    const characterType = sprite.texture.key;
     const prefixedKey = `${characterType}-${animationKey}`;
 
     const animManager = sprite.anims.animationManager;
@@ -388,7 +386,6 @@ export class SkillSystem {
       finalAnimKey = animationKey;
     }
 
-    // 애니메이션 정보 가져오기
     const anim = animManager.get(finalAnimKey);
     if (!anim) {
       console.error(`[SkillSystem] Could not get animation '${finalAnimKey}'`);
@@ -396,8 +393,6 @@ export class SkillSystem {
     }
 
     const frameCount = anim.frames.length;
-
-    // frameRate로부터 castTime 계산
     const castTime = (frameCount / frameRate) * 1000;
 
     sprite.anims.play(finalAnimKey, true);
@@ -407,7 +402,6 @@ export class SkillSystem {
       sprite.anims.msPerFrame = 1000 / frameRate;
     }
 
-    // StateMachine 상태 변경 및 잠금
     if (this.character.stateMachine) {
       this.character.stateMachine.currentState = finalAnimKey;
       this.character.stateMachine.isLocked = true;
@@ -421,7 +415,6 @@ export class SkillSystem {
           this.character.stateMachine.isLocked = false;
           this.character.stateMachine.lockTimer = null;
 
-          //  애니메이션 종료 후 idle/jump로 전환
           const onGround = this.character.sprite.body?.touching.down || false;
           if (this.character.stateMachine.changeState) {
             this.character.stateMachine.changeState(onGround ? 'idle' : 'jump');

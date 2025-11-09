@@ -1,14 +1,16 @@
 export default class AttackSystem {
-  constructor(scene, sprite, hitboxSize, duration, offset) {
+  constructor(scene, sprite, hitboxSize, duration, offset, targetType = 'single') {
     this.scene = scene;
     this.sprite = sprite;
     this.hitboxSize = hitboxSize;
     this.duration = duration;
     this.offset = offset;
+    this.targetType = targetType;
 
     this.active = false;
     this.hitbox = null;
     this.hasHitThisAttack = false;
+    this.hitEnemies = new Set();
 
     this.createHitbox();
   }
@@ -23,7 +25,7 @@ export default class AttackSystem {
       0.3,
     );
 
-    this.hitbox.setVisible(true); // ✅ 디버그용
+    this.hitbox.setVisible(true);
     this.scene.physics.add.existing(this.hitbox);
     this.hitbox.body.setAllowGravity(false);
   }
@@ -31,6 +33,7 @@ export default class AttackSystem {
   activate() {
     this.active = true;
     this.hasHitThisAttack = false;
+    this.hitEnemies.clear();
     this.updateHitboxPosition();
 
     this.scene.time.delayedCall(this.duration, () => {
@@ -41,6 +44,7 @@ export default class AttackSystem {
   deactivate() {
     this.active = false;
     this.hasHitThisAttack = false;
+    this.hitEnemies.clear();
   }
 
   updateHitboxPosition() {
@@ -54,7 +58,12 @@ export default class AttackSystem {
   }
 
   checkHit(target) {
-    if (!this.active || !target || this.hasHitThisAttack) {
+    if (!this.active || !target) {
+      return false;
+    }
+
+    // single 타입: 한 번만 맞춤
+    if (this.targetType === 'single' && this.hasHitThisAttack) {
       return false;
     }
 
@@ -72,7 +81,13 @@ export default class AttackSystem {
     const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2);
 
     if (hit) {
-      this.hasHitThisAttack = true;
+      if (this.targetType === 'single') {
+        this.hasHitThisAttack = true;
+      }
+
+      const enemyId = targetSprite.name || targetSprite;
+      this.hitEnemies.add(enemyId);
+
       return true;
     }
 
