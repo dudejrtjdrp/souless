@@ -1,0 +1,55 @@
+{
+  "characters": {
+    "monk": {
+      "health": 85,
+      "maxHealth": 120,
+      "mana": 120,
+      "maxMana": 150,
+      "position": { "x": 100, "y": 810 },
+      "skillCooldowns": {
+        "attack": 0,
+        "attack_2": 1250,
+        "attack_3": 0,
+        "special_attack": 3400,
+        "roll": 2100,
+        "meditate": 8500
+      },
+      "effects": ["burn", "invincible"],
+      "lastUsed": 1699876543210
+    },
+    "assassin": {
+      "health": 85,
+      "maxHealth": 120,
+      "mana": 120,
+      "maxMana": 150,
+      "position": { "x": 100, "y": 810 },
+      "skillCooldowns": {
+        "attack": 0,
+        "attack_2": 1250,
+        "attack_3": 0,
+        "special_attack": 3400,
+        "roll": 2100,
+        "meditate": 8500
+      },
+      "effects": ["burn", "invincible"],
+      "lastUsed": 1699876543210
+    },
+    "soul": {
+      "health": 100,
+      "maxHealth": 100,
+      "mana": 60,
+      "maxMana": 80,
+      "position": { "x": 450, "y": 300 },
+      "skillCooldowns": {
+        "attack": 0,
+        "dash": 500
+      },
+      "effects": [],
+      "lastUsed": 1699876000000
+    }
+  },
+  "currentCharacter": "monk",
+  "mapKey": "forest",
+  "gameTime": 3600000,
+  "lastSaved": 1699876543210
+}
