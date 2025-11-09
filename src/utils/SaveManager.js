@@ -42,11 +42,11 @@ export default class SaveManager {
       if (this.isElectron()) {
         // Electron 환경: IPC 통신으로 파일 쓰기
         await window.electron.saveSave(data);
-        console.log('💾 Saved to Electron:', data);
+        // console.log('💾 Saved to Electron:', data);
       } else {
         // 브라우저 환경: localStorage 사용
         localStorage.setItem(this.SAVE_KEY, JSON.stringify(data));
-        console.log('💾 Saved to localStorage:', data);
+        // console.log('💾 Saved to localStorage:', data);
       }
       return true;
     } catch (error) {

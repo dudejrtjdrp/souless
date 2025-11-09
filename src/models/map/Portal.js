@@ -32,8 +32,11 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     this.createAnimation();
     this.play('portal_idle');
 
-    this.isPlayerInside = false;
+    this.isPlayerNear = false;
     this.cooldown = false;
+
+    // UI 텍스트 생성
+    this.createPortalUI();
 
     console.log(`🌀 Portal created: ${id} → ${targetPortalId}`);
   }
@@ -51,58 +54,91 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     }
   }
 
+  createPortalUI() {
+    // 포탈 위에 표시될 UI 텍스트
+    this.portalText = this.scene.add
+      .text(this.x, this.y - 80, '↑ Press UP to Enter', {
+        fontSize: '16px',
+        fill: '#ffffff',
+        backgroundColor: '#000000',
+        padding: { x: 8, y: 4 },
+      })
+      .setOrigin(0.5)
+      .setDepth(100)
+      .setVisible(false);
+  }
+
   update(player) {
     if (!player || !player.body) return;
 
     const distance = Phaser.Math.Distance.Between(player.x, player.y, this.x, this.y);
-
     const isNear = distance < 100;
 
-    if (isNear && !this.isPlayerInside) {
-      this.onPlayerEnter(player);
-    } else if (!isNear && this.isPlayerInside) {
-      this.onPlayerExit();
+    // 플레이어가 가까워지면 UI 표시
+    if (isNear && !this.isPlayerNear) {
+      this.isPlayerNear = true;
+      this.portalText.setVisible(true);
+    } else if (!isNear && this.isPlayerNear) {
+      this.isPlayerNear = false;
+      this.portalText.setVisible(false);
+    }
+
+    // 플레이어가 가까이 있고 위 방향키를 눌렀을 때
+    if (isNear && this.scene.inputHandler) {
+      const input = this.scene.inputHandler.getInputState();
+
+      if (input.isUpPressed && !this.cooldown) {
+        this.onPlayerActivate();
+      }
     }
   }
 
-  onPlayerEnter(player) {
-    this.isPlayerInside = true;
+  onPlayerActivate() {
+    console.log('🔵 onPlayerActivate called');
+    console.log('  cooldown:', this.cooldown);
+    console.log('  connectionInfo:', this.connectionInfo);
+    console.log('  isPortalTransitioning:', this.scene.isPortalTransitioning);
 
     // 🎯 쿨다운 중이거나 Scene이 전환 중이면 무시
     if (this.cooldown || !this.connectionInfo) {
+      console.log('❌ Blocked: cooldown or no connection');
       return;
     }
 
     // 🎯 Scene이 이미 전환 중이면 무시 (전역 플래그)
     if (this.scene.isPortalTransitioning) {
+      console.log('❌ Blocked: already transitioning');
       return;
     }
 
-    console.log(`✨ Player entered portal: ${this.portalId}`);
+    console.log(`✨ Player activated portal: ${this.portalId}`);
+    console.log('  Target map:', this.connectionInfo.targetMap);
+    console.log('  Target portal:', this.targetPortalId);
 
     // GameScene의 onPortalEnter 호출
     if (this.scene.onPortalEnter) {
+      console.log('✅ Calling scene.onPortalEnter');
       this.cooldown = true;
-      this.scene.isPortalTransitioning = true; // 🎯 전역 플래그 설정
+      // 🎯 플래그는 GameScene에서 설정하도록 변경
+      // this.scene.isPortalTransitioning = true;
+      this.portalText.setVisible(false); // UI 숨기기
 
-      // 🎯 수정: targetPortalId를 명확히 전달
+      // 포탈 이펙트 추가 (선택사항)
+      this.scene.cameras.main.flash(300, 255, 255, 255);
+
       this.scene.onPortalEnter(
         this.connectionInfo.targetMap, // 다음 맵 키
         this.targetPortalId, // 다음 맵에서 스폰될 포탈 ID
       );
-
-      // 쿨다운 리셋 (Scene이 바뀌면 의미 없지만 안전장치)
-      this.scene.time.delayedCall(2000, () => {
-        this.cooldown = false;
-        if (this.scene.isPortalTransitioning) {
-          this.scene.isPortalTransitioning = false;
-        }
-      });
+    } else {
+      console.error('❌ scene.onPortalEnter is not defined!');
     }
   }
 
-  onPlayerExit() {
-    this.isPlayerInside = false;
-    console.log(`👋 Player left portal: ${this.portalId}`);
+  destroy() {
+    if (this.portalText) {
+      this.portalText.destroy();
+    }
+    super.destroy();
   }
 }

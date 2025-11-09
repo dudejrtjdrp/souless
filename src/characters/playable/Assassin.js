@@ -62,7 +62,7 @@ export default class Assassin extends CharacterBase {
     const skillKeys = [
       { key: 'Q', skill: 'attack_2', pressed: input.isQPressed },
       { key: 'W', skill: 'attack_3', pressed: input.isWPressed },
-      { key: 'E', skill: 'meditate', pressed: input.isEPressed },
+      { key: 'E', skill: 'defend', pressed: input.isEPressed },
       { key: 'R', skill: 'special_attack', pressed: input.isRPressed },
       { key: 'S', skill: 'roll', pressed: input.isSPressed },
     ];

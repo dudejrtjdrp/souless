@@ -95,6 +95,7 @@ export class SkillHitbox {
       rect: hitbox,
       offsetX: hitboxData.offsetX,
       offsetY: hitboxData.offsetY,
+      isMoving: false,
     });
   }
 
@@ -150,13 +151,24 @@ export class SkillHitbox {
           damage: step.damage || this.config.damage,
           knockback: step.knockback || this.config.knockback,
           effects: step.effects || this.config.effects,
+          isMoving: false,
         };
+
+        // 이동 설정이 있으면 이동 시작
+        if (step.movement) {
+          tempHitboxData.isMoving = true;
+          const direction = flipX ? -1 : 1;
+          const velocityX = (step.movement.velocityX || 0) * direction;
+          const velocityY = step.movement.velocityY || 0;
+          tempHitbox.body.setVelocity(velocityX, velocityY);
+        }
 
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
-        // 히트박스 유지 시간 200ms
-        this.scene.time.delayedCall(200, () => {
+        // 히트박스 유지 시간
+        const duration = step.duration || 200;
+        this.scene.time.delayedCall(duration, () => {
           const idx = this.hitboxes.indexOf(tempHitboxData);
           if (idx > -1) {
             this.hitboxes.splice(idx, 1);
@@ -171,7 +183,8 @@ export class SkillHitbox {
     });
 
     // 전체 시퀀스 종료 시 비활성화
-    const totalDuration = Math.max(...sequence.map((s) => s.delay || 0)) + 300;
+    const totalDuration =
+      Math.max(...sequence.map((s) => (s.delay || 0) + (s.duration || 200))) + 100;
     this.scene.time.delayedCall(totalDuration, () => {
       this.deactivate();
     });
@@ -192,6 +205,9 @@ export class SkillHitbox {
     const flipX = this.sprite.flipX;
 
     this.hitboxes.forEach((hitbox) => {
+      // 이동 중인 히트박스는 위치 업데이트 건너뛰기
+      if (hitbox.isMoving) return;
+
       const offsetX = flipX ? -hitbox.offsetX : hitbox.offsetX;
       const x = this.sprite.x + offsetX;
       const y = this.sprite.y + hitbox.offsetY;
@@ -221,6 +237,7 @@ export class SkillHitbox {
       return false;
     }
 
+    // 이동하지 않는 히트박스만 위치 업데이트
     this.updatePosition();
 
     const targetBounds = targetSprite.getBounds();

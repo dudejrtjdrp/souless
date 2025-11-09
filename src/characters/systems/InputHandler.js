@@ -18,6 +18,10 @@ export default class InputHandler {
       backQuote: scene.input.keyboard.addKey('BACKTICK'), // ` 키
       tab: scene.input.keyboard.addKey('TAB'), // Tab 키
       l: scene.input.keyboard.addKey('L'), // L 키
+      left: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),
+      right: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT),
+      up: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP),
+      down: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN),
     };
 
     // 이전 상태 저장 (엣지 감지용)
@@ -32,6 +36,10 @@ export default class InputHandler {
       backQuote: false,
       tab: false,
       l: false,
+      left: false,
+      right: false,
+      up: false,
+      down: false,
     };
   }
 
@@ -49,6 +57,10 @@ export default class InputHandler {
     const currentBackQuote = keys.backQuote.isDown;
     const currentTab = keys.tab.isDown;
     const currentL = keys.l.isDown;
+    const currentLeft = keys.left.isDown;
+    const currentRight = keys.right.isDown;
+    const currentUp = keys.up.isDown;
+    const currentDown = keys.down.isDown;
 
     // 엣지 감지 (down edge: false -> true)
     const isJumpPressed = currentSpaceDown && !this.prevState.space;
@@ -61,6 +73,10 @@ export default class InputHandler {
     const isBackQuotePressed = currentBackQuote && !this.prevState.backQuote;
     const isTabPressed = currentTab && !this.prevState.tab;
     const isLPressed = currentL && !this.prevState.l;
+    const isLeftPressed = currentLeft && !this.prevState.left;
+    const isRightPressed = currentRight && !this.prevState.right;
+    const isUpPressed = currentUp && !this.prevState.up;
+    const isDownPressed = currentDown && !this.prevState.down;
 
     // 이전 상태 갱신
     this.prevState.space = currentSpaceDown;
@@ -73,6 +89,10 @@ export default class InputHandler {
     this.prevState.backQuote = currentBackQuote;
     this.prevState.tab = currentTab;
     this.prevState.l = currentL;
+    this.prevState.left = currentLeft;
+    this.prevState.right = currentRight;
+    this.prevState.up = currentUp;
+    this.prevState.down = currentDown;
 
     return {
       cursors,
@@ -88,6 +108,10 @@ export default class InputHandler {
       isBackQuotePressed, // ` 키
       isTabPressed, // Tab 키
       isLPressed, // L 키
+      isLeftPressed,
+      isRightPressed,
+      isUpPressed,
+      isDownPressed,
       // 키를 계속 누르고 있는지 확인
       isJumpHeld: currentSpaceDown,
       isAttackHeld: currentAttackDown,

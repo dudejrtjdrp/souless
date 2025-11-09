@@ -16,6 +16,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   init(data = {}) {
+    // 🎯 포탈 전환 플래그 초기화
+    this.isPortalTransitioning = false;
+
     // 기본값 먼저 설정
     this.currentMapKey = data.mapKey || 'forest';
     this.selectedCharacter = data.characterType || 'assassin';
@@ -216,8 +219,10 @@ export default class GameScene extends Phaser.Scene {
    */
   async onPortalEnter(targetMapKey, portalId) {
     // 🎯 이미 전환 중이면 무시
+    console.log(targetMapKey);
     if (this.isPortalTransitioning) {
       console.log('⏳ Portal transition already in progress...');
+      console.log(this.inputHandler);
       return;
     }
 
@@ -225,6 +230,7 @@ export default class GameScene extends Phaser.Scene {
 
     console.log(`🌀 Entering portal to ${targetMapKey}, portal: ${portalId}`);
 
+    // if (this.inputHandler)
     // 포탈 위치 저장
     await SaveManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
@@ -245,6 +251,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // 맵 전환 (skipSaveCheck: true로 중복 방지)
+    console.log(targetMapKey);
     this.scene.start('GameScene', {
       mapKey: targetMapKey,
       characterType: this.selectedCharacter,
@@ -459,6 +466,15 @@ export default class GameScene extends Phaser.Scene {
     // Tab 키로 이전 캐릭터
     if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
       this.switchCharacter('prev');
+    }
+
+    if (input.isLPressed) {
+      console.log('🗑 Clearing all saved data in localStorage!');
+      localStorage.clear();
+      SaveManager.clear();
+      if (this.switchText) {
+        this.switchText.setText('🗑 All save data cleared! Reload the page.');
+      }
     }
 
     if (input.isLPressed) {
