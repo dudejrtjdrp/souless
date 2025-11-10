@@ -6,6 +6,7 @@ import MovementController from '../systems/MovementController.js';
 import InputHandler from '../systems/InputHandler.js';
 import CharacterNormalizer from '../../utils/CharacterNormalizer.js';
 import { SkillSystem } from '../systems/SkillSystem.js';
+import SaveManager from '../../utils/SaveManager.js';
 
 export default class CharacterBase {
   constructor(scene, x, y, config) {
@@ -31,6 +32,7 @@ export default class CharacterBase {
     if (this.config.debug) {
       this.debugGraphics = this.scene.add.graphics();
     }
+    this.selectedCharacter = config.spriteKey;
   }
 
   getDefaultConfig() {
@@ -308,6 +310,43 @@ export default class CharacterBase {
           }
         }
       }
+    }
+  }
+
+  async gainExp(amount) {
+    console.log('🎯 gainExp 호출:', {
+      amount,
+      character: this.selectedCharacter,
+      hasScene: !!this.scene,
+      hasUIScene: !!this.scene.uiScene,
+    });
+
+    try {
+      // 경험치 저장
+      await SaveManager.addCharacterExp(this.selectedCharacter, amount);
+      await SaveManager.addTotalExp(amount);
+
+      // 저장 확인
+      const expData = await SaveManager.getExpData();
+      console.log('💾 저장 후 경험치:', expData);
+
+      // UI 갱신
+      if (this.scene.uiScene) {
+        console.log('📊 UI 업데이트 시작...');
+
+        await this.scene.uiScene.updateExpBar();
+        await this.scene.uiScene.updateCharacterStats();
+
+        this.scene.uiScene.addLog(`+${amount} EXP`, '#00ff00');
+
+        console.log('✅ UI 업데이트 완료');
+      } else {
+        console.warn('⚠️ UIScene을 찾을 수 없음!');
+      }
+
+      console.log(`✨ ${this.selectedCharacter} gained ${amount} EXP`);
+    } catch (error) {
+      console.error('❌ gainExp 에러:', error);
     }
   }
 

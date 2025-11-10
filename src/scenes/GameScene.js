@@ -26,12 +26,6 @@ export default class GameScene extends Phaser.Scene {
     // Scene 데이터 저장 (skipSaveCheck 플래그)
     this.data.set('skipSaveCheck', data.skipSaveCheck || false);
 
-    console.log('🎮 GameScene init:', {
-      mapKey: this.currentMapKey,
-      character: this.selectedCharacter,
-      skipSaveCheck: data.skipSaveCheck,
-    });
-
     this.mapConfig = MAPS[this.currentMapKey];
 
     if (!this.mapConfig) {
@@ -40,13 +34,10 @@ export default class GameScene extends Phaser.Scene {
       this.currentMapKey = 'forest';
       this.mapConfig = MAPS['forest'];
     }
-
-    console.log('✅ Map config loaded:', this.mapConfig.name);
   }
 
   preload() {
     if (!this.mapConfig) {
-      console.error('❌ mapConfig is undefined in preload!');
       return;
     }
 
@@ -66,18 +57,42 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async create() {
-    // 🎯 세이브 파일 체크 (init에서 넘어온 데이터가 없을 때만)
+    // 🔹 UIScene 시작 및 대기
+    this.scene.launch('UIScene');
+    this.uiScene = this.scene.get('UIScene');
+
+    // ✅ UIScene의 create()가 완료될 때까지 대기
+    await new Promise((resolve) => {
+      if (this.uiScene.expBar && this.uiScene.healthText) {
+        resolve();
+      } else {
+        this.uiScene.events.once('create', () => {
+          console.log('✅ UIScene create 완료');
+          resolve();
+        });
+      }
+    });
+
+    console.log('🎮 GameScene create 시작');
+
+    // 🔹 InputHandler를 최대한 빨리 생성
+    this.inputHandler = new InputHandler(this);
+
+    // 🔹 Tab 키의 기본 동작(포커스 이동) 방지
+    this.input.keyboard.on('keydown-TAB', (event) => {
+      event.preventDefault();
+    });
+
+    // 세이브 파일 체크 (init에서 넘어온 데이터가 없을 때만)
     if (!this.data || !this.data.get('skipSaveCheck')) {
       const savedPosition = await SaveManager.getSavedPosition();
+      console.log(await SaveManager.load());
 
       if (savedPosition && savedPosition.mapKey !== this.currentMapKey) {
-        // 저장된 맵과 현재 맵이 다르면 Scene 재시작 (한 번만!)
-        console.log(`📂 Restarting with saved map: ${savedPosition.mapKey}`);
-
         this.scene.start('GameScene', {
           mapKey: savedPosition.mapKey,
           characterType: savedPosition.characterType || 'assassin',
-          skipSaveCheck: true, // 재시작 시 세이브 체크 건너뛰기
+          skipSaveCheck: true,
         });
         return;
       }
@@ -91,48 +106,34 @@ export default class GameScene extends Phaser.Scene {
         console.log('🆕 New game - will spawn at first portal');
       }
     } else {
-      // skipSaveCheck가 true면 세이브 파일 다시 로드
       const savedPosition = await SaveManager.getSavedPosition();
       if (savedPosition) {
         this.savedSpawnData = savedPosition;
         this.selectedCharacter = savedPosition.characterType || 'assassin';
-        console.log('📂 Loaded from save (second pass):', savedPosition);
       }
     }
 
     this.cameras.main.fadeIn(400, 0, 0, 0);
-
     this.physics.world.gravity.y = this.mapConfig.gravity;
 
     const { spawn, portals } = this.mapModel.create();
-
-    // 🎯 Spawn 위치 결정
     const spawnPosition = this.determineSpawnPosition(spawn, portals);
-    console.log('📍 Spawn position:', spawnPosition);
 
-    // 🎯 레이어 생성 (자동 스케일 적용)
+    // 레이어 생성
     if (this.mapConfig.layers && this.mapConfig.layers.length > 0) {
       const autoScale = this.mapModel.config.autoScale;
       const mapScale = this.mapConfig.mapScale || 1;
 
       this.mapConfig.layers.forEach((layer, index) => {
         const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
-
-        // 자동 스케일이 있으면 사용, 없으면 mapScale 사용
         if (autoScale) {
           img.setScale(autoScale);
-          console.log(`📐 Layer ${layer.key} scaled to ${autoScale.toFixed(2)}`);
         } else {
           img.setScale(mapScale);
         }
-
         img.setDepth(this.mapConfig.depths.backgroundStart + index);
       });
     }
-
-    // 카메라 오프셋 설정 (자동 또는 수동)
-    const cameraOffsetY =
-      this.mapConfig.camera?.offsetY || this.mapModel.AUTO_CONFIG.DEFAULT_CAMERA_OFFSET_Y;
 
     // 캐릭터 전환 매니저 초기화
     this.characterSwitchManager = new CharacterSwitchManager(this);
@@ -140,8 +141,6 @@ export default class GameScene extends Phaser.Scene {
 
     // 플레이어 생성
     this.spawnPosition = spawnPosition;
-    console.log(this.savedSpawnData);
-    console.log(spawnPosition.y);
     this.createPlayer(this.selectedCharacter, spawnPosition.x, spawnPosition.y);
 
     // 카메라 설정
@@ -153,15 +152,20 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
     this.enemyManager.createInitial();
 
-    this.inputHandler = new InputHandler(this);
-
-    // 캐릭터 전환 키 입력 설정
-    this.setupCharacterSwitchInput();
-
     // UI 텍스트 추가
     this.createSwitchUI();
 
-    // 🎯 초기 위치 저장 (세이브 파일이 없었다면)
+    // 🔹 UIScene이 준비되었으니 안전하게 업데이트
+    if (this.uiScene) {
+      console.log('📊 초기 UI 업데이트 시작');
+      this.uiScene.updateUI(this.player);
+      await this.uiScene.updateExpBar();
+      await this.uiScene.updateCharacterStats();
+      this.uiScene.addLog('게임 시작!', '#ffffff');
+      console.log('✅ 초기 UI 업데이트 완료');
+    }
+
+    // 초기 위치 저장
     if (!this.savedSpawnData) {
       this.saveCurrentPosition();
     }
@@ -178,13 +182,11 @@ export default class GameScene extends Phaser.Scene {
       const firstPortalConfig = PortalManager.getPortalsByMap(this.currentMapKey)[0];
 
       if (firstPortalConfig) {
-        console.log('🌀 Spawning at first portal:', firstPortalConfig);
         rawPosition = {
           x: firstPortalConfig.sourcePosition.x,
           y: firstPortalConfig.sourcePosition.y,
         };
       } else {
-        console.log('📍 Spawning at default spawn (no portals)');
         rawPosition = defaultSpawn;
       }
     }
@@ -251,16 +253,11 @@ export default class GameScene extends Phaser.Scene {
     // 🎯 이미 전환 중이면 무시
     console.log(targetMapKey);
     if (this.isPortalTransitioning) {
-      console.log('⏳ Portal transition already in progress...');
-      console.log(this.inputHandler);
       return;
     }
 
     this.isPortalTransitioning = true;
 
-    console.log(`🌀 Entering portal to ${targetMapKey}, portal: ${portalId}`);
-
-    // if (this.inputHandler)
     // 포탈 위치 저장
     await SaveManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
@@ -304,13 +301,6 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    console.log('🎮 Creating player:', {
-      originalY: y,
-      finalY: finalY,
-      autoScale: this.mapModel.config.autoScale,
-      hasSavedData: !!this.savedSpawnData,
-    });
-
     this.player = CharacterFactory.create(this, characterType, x, finalY, {
       scale: this.mapConfig.playerScale || 1,
     });
@@ -332,33 +322,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * 캐릭터 전환 키 입력 설정
-   */
-  setupCharacterSwitchInput() {
-    // const input = InputHandler.getInputState();
-    // // ` (백틱) 키로 다음 캐릭터
-    // if (input.isBackQuotePressed) {
-    //   this.switchCharacter('next');
-    // }
-    // // Tab 키로 이전 캐릭터
-    // if (input.isTabPressed) {
-    //   this.switchCharacter('prev');
-    // }
-    // // L 키로 저장 데이터 삭제
-    // if (input.isLPressed) {
-    //   console.log('🗑 Clearing all saved data in localStorage!');
-    //   localStorage.clear();
-    //   SaveManager.clear();
-    //   if (this.switchText) {
-    //     this.switchText.setText('🗑 All save data cleared! Reload the page.');
-    //   }
-    // }
-  }
-
-  /**
-   * 캐릭터 전환 실행
-   */
+  // 캐릭터 전환 실행
   async switchCharacter(direction = 'next') {
     if (this.characterSwitchManager.isTransitioning) {
       console.log('⏳ Already transitioning...');
@@ -484,6 +448,11 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
+    // 🔹 InputHandler가 아직 없으면 리턴
+    if (!this.inputHandler) {
+      return;
+    }
+
     this.player.update();
     this.mapModel.update(this.player.sprite);
 
@@ -493,25 +462,40 @@ export default class GameScene extends Phaser.Scene {
 
     this.checkAttackCollisions();
 
-    // UI 업데이트
     if (this.switchText && time % 100 < delta) {
       this.updateSwitchUI();
     }
 
+    // UI 업데이트
+    if (this.uiScene && this.player) {
+      this.uiScene.updateUI(this.player);
+      this.uiScene.updateSkillCooldowns(this.player.skills);
+    }
+
     const input = this.inputHandler.getInputState();
+
+    // 🔹 디버깅용 로그 추가
+    if (input.isBackQuotePressed) {
+      console.log('✅ BackQuote key detected!');
+    }
+    if (input.isTabPressed) {
+      console.log('✅ Tab key detected!');
+    }
 
     // ` (백틱) 키로 다음 캐릭터
     if (input.isBackQuotePressed && !this.isCharacterSwitchOnCooldown) {
+      console.log('🔄 Switching to next character...');
       this.switchCharacter('next');
     }
 
     // Tab 키로 이전 캐릭터
     if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
+      console.log('🔄 Switching to prev character...');
       this.switchCharacter('prev');
     }
 
+    // L 키로 세이브 초기화
     if (input.isLPressed) {
-      console.log('🗑 Clearing all saved data in localStorage!');
       localStorage.clear();
       SaveManager.clear();
       if (this.switchText) {
@@ -519,16 +503,7 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    if (input.isLPressed) {
-      console.log('🗑 Clearing all saved data in localStorage!');
-      localStorage.clear();
-      SaveManager.clear();
-      if (this.switchText) {
-        this.switchText.setText('🗑 All save data cleared! Reload the page.');
-      }
-    }
-
-    // 🎯 주기적으로 위치 저장 (선택사항 - 5초마다)
+    // 주기적으로 위치 저장 (5초마다)
     if (!this.lastSaveTime || time - this.lastSaveTime > 5000) {
       this.lastSaveTime = time;
       this.saveCurrentPosition();
@@ -543,17 +518,29 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager.enemies.forEach((enemy) => {
       const enemyTarget = enemy.sprite || enemy;
 
+      // 기본 공격
       if (this.player.isAttacking && this.player.isAttacking()) {
         const hit = this.player.checkAttackHit(enemyTarget);
         if (hit && enemy.takeDamage) {
-          enemy.takeDamage(10);
+          const died = enemy.takeDamage(10);
+
+          // ✅ 적이 죽으면 플레이어가 경험치 획득
+          if (died && enemy.expReward) {
+            this.player.gainExp(enemy.expReward); // 비동기지만 await 안 해도 됨
+          }
         }
       }
 
+      // 스킬 공격
       if (this.player.isUsingSkill && this.player.isUsingSkill()) {
         const skillHit = this.player.checkSkillHit(enemy);
         if (skillHit?.hit && enemy.takeDamage) {
-          enemy.takeDamage(skillHit.damage);
+          const died = enemy.takeDamage(skillHit.damage);
+
+          // ✅ 적이 죽으면 플레이어가 경험치 획득
+          if (died && enemy.expReward) {
+            this.player.gainExp(enemy.expReward);
+          }
 
           if (skillHit.knockback && enemyTarget.body) {
             const facingRight = !this.player.sprite.flipX;

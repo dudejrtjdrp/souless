@@ -13,7 +13,6 @@ export default class MapModel {
     this.collisionLayer = null;
     this.entityColliders = [];
     this.portals = [];
-    console.log(this.scene.scale.height);
     // 자동 설정용 상수
     this.AUTO_CONFIG = {
       TARGET_HEIGHT: this.scene.scale.height * 1.4, // 고정 높이 (화면 높이)
@@ -109,13 +108,6 @@ export default class MapModel {
     const scale = this.AUTO_CONFIG.TARGET_HEIGHT / originalHeight;
     const scaledWidth = originalWidth * scale;
 
-    console.log('🎨 Auto-scaling layers:', {
-      originalSize: `${originalWidth}x${originalHeight}`,
-      scale: scale.toFixed(2),
-      targetHeight: this.AUTO_CONFIG.TARGET_HEIGHT,
-      finalSize: `${scaledWidth.toFixed(0)}x${this.AUTO_CONFIG.TARGET_HEIGHT}`,
-    });
-
     // 계산된 크기 저장
     this.tiledMap.widthInPixels = scaledWidth;
     this.tiledMap.heightInPixels = this.AUTO_CONFIG.TARGET_HEIGHT;
@@ -141,12 +133,6 @@ export default class MapModel {
     // Physics world bounds 설정
     this.scene.physics.world.setBounds(0, 0, width, height);
     this.scene.cameras.main.setBounds(0, 0, width, height);
-
-    console.log('🌍 World bounds set:', {
-      width,
-      height,
-      physicsWorld: this.scene.physics.world.bounds,
-    });
 
     // ✅ Physics world가 제대로 설정됐는지 강제 확인
     if (
@@ -181,13 +167,6 @@ export default class MapModel {
     if (!this.config.mapPath) {
       const groundTop = height - this.AUTO_CONFIG.COLLISION_HEIGHT;
       const spawnY = groundTop - 50; // ✅ 충돌 영역 위 50px (캐릭터 높이 고려)
-
-      console.log('🎯 Spawn calculated:', {
-        mapHeight: height,
-        collisionHeight: this.AUTO_CONFIG.COLLISION_HEIGHT,
-        groundTop: groundTop,
-        spawnY: spawnY,
-      });
 
       return {
         x: 100,
@@ -229,15 +208,6 @@ export default class MapModel {
         0x00ff00,
         0.3, // ✅ 디버그용: 일단 반투명으로 보이게
       );
-
-      console.log('✅ Auto-created collision ground:', {
-        y: groundY,
-        width,
-        height: groundHeight,
-        centerX: width / 2,
-        top: groundY - groundHeight / 2,
-        bottom: groundY + groundHeight / 2,
-      });
     } else {
       // 기존 설정 사용
       const groundHeight = this.config.collision?.groundHeight || 200;
@@ -262,13 +232,6 @@ export default class MapModel {
       // ✅ Physics body 크기 강제 설정
       this.collisionGround.body.setSize(width, this.AUTO_CONFIG.COLLISION_HEIGHT);
       this.collisionGround.body.updateFromGameObject();
-
-      console.log('✅ Collision ground body:', {
-        x: this.collisionGround.body.x,
-        y: this.collisionGround.body.y,
-        width: this.collisionGround.body.width,
-        height: this.collisionGround.body.height,
-      });
     }
 
     this.collisionGround.setDepth(this.config.depths?.collision || 10);
@@ -281,8 +244,6 @@ export default class MapModel {
       const portal = new Portal(this.scene, portalData);
       this.portals.push(portal);
     });
-
-    console.log(`✅ Created ${this.portals.length} portals for map: ${this.mapKey}`);
   }
 
   getPortalById(portalId) {
@@ -384,13 +345,6 @@ export default class MapModel {
     enemySprite.setDepth(this.config.depths?.enemy || this.config.depths?.player || 50);
 
     const collisionResult = this.addEntityCollision(enemySprite, 'Enemy');
-
-    console.log('✅ Enemy added:', {
-      position: { x: enemySprite.x, y: enemySprite.y },
-      bodyY: enemySprite.body.y,
-      groundY: this.collisionGround.y,
-      worldHeight: this.scene.physics.world.bounds.height,
-    });
 
     return collisionResult;
   }

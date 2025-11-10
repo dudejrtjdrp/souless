@@ -5,7 +5,6 @@ import Slime from '../characters/enemies/Slime.js';
 import Bat from '../characters/enemies/Bat.js';
 import PurpleMonkey from '../characters/enemies/PurpleMonkey.js';
 
-// ✅ 이 부분이 파일 상단에 있어야 해요
 const enemyClassMap = { Slime, Canine, Bat, PurpleMonkey };
 
 export default class EnemyManager {
@@ -21,10 +20,9 @@ export default class EnemyManager {
     this.spawnMinX = 50;
     this.spawnMaxX = worldBounds.width - 50;
 
-    // ✅ autoScale 모드면 MapModel에서 안전한 Y 좌표 계산
     if (mapModel.config.autoScale) {
       const groundY = mapModel.getGroundY ? mapModel.getGroundY() : worldBounds.height - 200;
-      this.spawnY = groundY - 100; // 땅 위 100px
+      this.spawnY = groundY - 100;
       console.log('🎯 EnemyManager spawn Y (autoScale):', this.spawnY);
     } else {
       this.spawnY = mapConfig.enemies.yFixed;
@@ -43,7 +41,7 @@ export default class EnemyManager {
     const { types, maxCount, respawnInterval, patrolRangeX, minPlayerDistance } =
       this.mapConfig.enemies;
 
-    // 적 업데이트
+    // ✅ 적 업데이트 (패트롤만)
     this.enemies.forEach((enemy) => {
       if (enemy && enemy.sprite && !enemy.isDead) {
         this.updatePatrol(enemy);
@@ -53,54 +51,21 @@ export default class EnemyManager {
       }
     });
 
-    // 공격 체크
-    if (this.player && this.player.isAttacking && this.player.isAttacking()) {
-      // 플레이어와 가장 가까운 순으로 정렬
-      const sortedEnemies = [...this.enemies]
-        .filter((e) => e && e.sprite && !e.isDead)
-        .sort((a, b) => {
-          const distA = Phaser.Math.Distance.Between(
-            this.player.sprite.x,
-            this.player.sprite.y,
-            a.sprite.x,
-            a.sprite.y,
-          );
-          const distB = Phaser.Math.Distance.Between(
-            this.player.sprite.x,
-            this.player.sprite.y,
-            b.sprite.x,
-            b.sprite.y,
-          );
-          return distA - distB;
-        });
+    // ❌ 공격 체크 제거 - GameScene에서 처리함
+    // 이 부분 전체 삭제!
 
-      // checkAttackHit이 내부적으로 hasHitThisAttack을 체크하므로
-      // 첫 번째 히트 후에는 자동으로 false 반환
-      for (const enemy of sortedEnemies) {
-        const wasHit = this.player.checkAttackHit(enemy.sprite);
-
-        if (wasHit) {
-          const damage = this.mapConfig.enemies.attackDamage || 1;
-
-          if (enemy.takeDamage) {
-            enemy.takeDamage(damage);
-          }
-
-          // 히트했으면 바로 종료 (추가 안전장치)
-          break;
-        }
-      }
-    }
-
-    // 제거된 적 필터링
+    // ✅ 제거된 적 필터링
     this.enemies = this.enemies.filter((e) => e && !e.isDead);
 
-    // 리젠
-    if (this.enemies.length < maxCount && time - this.lastSpawnTime > respawnInterval) {
+    // ✅ 리젠
+    if (this.enemies.length < maxCount && time - this.lastSaveTime > respawnInterval) {
       this.spawnRandomEnemyNearPlayer(types, patrolRangeX, minPlayerDistance);
       this.lastSpawnTime = time;
     }
   }
+
+  // ❌ handleEnemyDeath 메서드 삭제 - 필요 없음!
+  // GameScene에서 처리하므로 여기서는 안 씀
 
   updatePatrol(enemy) {
     if (!enemy || !enemy.sprite || !enemy.sprite.body) return;
@@ -108,7 +73,6 @@ export default class EnemyManager {
     const leftBound = enemy.startX - enemy.patrolRangeX;
     const rightBound = enemy.startX + enemy.patrolRangeX;
 
-    // 좌우 범위 체크
     if (enemy.sprite.x <= leftBound) {
       enemy.direction = 1;
       enemy.sprite.setFlipX(false);
@@ -146,7 +110,6 @@ export default class EnemyManager {
       return;
     }
 
-    // ✅ spawnY 사용 (constructor에서 계산됨)
     const enemy = new EnemyClass(this.scene, x, this.spawnY);
 
     if (!enemy || !enemy.sprite) {
@@ -154,19 +117,16 @@ export default class EnemyManager {
       return;
     }
 
-    // Patrol 초기값
     enemy.startX = x;
     enemy.patrolRangeX = patrolRangeX;
     enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
 
-    // Depth 적용
     if (this.mapConfig.depths?.enemy !== undefined) {
       enemy.sprite.setDepth(this.mapConfig.depths.enemy);
     }
 
     this.enemies.push(enemy);
 
-    // MapModel을 통해 collision 추가
     if (this.mapModel && this.mapModel.addEnemy) {
       this.mapModel.addEnemy(enemy.sprite);
     } else {
