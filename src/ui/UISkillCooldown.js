@@ -21,7 +21,7 @@ export default class UISkillCooldown {
       const bg = scene.add
         .image(xPos + slotSize / 2, slotSize / 2, 'ui_skill', 78)
         .setDisplaySize(slotSize, slotSize)
-        .setDepth(2009);
+        .setDepth(1020);
 
       // 기본 원형 아이콘
       const icon = scene.add
@@ -35,41 +35,43 @@ export default class UISkillCooldown {
       keyBadge.fillRoundedRect(xPos + 4, 4, 20, 20, 4);
       keyBadge.lineStyle(1, 0xffffff, 0.5);
       keyBadge.strokeRoundedRect(xPos + 4, 4, 20, 20, 4);
-      keyBadge.setDepth(2002);
+      keyBadge.setDepth(2005);
 
       const keyText = scene.add
-        .text(xPos + 14, 14, key, {
-          fontSize: '12px',
-          color: '#ffffff',
+        .text(xPos + 12, 16, key, {
+          fontSize: '24px',
+          color: '#ff6b6b',
           fontStyle: 'bold',
-          fontFamily: 'Arial',
+          fontFamily: 'RoundedFixedsys',
+          stroke: '#000000',
+          strokeThickness: 3,
         })
-        .setOrigin(0.5)
-        .setDepth(2003);
+        .setOrigin(1)
+        .setDepth(2006);
 
       // 쿨타임 오버레이
-      const cooldownOverlay = scene.add.graphics().setDepth(2004);
-      cooldownOverlay.fillStyle(0x000000, 0.75);
-      cooldownOverlay.fillRoundedRect(xPos, 0, slotSize, slotSize, 8);
-      cooldownOverlay.setVisible(false);
+      const cooldownOverlay = scene.add.graphics().setDepth(2002);
+      // cooldownOverlay.fillStyle(0x000000, 1);
+      // cooldownOverlay.fillRoundedRect(slotSize / 6, slotSize / 6, slotSize - 10, slotSize - 10, 8);
+      // cooldownOverlay.setVisible(false);
 
       const cooldownText = scene.add
         .text(xPos + slotSize / 2, slotSize / 2, '', {
           fontSize: '24px',
           color: '#ff6b6b',
           fontStyle: 'bold',
-          fontFamily: 'RoundedFixedsys', // ✅ 커스텀 폰트 이름으로 변경
+          fontFamily: 'RoundedFixedsys',
           stroke: '#000000',
           strokeThickness: 3,
         })
         .setOrigin(0.5)
         .setVisible(false)
-        .setDepth(2005);
+        .setDepth(2004);
 
       const cooldownCircle = scene.add
         .graphics()
         .setVisible(false)
-        .setDepth(2006)
+        .setDepth(2003)
         .setPosition(slotSize / 4, slotSize / 4);
 
       this.skillSlots[key] = {
@@ -193,7 +195,7 @@ export default class UISkillCooldown {
         slot.cooldownCircle.lineStyle(3, 0xff6b6b, 0.8);
         slot.cooldownCircle.beginPath();
         slot.cooldownCircle.arc(
-          slot.keyText.x + 2,
+          slot.keyText.x + 4,
           slot.keyText.y + 2,
           20,
           -Math.PI / 2,
