@@ -124,6 +124,9 @@ export default class EnemyBase {
 
     // 방향에 따라 flip
     this.sprite.setFlipX(this.direction > 0);
+    if (this.sprite.flipX) {
+      this.sprite.setFlipX(this.direction < 0);
+    }
 
     // HP바 위치 동기화
     this.hpBar.x = this.sprite.x;

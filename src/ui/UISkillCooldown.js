@@ -132,7 +132,6 @@ export default class UISkillCooldown {
       const skill = skillsMap.get(skillName);
       if (skill && remainingMs > 0) {
         skill.cooldownRemaining = remainingMs;
-        console.log(`♻️ ${skillName} 쿨타임 복원: ${remainingMs}ms`);
       }
     }
   }

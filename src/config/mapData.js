@@ -35,7 +35,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Goblin', 'Bat'],
+      types: ['Slime', 'Bat'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -95,7 +95,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Goblin', 'Bat'],
+      types: ['Slime', 'Bat'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -151,7 +151,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Goblin', 'Bat', 'PurpleMonkey'],
+      types: ['Slime', 'Bat', 'PurpleMonkey'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,

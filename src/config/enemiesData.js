@@ -8,6 +8,7 @@ export const EnemiesData = {
       frameWidth: 64,
       frameHeight: 64,
       scale: 1.0,
+      flipX: false,
     },
     physics: {
       width: 32,
@@ -39,6 +40,7 @@ export const EnemiesData = {
       frameWidth: 64,
       frameHeight: 64,
       scale: 1.2,
+      flipX: false,
     },
     physics: {
       width: 40,
@@ -67,13 +69,14 @@ export const EnemiesData = {
   bat: {
     // ⚠️ Bat → bat
     sprite: {
-      frameWidth: 48,
-      frameHeight: 48,
-      scale: 1.0,
+      frameWidth: 64,
+      frameHeight: 64,
+      scale: 1.5,
+      flipX: false,
     },
     physics: {
       width: 30,
-      height: 30,
+      height: 25,
       collideWorldBounds: true,
     },
     stats: {
@@ -98,13 +101,14 @@ export const EnemiesData = {
   purple_monkey: {
     // ⚠️ PurpleMonkey → purple_monkey
     sprite: {
-      frameWidth: 80,
-      frameHeight: 80,
+      frameWidth: 32,
+      frameHeight: 32,
       scale: 1.5,
+      flipX: true,
     },
     physics: {
-      width: 50,
-      height: 60,
+      width: 30,
+      height: 30,
       collideWorldBounds: true,
     },
     stats: {
