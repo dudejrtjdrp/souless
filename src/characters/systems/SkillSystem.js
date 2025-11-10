@@ -29,6 +29,7 @@ export class Skill {
     }
 
     if (this.config.cooldown) {
+      // 🔹 밀리초 단위로 저장
       this.cooldownRemaining = this.config.cooldown;
     }
 
@@ -39,8 +40,15 @@ export class Skill {
   }
 
   update(delta) {
+    // 🔹 delta가 밀리초 단위인지 확인
+    // Phaser는 밀리초 단위로 delta를 제공함
     if (this.cooldownRemaining > 0) {
       this.cooldownRemaining = Math.max(0, this.cooldownRemaining - delta);
+
+      // 디버그 로그 (필요시)
+      if (this.cooldownRemaining > 0 && this.cooldownRemaining % 1000 < delta) {
+        console.log(`[${this.name}] Cooldown: ${Math.ceil(this.cooldownRemaining / 1000)}s`);
+      }
     }
 
     if (this.isActive && this.config.duration) {

@@ -157,12 +157,14 @@ export default class GameScene extends Phaser.Scene {
 
     // 🔹 UIScene이 준비되었으니 안전하게 업데이트
     if (this.uiScene) {
-      console.log('📊 초기 UI 업데이트 시작');
       this.uiScene.updateUI(this.player);
       await this.uiScene.updateExpBar();
       await this.uiScene.updateCharacterStats();
       this.uiScene.addLog('게임 시작!', '#ffffff');
-      console.log('✅ 초기 UI 업데이트 완료');
+
+      if (this.player) {
+        await this.uiScene.restoreSkillCooldowns(this.selectedCharacter, this.player);
+      }
     }
 
     // 초기 위치 저장
@@ -332,6 +334,10 @@ export default class GameScene extends Phaser.Scene {
     // 🎯 현재 위치 저장 (캐릭터 전환 전)
     await this.saveCurrentPosition();
 
+    // 🔹 현재 캐릭터의 스킬 쿨타임 저장
+    if (this.uiScene && this.player) {
+      await this.uiScene.saveCurrentCooldowns(this.selectedCharacter, this.player);
+    }
     // 현재 상태 저장
     this.characterSwitchManager.saveCurrentCharacterState(this.player);
 
@@ -392,6 +398,11 @@ export default class GameScene extends Phaser.Scene {
       // 적 매니저 플레이어 참조 업데이트
       if (this.enemyManager) {
         this.enemyManager.player = this.player;
+      }
+
+      // 🔹 새 캐릭터의 스킬 쿨타임 복원
+      if (this.uiScene && this.player) {
+        await this.uiScene.restoreSkillCooldowns(nextCharacterType, this.player);
       }
 
       // UI 업데이트
@@ -469,7 +480,7 @@ export default class GameScene extends Phaser.Scene {
     // UI 업데이트
     if (this.uiScene && this.player) {
       this.uiScene.updateUI(this.player);
-      this.uiScene.updateSkillCooldowns(this.player.skills);
+      this.uiScene.updateSkillCooldowns(this.player);
     }
 
     const input = this.inputHandler.getInputState();

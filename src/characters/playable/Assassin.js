@@ -45,8 +45,6 @@ export default class Assassin extends CharacterBase {
     // 상태 잠금 시 입력 무시
     if (this.stateMachine.isStateLocked()) return;
 
-    const now = this.scene.time.now;
-
     // 1️⃣ 공중 공격 (A)
     if (!this.movement.isOnGround() && input.isAttackPressed) {
       this.skillSystem.useSkill('air_attack');
