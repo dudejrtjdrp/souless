@@ -32,7 +32,9 @@ export default class CharacterBase {
     if (this.config.debug) {
       this.debugGraphics = this.scene.add.graphics();
     }
-    this.selectedCharacter = config.spriteKey;
+
+    // ✅ 캐릭터 타입 저장 (spriteKey에서 추출)
+    this.characterType = config.spriteKey || 'warrior';
   }
 
   getDefaultConfig() {
@@ -112,7 +114,6 @@ export default class CharacterBase {
       this.onStateChange.bind(this),
     );
 
-    // ✅ targetType 전달
     const attackTargetType = this.config.skills?.attack?.targetType || 'single';
 
     this.attackSystem = new AttackSystem(
@@ -313,40 +314,28 @@ export default class CharacterBase {
     }
   }
 
+  /**
+   * ✅ 경험치 획득 (UIScene에 이벤트 발행)
+   */
   async gainExp(amount) {
-    console.log('🎯 gainExp 호출:', {
-      amount,
-      character: this.selectedCharacter,
-      hasScene: !!this.scene,
-      hasUIScene: !!this.scene.uiScene,
-    });
+    console.log(`💎 ${this.characterType} gained ${amount} EXP`);
 
     try {
-      // 경험치 저장
-      await SaveManager.addCharacterExp(this.selectedCharacter, amount);
+      // 1️⃣ 저장소에 경험치 저장
+      await SaveManager.addCharacterExp(this.characterType, amount);
       await SaveManager.addTotalExp(amount);
 
-      // 저장 확인
-      const expData = await SaveManager.getExpData();
-      console.log('💾 저장 후 경험치:', expData);
-
-      // UI 갱신
-      if (this.scene.uiScene) {
-        console.log('📊 UI 업데이트 시작...');
-
-        await this.scene.uiScene.updateExpBar();
-        await this.scene.uiScene.updateCharacterStats();
-
-        this.scene.uiScene.addLog(`+${amount} EXP`, '#00ff00');
-
-        console.log('✅ UI 업데이트 완료');
-      } else {
-        console.warn('⚠️ UIScene을 찾을 수 없음!');
+      // 2️⃣ UIScene에 이벤트 발행
+      if (this.scene && this.scene.events) {
+        this.scene.events.emit('exp-gained', {
+          amount,
+          characterType: this.characterType,
+        });
       }
 
-      console.log(`✨ ${this.selectedCharacter} gained ${amount} EXP`);
+      console.log(`✅ EXP saved and event emitted for ${this.characterType}`);
     } catch (error) {
-      console.error('❌ gainExp 에러:', error);
+      console.error('❌ gainExp error:', error);
     }
   }
 

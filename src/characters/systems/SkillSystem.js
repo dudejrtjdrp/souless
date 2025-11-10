@@ -29,7 +29,6 @@ export class Skill {
     }
 
     if (this.config.cooldown) {
-      // 🔹 밀리초 단위로 저장
       this.cooldownRemaining = this.config.cooldown;
     }
 
@@ -40,15 +39,8 @@ export class Skill {
   }
 
   update(delta) {
-    // 🔹 delta가 밀리초 단위인지 확인
-    // Phaser는 밀리초 단위로 delta를 제공함
     if (this.cooldownRemaining > 0) {
       this.cooldownRemaining = Math.max(0, this.cooldownRemaining - delta);
-
-      // 디버그 로그 (필요시)
-      if (this.cooldownRemaining > 0 && this.cooldownRemaining % 1000 < delta) {
-        console.log(`[${this.name}] Cooldown: ${Math.ceil(this.cooldownRemaining / 1000)}s`);
-      }
     }
 
     if (this.isActive && this.config.duration) {
@@ -135,7 +127,6 @@ export class SkillHitbox {
 
     sequence.forEach((step, index) => {
       this.scene.time.delayedCall(step.delay || 0, () => {
-        // 임시 히트박스 생성
         const tempHitbox = this.scene.add.rectangle(
           0,
           0,
@@ -151,7 +142,6 @@ export class SkillHitbox {
         const offsetX = flipX ? -step.hitbox.offsetX : step.hitbox.offsetX;
         tempHitbox.setPosition(this.sprite.x + offsetX, this.sprite.y + step.hitbox.offsetY);
 
-        // 각 단계마다 독립적인 데미지와 설정
         const tempHitboxData = {
           rect: tempHitbox,
           offsetX: step.hitbox.offsetX,
@@ -162,7 +152,6 @@ export class SkillHitbox {
           isMoving: false,
         };
 
-        // 이동 설정이 있으면 이동 시작
         if (step.movement) {
           tempHitboxData.isMoving = true;
           const direction = flipX ? -1 : 1;
@@ -174,7 +163,6 @@ export class SkillHitbox {
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
-        // 히트박스 유지 시간
         const duration = step.duration || 200;
         this.scene.time.delayedCall(duration, () => {
           const idx = this.hitboxes.indexOf(tempHitboxData);
@@ -190,7 +178,6 @@ export class SkillHitbox {
       });
     });
 
-    // 전체 시퀀스 종료 시 비활성화
     const totalDuration =
       Math.max(...sequence.map((s) => (s.delay || 0) + (s.duration || 200))) + 100;
     this.scene.time.delayedCall(totalDuration, () => {
@@ -213,7 +200,6 @@ export class SkillHitbox {
     const flipX = this.sprite.flipX;
 
     this.hitboxes.forEach((hitbox) => {
-      // 이동 중인 히트박스는 위치 업데이트 건너뛰기
       if (hitbox.isMoving) return;
 
       const offsetX = flipX ? -hitbox.offsetX : hitbox.offsetX;
@@ -235,17 +221,14 @@ export class SkillHitbox {
 
     const enemyId = targetSprite.name || targetSprite;
 
-    // single 타입: 이미 아무 적이라도 맞췄으면 더 이상 못 맞춤
     if (this.config.targetType === 'single' && this.hitEnemies.size > 0) {
       return false;
     }
 
-    // single 타입이면서 이미 이 적을 맞췄으면 못 맞춤
     if (this.config.targetType === 'single' && this.hitEnemies.has(enemyId)) {
       return false;
     }
 
-    // 이동하지 않는 히트박스만 위치 업데이트
     this.updatePosition();
 
     const targetBounds = targetSprite.getBounds();
@@ -257,7 +240,6 @@ export class SkillHitbox {
       if (hit) {
         this.hitEnemies.add(enemyId);
 
-        // 각 히트박스의 독립적인 데미지와 설정 반환
         return {
           hit: true,
           damage: hitbox.damage || this.config.damage || 0,
@@ -301,7 +283,6 @@ export class SkillSystem {
     for (const [name, config] of Object.entries(skillsData)) {
       this.skills.set(name, new Skill(name, config));
 
-      // hitbox 또는 hitboxSequence가 있으면 SkillHitbox 생성
       if (
         (config.type === 'melee' || config.type === 'instant') &&
         (config.hitbox || config.hitboxSequence)
@@ -327,7 +308,7 @@ export class SkillSystem {
 
     const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
 
-    const airAllowedSkills = ['air_attack', 'roll'];
+    const airAllowedSkills = ['air_attack', 's_skill'];
     if (isInAir && !airAllowedSkills.includes(skillName)) {
       return false;
     }
@@ -359,7 +340,8 @@ export class SkillSystem {
 
   handleMeleeSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate);
+    // ✅ config.duration 사용 (애니메이션 길이가 아닌 실제 스킬 지속시간)
+    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
 
     const skillHitbox = this.skillHitboxes.get(name);
     if (skillHitbox) {
@@ -377,7 +359,7 @@ export class SkillSystem {
 
   handleProjectileSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate);
+    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
 
     const isLeft = this.character.sprite.flipX;
 
@@ -390,7 +372,7 @@ export class SkillSystem {
 
   handleMovementSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate);
+    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
 
     if (config.distance) {
       const direction = this.character.sprite.flipX ? -1 : 1;
@@ -411,7 +393,7 @@ export class SkillSystem {
 
   handleBuffSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate);
+    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
 
     this.scene.time.delayedCall(config.duration, () => {
       if (config.effects?.includes('heal')) {
@@ -425,15 +407,13 @@ export class SkillSystem {
 
   handleInstantSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate);
+    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
 
     const skillHitbox = this.skillHitboxes.get(name);
     if (skillHitbox) {
-      // hitboxSequence가 있으면 시퀀스 실행
       if (config.hitboxSequence) {
         skillHitbox.activateSequence(config.hitboxSequence);
       } else {
-        // 기존 방식
         const delay = config.hitboxDelay || 0;
         if (delay > 0) {
           this.scene.time.delayedCall(delay, () => {
@@ -446,7 +426,8 @@ export class SkillSystem {
     }
   }
 
-  playAnimationWithDuration(animationKey, frameRate) {
+  // ✅ duration 파라미터 추가
+  playAnimationWithDuration(animationKey, frameRate, skillDuration) {
     const sprite = this.character.sprite;
 
     if (!sprite || !sprite.anims) {
@@ -480,14 +461,18 @@ export class SkillSystem {
       return 0;
     }
 
-    const frameCount = anim.frames.length;
-    const castTime = (frameCount / frameRate) * 1000;
-
     sprite.anims.play(finalAnimKey, true);
 
     if (sprite.anims.currentAnim) {
       sprite.anims.currentAnim.frameRate = frameRate;
       sprite.anims.msPerFrame = 1000 / frameRate;
+    }
+
+    // ✅ skillDuration이 있으면 그것 사용, 없으면 애니메이션 길이 계산
+    let lockTime = skillDuration;
+    if (!lockTime) {
+      const frameCount = anim.frames.length;
+      lockTime = (frameCount / frameRate) * 1000;
     }
 
     if (this.character.stateMachine) {
@@ -498,6 +483,7 @@ export class SkillSystem {
         clearTimeout(this.character.stateMachine.lockTimer);
       }
 
+      // ✅ 실제 스킬 duration으로 락 해제
       this.character.stateMachine.lockTimer = setTimeout(() => {
         if (this.character.stateMachine) {
           this.character.stateMachine.isLocked = false;
@@ -508,10 +494,10 @@ export class SkillSystem {
             this.character.stateMachine.changeState(onGround ? 'idle' : 'jump');
           }
         }
-      }, castTime);
+      }, lockTime);
     }
 
-    return castTime;
+    return lockTime;
   }
 
   checkSkillHit(target) {

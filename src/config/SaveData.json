@@ -8,11 +8,11 @@
       "position": { "x": 100, "y": 810 },
       "skillCooldowns": {
         "attack": 0,
-        "attack_2": 1250,
-        "attack_3": 0,
-        "special_attack": 3400,
+        "q_skill": 1250,
+        "w_skill": 0,
+        "r_skill": 3400,
         "roll": 2100,
-        "meditate": 8500
+        "e_skill": 8500
       },
       "effects": ["burn", "invincible"],
       "lastUsed": 1699876543210
@@ -25,11 +25,11 @@
       "position": { "x": 100, "y": 810 },
       "skillCooldowns": {
         "attack": 0,
-        "attack_2": 1250,
-        "attack_3": 0,
-        "special_attack": 3400,
+        "q_skill": 1250,
+        "w_skill": 0,
+        "r_skill": 3400,
         "roll": 2100,
-        "meditate": 8500
+        "e_skill": 8500
       },
       "effects": ["burn", "invincible"],
       "lastUsed": 1699876543210

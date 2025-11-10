@@ -1,45 +1,73 @@
 import Phaser from 'phaser';
 import UIExpBar from '../ui/UIExpBar.js';
-import UICharacterStats from '../ui/UICharacterStats.js';
+import UIHealthMana from '../ui/UIHealthMana.js';
 import UISkillCooldown from '../ui/UISkillCooldown.js';
 import SaveManager from '../utils/SaveManager.js';
 
 export default class UIScene extends Phaser.Scene {
   constructor() {
     super('UIScene');
+    this.currentCharacterType = null;
   }
 
   async create() {
-    // 기본 텍스트 UI
-    this.healthText = this.add.text(16, 216, 'HP: 0', { fontSize: '16px', fill: '#ff4d4d' });
-    this.manaText = this.add.text(16, 236, 'MP: 0', { fontSize: '16px', fill: '#4d79ff' });
-    this.expText = this.add.text(16, 256, 'EXP: 0', { fontSize: '16px', fill: '#ffff4d' });
-    this.logText = this.add.text(16, 280, '', { fontSize: '14px', fill: '#cccccc' });
+    const { width, height } = this.cameras.main;
+    const centerX = width / 2;
 
-    [this.healthText, this.manaText, this.expText, this.logText].forEach((t) =>
-      t.setScrollFactor(0).setDepth(1000),
-    );
+    // === 중앙 상단: 경험치 바들 ===
+    this.expBar = new UIExpBar(this, centerX, 20);
 
-    // 경험치 바
-    this.expBar = new UIExpBar(this, 20, 70);
+    // === 중앙 하단: HP/MP 바 ===
+    const skillBarHeight = 80;
+    const hpMpY = height - skillBarHeight - 70;
+    this.healthMana = new UIHealthMana(this, centerX, hpMpY);
 
-    // 캐릭터별 경험치 통계
-    this.characterStats = new UICharacterStats(this, 20, 100);
+    // === 중앙 하단: 스킬 쿨다운 ===
+    const skillY = height - skillBarHeight;
+    this.skillCooldown = new UISkillCooldown(this, centerX, skillY);
 
-    // 🔹 스킬 쿨타임 UI
-    this.skillCooldown = new UISkillCooldown(this, 20, 320);
+    // === 디버그 로그 (좌측 하단) ===
+    this.logText = this.add
+      .text(16, height - 30, '', {
+        fontSize: '14px',
+        fill: '#cccccc',
+        backgroundColor: '#000000',
+        padding: { x: 8, y: 4 },
+      })
+      .setScrollFactor(0)
+      .setDepth(1000)
+      .setAlpha(0.8);
 
-    // 초기 로드
-    await this.updateExpBar();
-    await this.updateCharacterStats();
+    // 초기 데이터 로드
+    await this.updateExpBars();
 
-    // 🎯 create 완료 이벤트 발생
+    // 🎯 GameScene 이벤트 리스너 등록
+    const gameScene = this.scene.get('GameScene');
+    if (gameScene) {
+      // 캐릭터 전환 이벤트
+      gameScene.events.on('character-changed', async (characterType) => {
+        this.currentCharacterType = characterType;
+        await this.updatePlayerExp(characterType);
+        console.log(`🔄 UI: 캐릭터 전환됨 -> ${characterType}`);
+      });
+
+      // ✅ 경험치 획득 이벤트 (CharacterBase에서 발행)
+      gameScene.events.on('exp-gained', async (data) => {
+        const { amount, characterType } = data;
+        console.log(`📊 UI received exp-gained event:`, data);
+
+        // UI만 업데이트 (저장은 CharacterBase에서 이미 함)
+        await this.updateExpBars();
+        this.addLog(`+${amount} EXP`, '#ffd43b');
+      });
+    }
+
+    // 🎯 create 완료 이벤트
     this.events.emit('create');
   }
 
   update(time, delta) {
-    // 스킬 쿨타임 UI는 자체적으로 업데이트 필요 없음
-    // GameScene의 updateSkillCooldowns()를 통해 업데이트됨
+    // 필요시 애니메이션 업데이트
   }
 
   /**
@@ -47,26 +75,19 @@ export default class UIScene extends Phaser.Scene {
    */
   updateUI(player) {
     if (!player) return;
-
-    this.healthText.setText(`HP: ${Math.round(player.health)}/${Math.round(player.maxHealth)}`);
-    this.manaText.setText(`MP: ${Math.round(player.mana)}/${Math.round(player.maxMana)}`);
+    this.healthMana.update(player);
   }
 
   /**
    * 스킬 쿨다운 업데이트 (매 프레임)
-   * @param {Object} player - player.skillSystem.skills를 가지고 있어야 함
    */
   updateSkillCooldowns(player) {
     if (!player || !player.skillSystem || !this.skillCooldown) return;
-
-    // SkillSystem의 skills Map을 전달
     this.skillCooldown.updateFromSkills(player.skillSystem.skills);
   }
 
   /**
    * 저장된 쿨타임 복원 (캐릭터 전환 시)
-   * @param {string} characterType
-   * @param {Object} player - 현재 플레이어 객체
    */
   async restoreSkillCooldowns(characterType, player) {
     if (!this.skillCooldown || !player || !player.skillSystem) return;
@@ -74,24 +95,19 @@ export default class UIScene extends Phaser.Scene {
     const savedCooldowns = await SaveManager.getSkillCooldowns(characterType);
 
     if (Object.keys(savedCooldowns).length > 0) {
-      // SkillSystem의 Skill 객체에 쿨타임 복원
       this.skillCooldown.restoreCooldowns(savedCooldowns, player.skillSystem.skills);
       console.log(`♻️ ${characterType} 스킬 쿨타임 복원:`, savedCooldowns);
     }
 
-    // 만료된 쿨타임 정리
     await SaveManager.cleanExpiredCooldowns(characterType);
   }
 
   /**
    * 현재 쿨타임 저장 (캐릭터 전환 전)
-   * @param {string} characterType
-   * @param {Object} player - 현재 플레이어 객체
    */
   async saveCurrentCooldowns(characterType, player) {
     if (!this.skillCooldown || !player || !player.skillSystem) return;
 
-    // SkillSystem으로부터 현재 쿨타임 가져오기
     const cooldowns = this.skillCooldown.getCurrentCooldowns(player.skillSystem.skills);
 
     if (Object.keys(cooldowns).length > 0) {
@@ -101,36 +117,42 @@ export default class UIScene extends Phaser.Scene {
   }
 
   /**
-   * 경험치 바 업데이트
+   * 경험치 바들 업데이트
    */
-  async updateExpBar() {
+  async updateExpBars() {
     const expData = await SaveManager.getExpData();
     const totalExp = expData.totalExp || 0;
 
-    // 레벨 계산 (100 경험치당 1레벨)
+    // 총 경험치 (100 경험치당 1레벨)
     const level = Math.floor(totalExp / 100) + 1;
     const currentLevelExp = totalExp % 100;
     const nextLevelExp = 100;
 
-    // ExpBar 업데이트
     if (this.expBar) {
-      this.expBar.update(currentLevelExp, nextLevelExp);
+      this.expBar.updateTotalExp(currentLevelExp, nextLevelExp, level);
     }
 
-    // 텍스트 업데이트
-    if (this.expText) {
-      this.expText.setText(
-        `Lv.${level} | EXP: ${currentLevelExp}/${nextLevelExp} (Total: ${totalExp})`,
-      );
+    // 현재 캐릭터 경험치도 업데이트
+    if (this.currentCharacterType) {
+      await this.updatePlayerExp(this.currentCharacterType);
     }
   }
 
   /**
-   * 캐릭터별 경험치 통계 업데이트
+   * 플레이어 경험치 업데이트
+   * @param {string} characterType - 'warrior', 'mage', 'assassin', etc.
    */
-  async updateCharacterStats() {
-    if (this.characterStats) {
-      await this.characterStats.refresh();
+  async updatePlayerExp(characterType) {
+    if (!characterType) return;
+
+    const expData = await SaveManager.getExpData();
+    const characterExp = expData.characterExp || {};
+    const exp = characterExp[characterType] || 0;
+
+    console.log(`📊 Updating player exp for ${characterType}: ${exp}`);
+
+    if (this.expBar) {
+      this.expBar.updatePlayerExp(characterType, exp);
     }
   }
 
@@ -143,12 +165,51 @@ export default class UIScene extends Phaser.Scene {
       this.logText.setText(`[${timestamp}] ${message}`);
       this.logText.setStyle({ fill: color });
 
-      // 3초 후 원래 색으로 복구
+      // 3초 후 페이드아웃
       this.time.delayedCall(3000, () => {
         if (this.logText) {
-          this.logText.setStyle({ fill: '#cccccc' });
+          this.tweens.add({
+            targets: this.logText,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              if (this.logText) {
+                this.logText.setText('');
+                this.logText.setAlpha(0.8);
+              }
+            },
+          });
         }
       });
     }
+  }
+
+  /**
+   * ✅ 호환성을 위한 메서드들 (GameScene에서 호출됨)
+   */
+  async updateExpBar() {
+    await this.updateExpBars();
+  }
+
+  async updateCharacterStats() {
+    // 현재 캐릭터 경험치 업데이트
+    if (this.currentCharacterType) {
+      await this.updatePlayerExp(this.currentCharacterType);
+    }
+  }
+
+  /**
+   * 전체 UI 숨기기/보이기
+   */
+  hide() {
+    if (this.expBar) this.expBar.hide();
+    if (this.healthMana) this.healthMana.hide();
+    if (this.skillCooldown) this.skillCooldown.hide();
+  }
+
+  show() {
+    if (this.expBar) this.expBar.show();
+    if (this.healthMana) this.healthMana.show();
+    if (this.skillCooldown) this.skillCooldown.show();
   }
 }

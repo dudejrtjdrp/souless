@@ -58,11 +58,11 @@ export default class Assassin extends CharacterBase {
 
     // 3️⃣ Q/W/E/R/S 스킬
     const skillKeys = [
-      { key: 'Q', skill: 'attack_2', pressed: input.isQPressed },
-      { key: 'W', skill: 'attack_3', pressed: input.isWPressed },
-      { key: 'E', skill: 'defend', pressed: input.isEPressed },
-      { key: 'R', skill: 'special_attack', pressed: input.isRPressed },
-      { key: 'S', skill: 'roll', pressed: input.isSPressed },
+      { key: 'Q', skill: 'q_skill', pressed: input.isQPressed },
+      { key: 'W', skill: 'w_skill', pressed: input.isWPressed },
+      { key: 'E', skill: 'e_skill', pressed: input.isEPressed },
+      { key: 'R', skill: 'r_skill', pressed: input.isRPressed },
+      { key: 'S', skill: 's_skill', pressed: input.isSPressed },
     ];
 
     skillKeys.forEach(({ skill, pressed }) => {
