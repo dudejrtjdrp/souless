@@ -48,21 +48,12 @@ export default class StateMachine {
 
     const lockStates = [
       'attack',
-      'attack_1',
       'q_skill',
       'w_skill',
-      'air_attack',
-      'attack_air',
-      'r_skill',
-      'skill_punch',
-      'skill_kick',
-      'skill_meditation',
-      'skill_special',
       'e_skill',
+      'r_skill',
       's_skill',
-      'fireball',
-      'ice_shard',
-      'lightning',
+      'air_attack',
     ];
 
     if (lockStates.includes(baseState)) {
@@ -95,21 +86,12 @@ export default class StateMachine {
 
     const durations = {
       attack: 600,
-      attack_1: 600,
       q_skill: 650,
       w_skill: 700,
-      air_attack: 650,
-      attack_air: 650,
-      r_skill: 800,
-      skill_punch: 800,
-      skill_kick: 800,
-      skill_meditation: 2500,
-      skill_special: 1000,
       e_skill: 2500,
-      roll: 600,
-      fireball: 600,
-      ice_shard: 600,
-      lightning: 400,
+      r_skill: 800,
+      s_skill: 600,
+      air_attack: 650,
     };
 
     return durations[baseState] || 1000;

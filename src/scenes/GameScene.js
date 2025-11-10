@@ -348,18 +348,14 @@ export default class GameScene extends Phaser.Scene {
         this.enemyManager.player = this.player;
       }
 
-      // ✅ UIScene에 캐릭터 전환 이벤트 발행
-      if (this.uiScene) {
-        this.uiScene.currentCharacterType = nextCharacterType;
-        await this.uiScene.updateExpBars();
-        await this.uiScene.restoreSkillCooldowns(nextCharacterType, this.player);
+      // ✅ UIScene에 캐릭터 변경 알림 (직접 참조 방식)
+      if (this.uiScene && this.uiScene.onCharacterChanged) {
+        await this.uiScene.onCharacterChanged(nextCharacterType, this.player);
+      }
 
-        // 🎨 스킬 아이콘 업데이트
-        const { CharacterData } = await import('../config/CharacterData.js');
-        const characterData = CharacterData[nextCharacterType];
-        if (characterData && this.uiScene.skillCooldownUI) {
-          this.uiScene.skillCooldownUI.updateSkillIcons(characterData);
-        }
+      // 저장된 스킬 쿨타임 복원
+      if (this.uiScene) {
+        await this.uiScene.restoreSkillCooldowns(nextCharacterType, this.player);
       }
 
       this.updateSwitchUI();
@@ -371,6 +367,23 @@ export default class GameScene extends Phaser.Scene {
 
       this.characterSwitchManager.debugPrintStates();
     });
+  }
+
+  // 경험치 획득 (CharacterBase에서 호출)
+  onExpGained(amount, characterType) {
+    const uiScene = this.scene.get('UIScene');
+    if (uiScene && uiScene.onExpGained) {
+      uiScene.onExpGained(amount, characterType);
+    }
+  }
+
+  update(time, delta) {
+    // HP/MP 업데이트
+    const uiScene = this.scene.get('UIScene');
+    if (uiScene && this.player) {
+      uiScene.updateUI(this.player);
+      uiScene.updateSkillCooldowns(this.player);
+    }
   }
 
   createSwitchUI() {

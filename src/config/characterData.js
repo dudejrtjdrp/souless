@@ -33,10 +33,20 @@ export const CharacterData = {
         knockback: { x: 100, y: 0 },
         targetType: 'single',
       },
+      air_attack: {
+        type: 'melee',
+        damage: 10,
+        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        duration: 400,
+        animation: 'air_attack',
+        frameRate: 6,
+        knockback: { x: 100, y: 0 },
+        targetType: 'single',
+      },
       q_skill: {
         type: 'melee',
         damage: 15,
-        icon: 'assets/skills/monk/attack_2.png',
+        icon: 'assets/skills/monk/q_skill.png',
         hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
         duration: 700,
         animation: 'q_skill',
@@ -49,7 +59,7 @@ export const CharacterData = {
       w_skill: {
         type: 'melee',
         damage: 25,
-        icon: 'assets/skills/monk/attack_3.png',
+        icon: 'assets/skills/monk/w_skill.png',
         hitbox: [
           { width: 175, height: 40, offsetX: 80, offsetY: 100 },
           { width: 70, height: 90, offsetX: 130, offsetY: 60 },
@@ -66,7 +76,7 @@ export const CharacterData = {
       },
       s_skill: {
         type: 'movement',
-        icon: 'assets/skills/monk/roll.png',
+        icon: 'assets/skills/monk/s_skill.png',
         duration: 400,
         animation: 's_skill',
         frameRate: 10,
@@ -77,7 +87,7 @@ export const CharacterData = {
       },
       e_skill: {
         type: 'buff',
-        icon: 'assets/skills/monk/meditate.png',
+        icon: 'assets/skills/monk/e_skill.png',
         duration: 2000,
         animation: 'e_skill',
         frameRate: 8,
@@ -89,7 +99,7 @@ export const CharacterData = {
       },
       r_skill: {
         type: 'instant',
-        icon: 'assets/skills/monk/special_attack.png',
+        icon: 'assets/skills/monk/r_skill.png',
         hitboxSequence: [
           {
             delay: 0,
@@ -165,6 +175,16 @@ export const CharacterData = {
         knockback: { x: 100, y: 0 },
         cooldown: 200,
         targetType: 'multi',
+      },
+      air_attack: {
+        type: 'melee',
+        damage: 10,
+        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        duration: 400,
+        animation: 'air_attack',
+        frameRate: 6,
+        knockback: { x: 100, y: 0 },
+        targetType: 'single',
       },
       q_skill: {
         type: 'melee',
@@ -311,6 +331,16 @@ export const CharacterData = {
         animation: 'attack',
         cooldown: 500,
         frameRate: 12,
+        knockback: { x: 100, y: 0 },
+        targetType: 'single',
+      },
+      air_attack: {
+        type: 'melee',
+        damage: 10,
+        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        duration: 400,
+        animation: 'air_attack',
+        frameRate: 6,
         knockback: { x: 100, y: 0 },
         targetType: 'single',
       },

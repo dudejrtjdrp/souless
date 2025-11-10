@@ -3,11 +3,20 @@ import UIExpBar from '../ui/UIExpBar.js';
 import UIHealthMana from '../ui/UIHealthMana.js';
 import UISkillCooldown from '../ui/UISkillCooldown.js';
 import SaveManager from '../utils/SaveManager.js';
+import SkillIconLoader from '../utils/SkillIconLoader.js';
 
 export default class UIScene extends Phaser.Scene {
   constructor() {
     super('UIScene');
     this.currentCharacterType = null;
+  }
+
+  preload() {
+    this.load.spritesheet('ui_skill', 'assets/ui/skill_ui.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    SkillIconLoader.preload(this);
   }
 
   async create() {
@@ -41,26 +50,13 @@ export default class UIScene extends Phaser.Scene {
     // 초기 데이터 로드
     await this.updateExpBars();
 
-    // 🎯 GameScene 이벤트 리스너 등록
-    const gameScene = this.scene.get('GameScene');
-    if (gameScene) {
-      // 캐릭터 전환 이벤트
-      gameScene.events.on('character-changed', async (characterType) => {
-        this.currentCharacterType = characterType;
-        await this.updatePlayerExp(characterType);
-        console.log(`🔄 UI: 캐릭터 전환됨 -> ${characterType}`);
-      });
+    this.load.spritesheet('ui_skill', 'assets/ui/skill_ui.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
 
-      // ✅ 경험치 획득 이벤트 (CharacterBase에서 발행)
-      gameScene.events.on('exp-gained', async (data) => {
-        const { amount, characterType } = data;
-        console.log(`📊 UI received exp-gained event:`, data);
-
-        // UI만 업데이트 (저장은 CharacterBase에서 이미 함)
-        await this.updateExpBars();
-        this.addLog(`+${amount} EXP`, '#ffd43b');
-      });
-    }
+    // 캐릭터 스킬 아이콘 preload
+    SkillIconLoader.updateAllIcons(this, this.skillCooldown, this.currentCharacterType);
 
     // 🎯 create 완료 이벤트
     this.events.emit('create');
@@ -68,6 +64,38 @@ export default class UIScene extends Phaser.Scene {
 
   update(time, delta) {
     // 필요시 애니메이션 업데이트
+  }
+
+  /**
+   * 🎯 캐릭터 변경 시 호출되는 메서드 (GameScene에서 직접 호출)
+   */
+  async onCharacterChanged(characterType, player = null) {
+    console.log(`🔄 UI: 캐릭터 변경 감지 -> ${characterType}`);
+
+    this.currentCharacterType = characterType;
+
+    // 스킬 아이콘 업데이트
+    SkillIconLoader.updateAllIcons(this, this.skillCooldown, characterType);
+
+    // 경험치 바 업데이트
+    await this.updatePlayerExp(characterType);
+
+    // HP/MP 업데이트
+    if (player) {
+      this.updateUI(player);
+    }
+
+    this.addLog(`${characterType} 활성화`, '#51cf66');
+  }
+
+  /**
+   * 🎯 경험치 획득 시 호출되는 메서드
+   */
+  async onExpGained(amount, characterType) {
+    console.log(`📊 UI: 경험치 획득 -> ${amount} (${characterType})`);
+
+    await this.updateExpBars();
+    this.addLog(`+${amount} EXP`, '#ffd43b');
   }
 
   /**
@@ -140,7 +168,6 @@ export default class UIScene extends Phaser.Scene {
 
   /**
    * 플레이어 경험치 업데이트
-   * @param {string} characterType - 'warrior', 'mage', 'assassin', etc.
    */
   async updatePlayerExp(characterType) {
     if (!characterType) return;

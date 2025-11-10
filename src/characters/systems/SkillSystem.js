@@ -300,23 +300,24 @@ export class SkillSystem {
       return false;
     }
 
+    const config = skill.config;
+
+    // 공중 여부 체크
+    const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
+    const airAllowedSkills = ['air_attack', 's_skill'];
+    if (isInAir && !airAllowedSkills.includes(skillName)) {
+      return false; // 공중에서 사용 불가면 아무 일도 안 일어나도록
+    }
+
+    // 이제 스킬 실제 사용
     if (!skill.use(this.character)) {
       return false;
     }
 
-    const config = skill.config;
-
-    const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
-
-    const airAllowedSkills = ['air_attack', 's_skill'];
-    if (isInAir && !airAllowedSkills.includes(skillName)) {
-      return false;
-    }
-
+    // 이하 기존 로직
     if (config.type !== 'movement' && this.character.sprite.body) {
       this.character.sprite.body.setVelocityX(0);
     }
-
     switch (config.type) {
       case 'melee':
         this.handleMeleeSkill(skillName, config);
