@@ -144,16 +144,6 @@ export default class MapModel {
     this.underSolidRect.setDepth(45); // tilemapStart(50) 바로 아래
     this.underSolidRect.setScrollFactor(1);
     this.underSolidRect.setOrigin(0.5, 0.5);
-
-    console.log(`✅ Created underSolidRectangle:`, {
-      x: this.underSolidRect.x,
-      y: this.underSolidRect.y,
-      width: width,
-      height: rectHeight,
-      color: color,
-      depth: this.underSolidRect.depth,
-      visible: this.underSolidRect.visible,
-    });
   }
 
   /**
@@ -223,12 +213,6 @@ export default class MapModel {
     if (!this.config.mapPath) {
       // ⭐ collision ground 위 150px에 스폰 (캐릭터가 충분히 위에서 시작)
       const spawnY = groundTopY - 150;
-
-      console.log('✅ Auto spawn calculated:', {
-        groundTopY,
-        spawnY,
-        heightDifference: groundTopY - spawnY,
-      });
 
       return {
         x: 100,
@@ -300,15 +284,6 @@ export default class MapModel {
       this.collisionGround.body.updateFromGameObject();
       this.collisionGround.body.mass = 999999;
       this.collisionGround.body.pushable = false;
-
-      console.log('✅ Collision ground created:', {
-        x: this.collisionGround.x,
-        y: this.collisionGround.y,
-        topY: this.collisionGround.y - groundHeight / 2,
-        bottomY: this.collisionGround.y + groundHeight / 2,
-        width: this.collisionGround.body.width,
-        height: this.collisionGround.body.height,
-      });
     }
 
     this.collisionGround.setDepth(this.config.depths?.collision || 10);
@@ -316,11 +291,17 @@ export default class MapModel {
 
   createPortals() {
     if (!this.config.portals) return;
-
+    const collisionTopY = this.getCollisionTopY(); // 상단 Y값
     this.config.portals.forEach((portalData) => {
-      const portal = new Portal(this.scene, portalData);
+      // Y값을 collision 상단으로 설정
+      const adjustedData = { ...portalData, y: collisionTopY - 32 };
+      const portal = new Portal(this.scene, adjustedData);
       this.portals.push(portal);
     });
+  }
+  getCollisionTopY() {
+    if (!this.collisionGround) return this.getScaledMapSize().height;
+    return this.collisionGround.y - this.collisionGround.height / 2;
   }
 
   getPortalById(portalId) {
@@ -402,16 +383,9 @@ export default class MapModel {
       return false;
     }
 
-    // ⭐ 플레이어를 collision ground 위로 강제 이동
+    //  플레이어를 collision ground 위로 강제 이동
     const safePos = this.getSafeSpawnPosition(playerSprite.x, 150);
     playerSprite.setPosition(safePos.x, safePos.y);
-
-    console.log('✅ Player positioned:', {
-      x: playerSprite.x,
-      y: playerSprite.y,
-      groundY: this.getGroundY(),
-      difference: this.getGroundY() - playerSprite.y,
-    });
 
     playerSprite.setDepth(this.config.depths?.player || 100);
 
@@ -493,12 +467,6 @@ export default class MapModel {
    * 🎯 모든 collider 상태 확인 (디버그용)
    */
   checkColliders() {
-    this.entityColliders.forEach((collider, i) => {
-      console.log(`Collider ${i}:`, {
-        active: collider.active,
-        object1: collider.object1?.constructor?.name,
-        object2: collider.object2?.constructor?.name,
-      });
-    });
+    this.entityColliders.forEach((collider, i) => {});
   }
 }

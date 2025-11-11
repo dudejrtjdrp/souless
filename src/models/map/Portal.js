@@ -95,6 +95,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
       return;
     }
 
+    console.log('asd');
     // 🎯 Scene이 이미 전환 중이면 무시 (전역 플래그)
     if (this.scene.isPortalTransitioning) {
       return;

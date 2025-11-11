@@ -55,7 +55,12 @@ export default class GameScene extends Phaser.Scene {
 
   async create() {
     await this.initializeUI();
-    await this.loadSaveData();
+
+    // loadSaveData가 false를 반환하면 씬 전환 중이므로 create 중단
+    const shouldContinue = await this.loadSaveData();
+    if (!shouldContinue) {
+      return; // 씬 전환 중이므로 create를 멈춤
+    }
 
     this.setupScene();
     this.createBackground();
@@ -68,6 +73,7 @@ export default class GameScene extends Phaser.Scene {
     if (!this.savedSpawnData) {
       this.saveCurrentPosition();
     }
+    this.isPortalTransitioning = false;
   }
 
   async initializeUI() {
@@ -80,16 +86,18 @@ export default class GameScene extends Phaser.Scene {
     this.setupInputHandler();
     this.preventTabDefault();
 
+    // skipSaveCheck가 true면 저장 데이터 체크를 건너뜀
     if (this.data.get('skipSaveCheck')) {
       this.savedSpawnData = await SaveManager.getSavedPosition();
       if (this.savedSpawnData) {
         this.selectedCharacter = this.savedSpawnData.characterType || 'assassin';
       }
-      return true;
+      return true; // 여기서 바로 리턴해야 함
     }
 
     const savedPosition = await SaveManager.getSavedPosition();
 
+    // 저장된 위치가 있고, 현재 맵과 다른 경우에만 재시작
     if (savedPosition && savedPosition.mapKey !== this.currentMapKey) {
       this.restartWithSavedMap(savedPosition);
       return false;
@@ -224,14 +232,14 @@ export default class GameScene extends Phaser.Scene {
 
     this.isPortalTransitioning = true;
 
+    // 포탈 위치 저장
     await SaveManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
     this.cleanupBeforeTransition();
-
     this.scene.start('GameScene', {
       mapKey: targetMapKey,
       characterType: this.selectedCharacter,
-      skipSaveCheck: true,
+      skipSaveCheck: true, // 이게 핵심!
     });
   }
 

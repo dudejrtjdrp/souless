@@ -68,6 +68,7 @@ export default class SaveManager {
       characterType,
       physics: CharacterData[characterType].physics.collisionBox,
       fromPortal: false,
+      isPortalSpawn: false, // 일반 위치 저장
       timestamp: Date.now(),
     };
     return await this.save(saveData);
@@ -82,6 +83,7 @@ export default class SaveManager {
       characterType,
       physics: CharacterData[characterType].physics.collisionBox,
       fromPortal: true,
+      isPortalSpawn: true, // 포탈 스폰 표시
       timestamp: Date.now(),
     };
     return await this.save(saveData);
