@@ -79,11 +79,6 @@ export const MAPS = {
       { key: 'forest_layer11', path: '/assets/map/forest/10.png' },
       { key: 'forest_layer12', path: '/assets/map/forest/11.png' },
     ],
-    // ⭐ 숲 맵용 하단 배경
-    underSolidRectangle: {
-      y: 120,
-      color: '#0f380f', // 어두운 초록
-    },
     collision: {
       key: 'forest_tileset',
       path: '/assets/map/forest/forest_tileset.png',

@@ -55,11 +55,21 @@ export default class UIScene extends Phaser.Scene {
 
     // 🎯 create 완료 이벤트
     this.events.emit('ui-ready');
+
+    const gameScene = this.scene.get('GameScene');
+    if (gameScene && gameScene.player && gameScene.selectedCharacter) {
+      // 약간의 딜레이를 줘서 모든 텍스처 로딩 완료 보장
+      this.time.delayedCall(0, () => {
+        SkillIconLoader.updateAllIcons(
+          this,
+          this.skillCooldown,
+          gameScene.selectedCharacter,
+          this.skillCooldown.container,
+        );
+      });
+    }
   }
 
-  /**
-   * 🎯 게임 이벤트 리스너 설정
-   */
   setupEventListeners() {
     const gameScene = this.scene.get('GameScene');
     if (!gameScene) {
@@ -88,8 +98,16 @@ export default class UIScene extends Phaser.Scene {
     const { characterType, player } = data;
     this.currentCharacterType = characterType;
 
-    // 스킬 아이콘 업데이트
-    SkillIconLoader.updateAllIcons(this, this.skillCooldown, characterType);
+    // 스킬 아이콘 업데이트 (container 전달)
+    if (player && player.skillSystem) {
+      SkillIconLoader.updateAllIcons(
+        this,
+        this.skillCooldown,
+        characterType,
+        this.skillCooldown.container, // ✅ container 명시적 전달
+      );
+      await this.restoreSkillCooldowns(characterType, player);
+    }
 
     // 경험치 바 업데이트
     await this.updatePlayerExp(characterType);
@@ -97,11 +115,6 @@ export default class UIScene extends Phaser.Scene {
     // HP/MP 업데이트
     if (player) {
       this.updateUI(player);
-    }
-
-    // 쿨다운 복원
-    if (player) {
-      await this.restoreSkillCooldowns(characterType, player);
     }
 
     this.addLog(`${characterType} 활성화`, '#51cf66');
@@ -135,7 +148,21 @@ export default class UIScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // 필요시 애니메이션 업데이트
+    const gameScene = this.scene.get('GameScene');
+
+    // 새 GameScene이 이전과 다르면 이벤트 재연결
+    if (gameScene && this.currentGameScene !== gameScene) {
+      this.currentGameScene = gameScene;
+      this.setupEventListeners();
+
+      // 캐릭터 상태 강제 갱신
+      if (gameScene.player) {
+        this.handleCharacterChanged({
+          characterType: gameScene.selectedCharacter,
+          player: gameScene.player,
+        });
+      }
+    }
   }
 
   /**

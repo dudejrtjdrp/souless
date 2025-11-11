@@ -1,10 +1,6 @@
 import { CharacterData } from '../config/characterData';
 
 export default class SkillIconLoader {
-  /**
-   * scene: Phaser.Scene
-   * 캐릭터 데이터 기반으로 모든 스킬 아이콘 preload
-   */
   static preload(scene) {
     Object.entries(CharacterData).forEach(([charKey, charData]) => {
       if (!charData.skills) return;
@@ -34,8 +30,9 @@ export default class SkillIconLoader {
    * @param {Object} slot - UISkillCooldown.skillSlots[key]
    * @param {string} characterKey - 'warrior', 'mage' etc
    * @param {string} skillKey - 'q_skill', 'attack' etc
+   * @param {Phaser.GameObjects.Container} container - 명시적으로 container 전달
    */
-  static applyIcon(scene, slot, characterKey, skillKey) {
+  static applyIcon(scene, slot, characterKey, skillKey, container = null) {
     const textureKey = SkillIconLoader.getTextureKey(characterKey, skillKey);
 
     if (!slot) return;
@@ -59,9 +56,13 @@ export default class SkillIconLoader {
 
       slot.iconImage = iconImage;
 
-      // container에 추가
-      if (slot.bg && slot.bg.parentContainer) {
-        slot.bg.parentContainer.add(iconImage);
+      // ✅ 명시적으로 전달받은 container 사용
+      const targetContainer = container || (slot.bg && slot.bg.parentContainer);
+
+      if (targetContainer) {
+        targetContainer.add(iconImage);
+      } else {
+        console.warn(`Container not found for slot with texture: ${textureKey}`);
       }
     } else {
       // 텍스처가 없으면 기본 원형 아이콘 표시
@@ -75,8 +76,9 @@ export default class SkillIconLoader {
    * @param {Phaser.Scene} scene
    * @param {UISkillCooldown} uiSkillCooldown
    * @param {string} characterType - 'warrior', 'mage' etc
+   * @param {Phaser.GameObjects.Container} container - UI Container (선택)
    */
-  static updateAllIcons(scene, uiSkillCooldown, characterType) {
+  static updateAllIcons(scene, uiSkillCooldown, characterType, container = null) {
     const characterData = CharacterData[characterType];
     if (!characterData || !characterData.skills) return;
 
@@ -106,7 +108,7 @@ export default class SkillIconLoader {
 
       // 아이콘 적용
       if (foundSkillKey) {
-        SkillIconLoader.applyIcon(scene, slot, characterType, foundSkillKey);
+        SkillIconLoader.applyIcon(scene, slot, characterType, foundSkillKey, container);
       } else {
         // 스킬이 없으면 기본 아이콘으로
         SkillIconLoader.resetIcon(slot);

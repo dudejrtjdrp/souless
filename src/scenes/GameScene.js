@@ -67,12 +67,19 @@ export default class GameScene extends Phaser.Scene {
     this.setupPlayer();
     this.setupCamera();
     this.setupEnemies();
-    this.setupUI();
     this.emitInitialEvents();
 
     if (!this.savedSpawnData) {
       this.saveCurrentPosition();
     }
+
+    if (this.uiScene) {
+      this.uiScene.handleCharacterChanged({
+        characterType: this.selectedCharacter,
+        player: this.player,
+      });
+    }
+
     this.isPortalTransitioning = false;
   }
 
@@ -162,10 +169,6 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager.createInitial();
   }
 
-  setupUI() {
-    this.createSwitchUI();
-  }
-
   emitInitialEvents() {
     this.events.emit('character-changed', {
       characterType: this.selectedCharacter,
@@ -239,7 +242,7 @@ export default class GameScene extends Phaser.Scene {
     this.scene.start('GameScene', {
       mapKey: targetMapKey,
       characterType: this.selectedCharacter,
-      skipSaveCheck: true, // 이게 핵심!
+      skipSaveCheck: true,
     });
   }
 
@@ -261,31 +264,6 @@ export default class GameScene extends Phaser.Scene {
       amount,
       characterType,
     });
-  }
-
-  createSwitchUI() {
-    this.switchText = this.add
-      .text(16, 16, '', {
-        fontSize: '18px',
-        fill: '#ffffff',
-        backgroundColor: '#000000',
-        padding: { x: 10, y: 5 },
-      })
-      .setScrollFactor(0)
-      .setDepth(1000);
-
-    this.updateSwitchUI();
-  }
-
-  updateSwitchUI() {
-    if (!this.switchText || !this.player) return;
-
-    const stats = this.getPlayerStats();
-    this.switchText.setText([
-      `Character: ${this.selectedCharacter.toUpperCase()}`,
-      `HP: ${stats.hp}/${stats.maxHp} | MP: ${stats.mp}/${stats.maxMp}`,
-      `Press \` to switch | Map: ${this.currentMapKey}`,
-    ]);
   }
 
   getPlayerStats() {
@@ -316,11 +294,8 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager?.update(time, delta);
 
     const handler = new CombatCollisionHandler(this);
+    this.uiScene.update(time, delta);
     handler.checkAttackCollisions();
-
-    if (time % 100 < delta) {
-      this.updateSwitchUI();
-    }
   }
 
   setupInputHandler() {

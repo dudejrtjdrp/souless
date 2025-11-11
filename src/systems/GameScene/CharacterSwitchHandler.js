@@ -116,7 +116,5 @@ export default class CharacterSwitchHandler {
       characterType: nextType,
       player: this.scene.player,
     });
-
-    this.scene.updateSwitchUI();
   }
 }

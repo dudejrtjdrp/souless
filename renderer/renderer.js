@@ -15,7 +15,7 @@ const config = {
   },
   scene: [GameScene, SoulScene, UIScene],
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
   pixelArt: true,
