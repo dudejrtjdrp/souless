@@ -25,7 +25,7 @@ export const CharacterData = {
       attack: {
         type: 'melee',
         damage: 10,
-        icon: 'assets/skills/monk/attack.png', // 🎨 아이콘 추가
+        icon: 'assets/skills/monk/attack.png', // 아이콘 추가
         hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
         duration: 400,
         animation: 'attack',
@@ -91,10 +91,16 @@ export const CharacterData = {
         duration: 2000,
         animation: 'e_skill',
         frameRate: 8,
+        isChanneling: true,
+        channeling: {
+          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
+          maxDuration: 3000, // 최대 3초
+          manaPerTick: 2, // 100ms당 2 마나 소모,
+          holdFrame: 10, // 추가: 10번째 프레임에서 멈춤
+        },
         effects: ['heal', 'mana_regen'],
         healAmount: 20,
         manaAmount: 30,
-        cooldown: 10000,
         targetType: 'single',
       },
       r_skill: {
@@ -133,7 +139,7 @@ export const CharacterData = {
       { key: 'q_skill', frames: { start: 155, end: 161 }, frameRate: 8, repeat: 0 },
       { key: 'w_skill', frames: { start: 187, end: 197 }, frameRate: 12, repeat: 0 },
       { key: 'r_skill', frames: { start: 201, end: 230 }, frameRate: 30, repeat: 0 },
-      { key: 'e_skill', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
+      // { key: 'e_skill', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 251, end: 255 }, frameRate: 10, repeat: 0 },
       { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 301, end: 306 }, frameRate: 8, repeat: 0 },
@@ -189,7 +195,7 @@ export const CharacterData = {
       q_skill: {
         type: 'melee',
         damage: 15,
-        icon: 'assets/skills/assassin/attack_2.png',
+        icon: 'assets/skills/assassin/q_skill.png',
         hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
         duration: 700,
         animation: 'q_skill',
@@ -201,7 +207,7 @@ export const CharacterData = {
       },
       w_skill: {
         type: 'instant',
-        icon: 'assets/skills/assassin/attack_3.png',
+        icon: 'assets/skills/assassin/w_skill.png',
         hitboxSequence: [
           {
             delay: 0,
@@ -214,7 +220,6 @@ export const CharacterData = {
             damage: 15,
           },
         ],
-        duration: 500,
         animation: 'w_skill',
         frameRate: 12,
         knockback: { x: 200, y: -100 },
@@ -223,9 +228,26 @@ export const CharacterData = {
         cost: { mana: 20 },
         targetType: 'multi',
       },
+      e_skill: {
+        type: 'buff',
+        icon: 'assets/skills/assassin/e_skill.png',
+        animation: 'e_skill',
+        frameRate: 8,
+        isChanneling: true,
+        channeling: {
+          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
+          maxDuration: 3000, // 최대 3초
+          manaPerTick: 2, // 100ms당 2 마나 소모,
+          holdFrame: 303, // 추가: 10번째 프레임에서 멈춤
+        },
+        effects: ['defend'],
+        healAmount: 20,
+        manaAmount: 30,
+        targetType: 'single',
+      },
       r_skill: {
         type: 'instant',
-        icon: 'assets/skills/assassin/special_attack.png',
+        icon: 'assets/skills/assassin/r_skill.png',
         hitboxSequence: [
           {
             delay: 100,
@@ -258,24 +280,12 @@ export const CharacterData = {
       },
       s_skill: {
         type: 'movement',
-        icon: 'assets/skills/assassin/roll.png',
+        icon: 'assets/skills/assassin/s_skill.png',
         duration: 400,
         animation: 's_skill',
         frameRate: 10,
         invincible: true,
         distance: 150,
-        cooldown: 3000,
-        targetType: 'single',
-      },
-      e_skill: {
-        type: 'melee',
-        icon: 'assets/skills/assassin/defend.png',
-        duration: 800,
-        animation: 'e_skill',
-        frameRate: 8,
-        effects: ['defend'],
-        healAmount: 20,
-        manaAmount: 30,
         cooldown: 3000,
         targetType: 'single',
       },
@@ -292,7 +302,7 @@ export const CharacterData = {
       { key: 'q_skill', frames: { start: 215, end: 227 }, frameRate: 8, repeat: 0 },
       { key: 'w_skill', frames: { start: 253, end: 265 }, frameRate: 25, repeat: 0 },
       { key: 'r_skill', frames: { start: 270, end: 307 }, frameRate: 37, repeat: 0 },
-      { key: 'e_skill', frames: { start: 300, end: 307 }, frameRate: 8, repeat: 0 },
+      { key: 'e_skill', frames: { start: 300, end: 307 }, frameRate: 8, repeat: -1 },
       { key: 'defend', frames: { start: 300, end: 307 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 330, end: 335 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 360, end: 378 }, frameRate: 15, repeat: 0 },

@@ -160,7 +160,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey'],
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,

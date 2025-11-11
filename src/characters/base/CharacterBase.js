@@ -233,6 +233,12 @@ export default class CharacterBase {
     if (input.isJumpPressed) {
       this.jump();
     }
+    if (input.isEPressed) {
+      console.log(input);
+    }
+    if (input.isEReleased) {
+      console.log(input);
+    }
   }
 
   updateMovement(input) {

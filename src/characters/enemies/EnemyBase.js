@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 import { EnemiesData } from '../../config/enemiesData.js';
 
 export default class EnemyBase {
-  constructor(scene, x, y, enemyType) {
+  constructor(scene, x, y, enemyType, direction = 1) {
     this.scene = scene;
     this.enemyType = enemyType;
 
@@ -11,7 +11,7 @@ export default class EnemyBase {
     this.data = EnemiesData[enemyType];
     if (!this.data) {
       console.error(`❌ Enemy data not found: ${enemyType}`);
-      this.sprite = scene.add.sprite(x, y, '__MISSING');
+      this.sprite = scene.add.sprite(x, y, 'MISSING');
       return;
     }
 
@@ -27,7 +27,7 @@ export default class EnemyBase {
     this.startX = x;
     this.isDead = false;
     this.lastDamageTime = 0;
-    this.direction = 1;
+    this.direction = direction;
 
     // ✅ 스프라이트 생성
     const spriteKey = `${enemyType}_idle`;
@@ -115,18 +115,19 @@ export default class EnemyBase {
 
     // Patrol
     if (this.sprite.x >= this.startX + this.patrolRangeX) {
-      this.direction = -1;
+      this.direction = -1; // 왼쪽
       this.sprite.body.setVelocityX(this.speed * this.direction);
     } else if (this.sprite.x <= this.startX - this.patrolRangeX) {
-      this.direction = 1;
+      this.direction = 1; // 오른쪽
       this.sprite.body.setVelocityX(this.speed * this.direction);
     }
 
-    // 방향에 따라 flip
-    this.sprite.setFlipX(this.direction > 0);
-    if (this.sprite.flipX) {
-      this.sprite.setFlipX(this.direction < 0);
-    }
+    // 🎯 방향에 따라 flipX 조정
+    // 기본 flipX 값은 enemiesData에서 설정된 초기값
+    const baseFlip = this.data.sprite.flipX || false;
+
+    // 방향에 따라 기본 flipX 반전
+    this.sprite.setFlipX(this.direction > 0 ? !baseFlip : baseFlip);
 
     // HP바 위치 동기화
     this.hpBar.x = this.sprite.x;
