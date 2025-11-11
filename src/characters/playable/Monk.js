@@ -48,16 +48,13 @@ export default class Monk extends CharacterBase {
 
     // 1️⃣ 공중 공격 (A)
     if (!this.movement.isOnGround() && input.isAttackPressed) {
-      console.log('🌟 [Monk] Air attack pressed!');
       this.skillSystem.useSkill('air_attack');
       return;
     }
 
     // 2️⃣ 지상 공격 콤보 (A)
     if (input.isAttackPressed) {
-      console.log('🌟 [Monk] Ground attack pressed!');
       const result = this.skillSystem.useSkill('attack');
-      console.log('🌟 [Monk] useSkill result:', result);
     }
 
     // 3️⃣ Q/W/E/R/S 스킬

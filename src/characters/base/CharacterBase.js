@@ -177,9 +177,6 @@ export default class CharacterBase {
     if (this.isInvincible) return;
 
     this.health = Math.max(0, this.health - amount);
-    console.log(
-      `${this.constructor.name} took ${amount} damage (HP: ${this.health}/${this.maxHealth})`,
-    );
 
     if (this.health <= 0) {
       this.onDeath();
@@ -188,9 +185,6 @@ export default class CharacterBase {
 
   heal(amount) {
     this.health = Math.min(this.maxHealth, this.health + amount);
-    console.log(
-      `${this.constructor.name} healed ${amount} HP (HP: ${this.health}/${this.maxHealth})`,
-    );
   }
 
   restoreMana(amount) {
@@ -215,9 +209,7 @@ export default class CharacterBase {
     }, duration);
   }
 
-  onDeath() {
-    console.log(`${this.constructor.name} died`);
-  }
+  onDeath() {}
 
   update() {
     const input = this.inputHandler.getInputState();
@@ -314,29 +306,44 @@ export default class CharacterBase {
     }
   }
 
-  /**
-   * ✅ 경험치 획득 (UIScene에 이벤트 발행)
-   */
   async gainExp(amount) {
-    console.log(`💎 ${this.characterType} gained ${amount} EXP`);
+    if (amount <= 0) return;
 
-    try {
-      // 1️⃣ 저장소에 경험치 저장
-      await SaveManager.addCharacterExp(this.characterType, amount);
-      await SaveManager.addTotalExp(amount);
+    // SaveManager에 경험치 저장
+    await SaveManager.addExp(amount, this.characterType);
 
-      // 2️⃣ UIScene에 이벤트 발행
-      if (this.scene && this.scene.events) {
-        this.scene.events.emit('exp-gained', {
-          amount,
-          characterType: this.characterType,
-        });
-      }
-
-      console.log(`✅ EXP saved and event emitted for ${this.characterType}`);
-    } catch (error) {
-      console.error('❌ gainExp error:', error);
+    // ✅ GameScene에 이벤트 발생 알림
+    if (this.scene && this.scene.events) {
+      this.scene.onExpGained(amount, this.characterType);
     }
+
+    // 경험치 획득 이펙트 표시 (선택사항)
+    this.showExpGainEffect(amount);
+  }
+
+  showExpGainEffect(amount) {
+    // 캐릭터 위에 +EXP 텍스트 표시
+    const expText = this.scene.add
+      .text(this.sprite.x, this.sprite.y - 50, `+${amount} EXP`, {
+        fontSize: '16px',
+        color: '#ffd43b',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5);
+
+    // 위로 떠오르면서 페이드아웃
+    this.scene.tweens.add({
+      targets: expText,
+      y: expText.y - 30,
+      alpha: 0,
+      duration: 1000,
+      ease: 'Power2',
+      onComplete: () => {
+        expText.destroy();
+      },
+    });
   }
 
   destroy() {

@@ -13,11 +13,14 @@ export default class MapModel {
     this.collisionLayer = null;
     this.entityColliders = [];
     this.portals = [];
+    this.underSolidRect = null;
+    this.backgroundLayers = []; // 배경 레이어들 저장
+
     // 자동 설정용 상수
     this.AUTO_CONFIG = {
-      TARGET_HEIGHT: this.scene.scale.height * 1.4, // 고정 높이 (화면 높이)
-      COLLISION_HEIGHT: 200, // 하단 충돌 영역 높이
-      DEFAULT_CAMERA_OFFSET_Y: 350, // 기본 카메라 Y 오프셋
+      TARGET_HEIGHT: this.scene.scale.height * 1.4,
+      COLLISION_HEIGHT: 200,
+      DEFAULT_CAMERA_OFFSET_Y: 350,
     };
   }
 
@@ -32,11 +35,9 @@ export default class MapModel {
   }
 
   loadMapJSON() {
-    // mapPath가 있을 때만 로드
     if (this.config.mapPath) {
       this.scene.load.tilemapTiledJSON(this.mapKey, this.config.mapPath);
     } else {
-      console.log(` No tilemap for ${this.mapKey}, using auto-config mode`);
     }
   }
 
@@ -59,26 +60,29 @@ export default class MapModel {
 
     this.setupWorldBounds();
     this.createFixedCollisionGround();
+
+    // ⭐ underSolidRectangle은 collision ground 생성 후에 만듦
+    this.createUnderSolidRectangle();
+
     const spawn = this.calculateSpawn();
 
-    this.createPortals(); // 포탈 생성
+    this.createPortals();
 
     return {
       spawn,
       collisionGround: this.collisionGround,
       collisionLayer: this.collisionLayer,
       portals: this.portals,
+      underSolidRect: this.underSolidRect, // ⭐ 추가
     };
   }
 
   createTilemap() {
-    // mapPath가 있을 때만 생성
     if (this.config.mapPath) {
       this.tiledMap = this.scene.make.tilemap({ key: this.mapKey });
     } else {
-      // 타일맵 없이 빈 객체 생성 (자동 설정)
       this.tiledMap = {
-        widthInPixels: 0, // autoScaleLayers에서 계산
+        widthInPixels: 0,
         heightInPixels: this.AUTO_CONFIG.TARGET_HEIGHT,
       };
     }
@@ -86,9 +90,6 @@ export default class MapModel {
 
   /**
    * 🎯 레이어 자동 스케일링
-   * - 첫 번째 레이어의 높이를 TARGET_HEIGHT에 맞춤
-   * - 모든 레이어에 동일한 스케일 적용
-   * - 너비는 비율에 맞게 자동 계산
    */
   autoScaleLayers() {
     if (!this.config.layers || this.config.layers.length === 0) return;
@@ -104,21 +105,73 @@ export default class MapModel {
     const originalWidth = firstLayerTexture.source[0].width;
     const originalHeight = firstLayerTexture.source[0].height;
 
-    // 높이를 TARGET_HEIGHT에 맞추는 스케일 계산
     const scale = this.AUTO_CONFIG.TARGET_HEIGHT / originalHeight;
     const scaledWidth = originalWidth * scale;
 
-    // 계산된 크기 저장
     this.tiledMap.widthInPixels = scaledWidth;
     this.tiledMap.heightInPixels = this.AUTO_CONFIG.TARGET_HEIGHT;
 
-    // 자동 계산된 스케일을 config에 저장
     this.config.autoScale = scale;
-    this.config.mapScale = 1; // 이미 레이어에 스케일 적용했으므로 1로 설정
+    this.config.mapScale = 1;
+  }
+
+  /**
+   * 🎨 하단 Solid Rectangle 생성
+   * - 배경보다 앞에 배치 (배경 레이어들을 가림)
+   * - 배경 레이어들을 y값만큼 위로 이동
+   */
+  createUnderSolidRectangle() {
+    const underConfig = this.config.underSolidRectangle;
+    if (!underConfig) return;
+
+    const { width, height } = this.getScaledMapSize();
+    const rectHeight = underConfig.y || 100;
+    const color = underConfig.color || '#000000';
+
+    const colorValue = parseInt(color.replace('#', ''), 16);
+
+    // 하단에 solid rectangle 생성
+    this.underSolidRect = this.scene.add.rectangle(
+      width / 2,
+      height - rectHeight / 2,
+      width,
+      rectHeight,
+      colorValue,
+      1, // 완전 불투명
+    );
+
+    // ⭐ 배경보다 앞에, 하지만 collision/player보다는 뒤에
+    this.underSolidRect.setDepth(45); // tilemapStart(50) 바로 아래
+    this.underSolidRect.setScrollFactor(1);
+    this.underSolidRect.setOrigin(0.5, 0.5);
+
+    console.log(`✅ Created underSolidRectangle:`, {
+      x: this.underSolidRect.x,
+      y: this.underSolidRect.y,
+      width: width,
+      height: rectHeight,
+      color: color,
+      depth: this.underSolidRect.depth,
+      visible: this.underSolidRect.visible,
+    });
+  }
+
+  /**
+   * 🎯 배경 레이어들을 위로 이동 (MapView에서 호출)
+   * @param {Array} layers - 배경 레이어 이미지 객체들
+   */
+  adjustBackgroundLayers(layers) {
+    const underConfig = this.config.underSolidRectangle;
+    if (!underConfig || !layers) return;
+
+    const offsetY = underConfig.y || 100;
+
+    layers.forEach((layer) => {
+      layer.y -= offsetY; // 위로 이동
+    });
   }
 
   addTilesets() {
-    // tiledMap이 실제 Tilemap 객체일 때만 실행
     if (this.tiledMap && this.tiledMap.addTilesetImage) {
       return this.config.tilesets.map(({ nameInTiled, key }) =>
         this.tiledMap.addTilesetImage(nameInTiled, key),
@@ -130,11 +183,9 @@ export default class MapModel {
   setupWorldBounds() {
     const { width, height } = this.getScaledMapSize();
 
-    // Physics world bounds 설정
     this.scene.physics.world.setBounds(0, 0, width, height);
     this.scene.cameras.main.setBounds(0, 0, width, height);
 
-    // ✅ Physics world가 제대로 설정됐는지 강제 확인
     if (
       this.scene.physics.world.bounds.width !== width ||
       this.scene.physics.world.bounds.height !== height
@@ -145,7 +196,6 @@ export default class MapModel {
   }
 
   getScaledMapSize() {
-    // 자동 스케일 모드
     if (!this.config.mapPath) {
       return {
         width: this.tiledMap.widthInPixels,
@@ -153,20 +203,32 @@ export default class MapModel {
       };
     }
 
-    // 기존 타일맵 모드
     return {
       width: this.tiledMap.widthInPixels * this.config.mapScale,
       height: this.tiledMap.heightInPixels * this.config.mapScale,
     };
   }
 
+  /**
+   * 🎯 스폰 위치 계산
+   * - collision ground 위에 확실히 생성
+   */
   calculateSpawn() {
     const { width, height } = this.getScaledMapSize();
+    const groundHeight = this.AUTO_CONFIG.COLLISION_HEIGHT;
 
-    // 자동 모드: 충돌 영역 위에 스폰
+    // ⭐ collision ground의 상단 위치
+    const groundTopY = height - groundHeight;
+
     if (!this.config.mapPath) {
-      const groundTop = height - this.AUTO_CONFIG.COLLISION_HEIGHT;
-      const spawnY = groundTop - 50; // ✅ 충돌 영역 위 50px (캐릭터 높이 고려)
+      // ⭐ collision ground 위 150px에 스폰 (캐릭터가 충분히 위에서 시작)
+      const spawnY = groundTopY - 150;
+
+      console.log('✅ Auto spawn calculated:', {
+        groundTopY,
+        spawnY,
+        heightDifference: groundTopY - spawnY,
+      });
 
       return {
         x: 100,
@@ -189,49 +251,64 @@ export default class MapModel {
       spawnY = height - (offsetY || 0);
     }
 
+    // ⭐ spawnY가 collision ground 안에 있으면 위로 이동
+    if (spawnY > groundTopY - 100) {
+      spawnY = groundTopY - 150;
+    }
+
     return { x: spawnX, y: spawnY };
   }
 
+  /**
+   * 🎯 강화된 Collision Ground 생성
+   */
   createFixedCollisionGround() {
     const { width, height } = this.getScaledMapSize();
+    const groundHeight = this.AUTO_CONFIG.COLLISION_HEIGHT;
+    const groundY = height - groundHeight / 2;
 
-    // 자동 모드: 하단 200px
     if (!this.config.mapPath && !this.config.collision) {
-      const groundHeight = this.AUTO_CONFIG.COLLISION_HEIGHT;
-      const groundY = height - groundHeight / 2;
-
       this.collisionGround = this.scene.add.rectangle(
         width / 2,
         groundY,
         width,
         groundHeight,
         0x00ff00,
-        0.3, // ✅ 디버그용: 일단 반투명으로 보이게
+        this.debug ? 0.3 : 0,
       );
     } else {
-      // 기존 설정 사용
-      const groundHeight = this.config.collision?.groundHeight || 200;
-      const groundY = height - groundHeight / 2;
+      const collisionHeight = this.config.collision?.groundHeight || 200;
+      const collisionY = height - collisionHeight / 2;
 
       this.collisionGround = this.scene.add.rectangle(
         width / 2,
-        groundY,
+        collisionY,
         width,
-        groundHeight,
+        collisionHeight,
         0x00ff00,
-        0,
+        this.debug ? 0.3 : 0,
       );
     }
 
+    // ⭐ Physics body 설정 강화
     this.scene.physics.add.existing(this.collisionGround, true);
 
     if (this.collisionGround.body) {
       this.collisionGround.body.immovable = true;
       this.collisionGround.body.moves = false;
-
-      // ✅ Physics body 크기 강제 설정
-      this.collisionGround.body.setSize(width, this.AUTO_CONFIG.COLLISION_HEIGHT);
+      this.collisionGround.body.setSize(width, groundHeight);
       this.collisionGround.body.updateFromGameObject();
+      this.collisionGround.body.mass = 999999;
+      this.collisionGround.body.pushable = false;
+
+      console.log('✅ Collision ground created:', {
+        x: this.collisionGround.x,
+        y: this.collisionGround.y,
+        topY: this.collisionGround.y - groundHeight / 2,
+        bottomY: this.collisionGround.y + groundHeight / 2,
+        width: this.collisionGround.body.width,
+        height: this.collisionGround.body.height,
+      });
     }
 
     this.collisionGround.setDepth(this.config.depths?.collision || 10);
@@ -292,21 +369,23 @@ export default class MapModel {
   getGroundY() {
     const { height } = this.getScaledMapSize();
 
-    // 자동 모드: collision ground의 상단
     if (!this.config.mapPath) {
       return height - this.AUTO_CONFIG.COLLISION_HEIGHT;
     }
 
-    // 기존 설정 사용
     const groundHeight = this.config.collision?.groundHeight || 200;
     return height - groundHeight;
   }
 
-  getSafeSpawnPosition(x, offsetY = 50) {
+  /**
+   * 🎯 안전한 스폰 위치 계산
+   * - collision ground 위에 확실히 생성되도록 보장
+   */
+  getSafeSpawnPosition(x, offsetY = 150) {
     const groundY = this.getGroundY();
     return {
       x: x,
-      y: groundY - offsetY, // 땅 위 offsetY px
+      y: groundY - offsetY, // ⭐ collision 영역보다 150px 위
     };
   }
 
@@ -314,19 +393,46 @@ export default class MapModel {
     this.portals.forEach((portal) => portal.update(player));
   }
 
+  /**
+   * 🎯 플레이어 추가 (collision ground 위에 확실히 배치)
+   */
   addPlayer(playerSprite) {
-    if (!playerSprite || !playerSprite.body) return false;
-    playerSprite.setDepth(this.config.depths?.player || 50);
+    if (!playerSprite || !playerSprite.body) {
+      console.error('❌ Player sprite has no physics body');
+      return false;
+    }
+
+    // ⭐ 플레이어를 collision ground 위로 강제 이동
+    const safePos = this.getSafeSpawnPosition(playerSprite.x, 150);
+    playerSprite.setPosition(safePos.x, safePos.y);
+
+    console.log('✅ Player positioned:', {
+      x: playerSprite.x,
+      y: playerSprite.y,
+      groundY: this.getGroundY(),
+      difference: this.getGroundY() - playerSprite.y,
+    });
+
+    playerSprite.setDepth(this.config.depths?.player || 100);
+
+    // ⭐ Physics 설정 강화
+    playerSprite.body.setAllowGravity(true);
+    playerSprite.body.setCollideWorldBounds(true);
+    playerSprite.body.setBounce(0);
+    playerSprite.body.setVelocityY(0); // ⭐ 초기 속도 0
+
     return this.addEntityCollision(playerSprite, 'Player');
   }
 
+  /**
+   * 🎯 적 추가 (collision ground 위에 확실히 배치)
+   */
   addEnemy(enemySprite) {
     if (!enemySprite) {
       console.warn('❌ Enemy sprite is null');
       return false;
     }
 
-    // Physics body가 없으면 추가
     if (!enemySprite.body) {
       this.scene.physics.add.existing(enemySprite);
     }
@@ -336,27 +442,63 @@ export default class MapModel {
       return false;
     }
 
-    // ✅ Physics 설정 강화
+    // ⭐ 적을 collision ground 위로 강제 이동
+    const safePos = this.getSafeSpawnPosition(enemySprite.x, 150);
+    enemySprite.setPosition(safePos.x, safePos.y);
+
+    // ⭐ Physics 설정 강화
     enemySprite.body.setAllowGravity(true);
     enemySprite.body.setCollideWorldBounds(true);
-    enemySprite.body.setGravityY(500); // 중력 증가
-    enemySprite.body.setVelocityY(0); // 초기 속도 0
+    enemySprite.body.setGravityY(800);
+    enemySprite.body.setVelocityY(0);
+    enemySprite.body.setBounce(0);
+    enemySprite.body.setMass(1);
 
-    enemySprite.setDepth(this.config.depths?.enemy || this.config.depths?.player || 50);
+    enemySprite.setDepth(this.config.depths?.enemy || 90);
 
     const collisionResult = this.addEntityCollision(enemySprite, 'Enemy');
 
     return collisionResult;
   }
 
-  addEntityCollision(entitySprite) {
-    if (!this.collisionGround) return false;
+  /**
+   * 🎯 강화된 Entity Collision 추가
+   */
+  addEntityCollision(entitySprite, entityType = 'Entity') {
+    if (!this.collisionGround) {
+      console.error('❌ No collision ground available');
+      return false;
+    }
 
     entitySprite.body.setAllowGravity(true);
     entitySprite.body.setCollideWorldBounds(true);
-    const groundCollider = this.scene.physics.add.collider(entitySprite, this.collisionGround);
-    this.entityColliders.push(groundCollider);
+
+    const groundCollider = this.scene.physics.add.collider(
+      entitySprite,
+      this.collisionGround,
+      null,
+      null,
+      this,
+    );
+
+    if (groundCollider) {
+      groundCollider.active = true;
+      this.entityColliders.push(groundCollider);
+    }
 
     return groundCollider;
+  }
+
+  /**
+   * 🎯 모든 collider 상태 확인 (디버그용)
+   */
+  checkColliders() {
+    this.entityColliders.forEach((collider, i) => {
+      console.log(`Collider ${i}:`, {
+        active: collider.active,
+        object1: collider.object1?.constructor?.name,
+        object2: collider.object2?.constructor?.name,
+      });
+    });
   }
 }

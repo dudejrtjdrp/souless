@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import fs from 'fs/promises';
@@ -11,14 +11,18 @@ const isDev =
   process.defaultApp ||
   /[\\/]electron[\\/]/.test(process.execPath);
 
-console.log('isDev:', isDev);
-
 let mainWindow;
 
 function createWindow() {
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+
+  const winWidth = 1280;
+  const winHeight = 720;
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 720,
+    width: screenWidth,
+    height: screenHeight,
+    // x: Math.floor((screenWidth - winWidth) / 2),
+    // y: screenHeight - winHeight,
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -26,7 +30,7 @@ function createWindow() {
       sandbox: false,
     },
     resizable: false, // 창 크기 고정
-    fullscreen: false,
+    fullscreen: true,
     title: 'Soul Game',
     backgroundColor: '#000000',
   });
@@ -95,12 +99,10 @@ ipcMain.handle('load-save', async () => {
   try {
     const savePath = getSavePath();
     const data = await fs.readFile(savePath, 'utf-8');
-    console.log('📂 Save loaded from:', savePath);
     return JSON.parse(data);
   } catch (error) {
     if (error.code === 'ENOENT') {
       // 파일이 없으면 null 반환
-      console.log('📭 No save file found');
       return null;
     }
     console.error('❌ Load save error:', error);
@@ -115,7 +117,6 @@ ipcMain.handle('save-save', async (event, data) => {
   try {
     const savePath = getSavePath();
     await fs.writeFile(savePath, JSON.stringify(data, null, 2), 'utf-8');
-    console.log('💾 Save file written to:', savePath);
     return true;
   } catch (error) {
     console.error('❌ Save save error:', error);
@@ -130,12 +131,10 @@ ipcMain.handle('clear-save', async () => {
   try {
     const savePath = getSavePath();
     await fs.unlink(savePath);
-    console.log('🗑️ Save file deleted');
     return true;
   } catch (error) {
     if (error.code === 'ENOENT') {
       // 파일이 없으면 성공으로 처리
-      console.log('🗑️ No save file to delete');
       return true;
     }
     console.error('❌ Clear save error:', error);
@@ -148,6 +147,5 @@ ipcMain.handle('clear-save', async () => {
  */
 ipcMain.handle('get-save-path', () => {
   const savePath = getSavePath();
-  console.log('📍 Save path:', savePath);
   return savePath;
 });

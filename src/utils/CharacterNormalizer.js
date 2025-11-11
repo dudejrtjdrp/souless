@@ -58,17 +58,6 @@ export default class CharacterNormalizer {
    */
   static debugInfo(spriteKey, spriteScale, config) {
     console.group(`🎯 [${spriteKey}] 정규화 정보`);
-    console.log('스프라이트 스케일:', spriteScale.toFixed(3));
-    console.log('설정된 body.setSize:', {
-      width: config.bodySize.width.toFixed(1),
-      height: config.bodySize.height.toFixed(1),
-    });
-    console.log('설정된 body.setOffset:', {
-      x: config.bodyOffset.x.toFixed(1),
-      y: config.bodyOffset.y.toFixed(1),
-    });
-    console.log('최종 충돌 박스 크기 (절대값):', config.finalBodySize);
-    console.log('최종 충돌 박스 오프셋 (절대값):', config.finalBodyOffset);
     console.groupEnd();
   }
 
@@ -88,7 +77,6 @@ export default class CharacterNormalizer {
       return false;
     }
 
-    console.log('✅ 충돌 박스가 Soul과 동일합니다:', standard);
     return true;
   }
 }

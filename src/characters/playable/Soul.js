@@ -58,7 +58,6 @@ export default class Soul extends CharacterBase {
     if (!skill) return;
 
     if (skill.isOnCooldown()) {
-      console.log(`Dash cooldown: ${Math.ceil(skill.cooldownRemaining / 1000)}s`);
       return;
     }
 

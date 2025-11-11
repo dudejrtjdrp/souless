@@ -1,5 +1,4 @@
-// src/config/mapData.js
-import { generateMapPortals } from './portalData.js';
+import { generateMapPortals } from '../utils/PortalHelper';
 
 export const MAPS = {
   cave: {
@@ -20,6 +19,11 @@ export const MAPS = {
       { key: 'cave_layer8', path: '/assets/map/parallax_cave/8fx.png' },
       { key: 'cave_layer9', path: '/assets/map/parallax_cave/9.png' },
     ],
+    // ⭐ 하단 solid rectangle 설정
+    underSolidRectangle: {
+      y: 150, // 높이 (px)
+      color: '#1a1a2e', // 어두운 남색
+    },
     spawn: {
       x: 'left',
       y: 2170,
@@ -51,7 +55,7 @@ export const MAPS = {
     mapScale: 3,
     mapPath: '/assets/map/forest/forest_map.tmj',
     camera: {
-      offsetY: 150,
+      offsetY: -100, // ⭐ 카메라를 위로 올려서 캐릭터가 화면 중앙에 오도록
     },
     tilesets: [
       {
@@ -75,6 +79,11 @@ export const MAPS = {
       { key: 'forest_layer11', path: '/assets/map/forest/10.png' },
       { key: 'forest_layer12', path: '/assets/map/forest/11.png' },
     ],
+    // ⭐ 숲 맵용 하단 배경
+    underSolidRectangle: {
+      y: 120,
+      color: '#0f380f', // 어두운 초록
+    },
     collision: {
       key: 'forest_tileset',
       path: '/assets/map/forest/forest_tileset.png',
@@ -82,8 +91,8 @@ export const MAPS = {
     },
     spawn: {
       x: 'left',
-      y: 2170,
-      offsetY: 200,
+      y: 'bottom', // ⭐ 'bottom'으로 변경해서 자동 계산
+      offsetY: 350, // ⭐ 바닥에서 350px 위
     },
     gravity: 800,
     playerScale: 2,
@@ -112,7 +121,7 @@ export const MAPS = {
     mapScale: 4,
     mapPath: '/assets/map/dark_cave/dark_cave_map.tmj',
     camera: {
-      offsetY: 0,
+      offsetY: -50, // ⭐ 카메라 위치 조정
     },
     tilesets: [
       {
@@ -131,15 +140,20 @@ export const MAPS = {
         path: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
       },
     ],
+    // ⭐ 어두운 동굴용 하단 배경
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000', // 완전한 검정
+    },
     collision: {
       key: 'dark_cave_tileset',
       path: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
-      groundHeight: 100,
+      groundHeight: 200,
     },
     spawn: {
       x: 'left',
-      y: 893,
-      offsetY: 200,
+      y: 'bottom', // ⭐ 'bottom'으로 변경
+      offsetY: 350, // ⭐ 바닥에서 350px 위
     },
     gravity: 800,
     playerScale: 2,
@@ -165,9 +179,4 @@ export const MAPS = {
 
 // 🎯 디버그: 포탈 정보 출력 (개발 중)
 if (import.meta.env.DEV) {
-  console.log('=== Map Portal Info ===');
-  console.log('Cave portals:', MAPS.cave.portals);
-  console.log('Forest portals:', MAPS.forest.portals);
-  console.log('Dark cave portals:', MAPS.dark_cave.portals);
-  console.log('======================');
 }

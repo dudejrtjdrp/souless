@@ -7,214 +7,209 @@ import CharacterFactory from '../characters/base/CharacterFactory.js';
 import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
 import CharacterSwitchManager from '../systems/CharacterSwitchManager.js';
 import SaveManager from '../utils/SaveManager.js';
-import { PortalManager } from '../config/portalData.js';
 import InputHandler from '../characters/systems/InputHandler.js';
+
+// 새로운 매니저들
+import GameSceneInitializer from '../systems/GameScene/GameSceneInitializer.js';
+import PlayerSpawnManager from '../systems/GameScene/PlayerSpawnManager.js';
+import BackgroundLayerManager from '../systems/GameScene/BackgroundLayerManager.js';
+import CharacterSwitchHandler from '../systems/GameScene/CharacterSwitchHandler.js';
+import CombatCollisionHandler from '../systems/GameScene/CombatCollisionHandler.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
   }
 
-  init(data = {}) {
-    this.isPortalTransitioning = false;
-    this.currentMapKey = data.mapKey || 'forest';
-    this.selectedCharacter = data.characterType || 'assassin';
-    this.data.set('skipSaveCheck', data.skipSaveCheck || false);
-
-    this.mapConfig = MAPS[this.currentMapKey];
-
-    if (!this.mapConfig) {
-      console.error(`❌ Map config not found for key: "${this.currentMapKey}"`);
-      console.log('Available maps:', Object.keys(MAPS));
-      this.currentMapKey = 'forest';
-      this.mapConfig = MAPS['forest'];
-    }
+  async init(data = {}) {
+    await GameSceneInitializer.initializeScene(this, data);
   }
 
   preload() {
-    if (!this.mapConfig) {
-      return;
-    }
+    if (!this.mapConfig) return;
 
+    this.loadMapAssets();
+    this.loadCharacterAssets();
+    this.loadPortalAssets();
+  }
+
+  loadMapAssets() {
     this.mapModel = new MapModel(this, this.currentMapKey, this.mapConfig, true);
     this.mapModel.preload();
 
     this.mapConfig.layers.forEach((layer) => {
       this.load.image(layer.key, layer.path);
     });
+  }
 
+  loadCharacterAssets() {
     CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
+  }
 
+  loadPortalAssets() {
     for (let i = 1; i <= 16; i++) {
       this.load.image(`holy_vfx_02_${i}`, `assets/portal/Holy VFX 02 ${i}.png`);
     }
   }
 
   async create() {
-    this.scene.launch('UIScene');
-    this.uiScene = this.scene.get('UIScene');
+    await this.initializeUI();
+    await this.loadSaveData();
 
-    // ✅ UIScene의 create()가 완료될 때까지 대기
-    await new Promise((resolve) => {
-      if (this.uiScene.expBar && this.uiScene.healthMana) {
-        resolve();
-      } else {
-        this.uiScene.events.once('create', () => {
-          console.log('✅ UIScene create 완료');
-          resolve();
-        });
-      }
-    });
+    this.setupScene();
+    this.createBackground();
+    this.setupPlayer();
+    this.setupCamera();
+    this.setupEnemies();
+    this.setupUI();
+    this.emitInitialEvents();
 
-    console.log('🎮 GameScene create 시작');
-
-    this.inputHandler = new InputHandler(this);
-
-    this.input.keyboard.on('keydown-TAB', (event) => {
-      event.preventDefault();
-    });
-
-    // 세이브 파일 체크
-    if (!this.data || !this.data.get('skipSaveCheck')) {
-      const savedPosition = await SaveManager.getSavedPosition();
-      console.log(await SaveManager.load());
-
-      if (savedPosition && savedPosition.mapKey !== this.currentMapKey) {
-        this.scene.start('GameScene', {
-          mapKey: savedPosition.mapKey,
-          characterType: savedPosition.characterType || 'assassin',
-          skipSaveCheck: true,
-        });
-        return;
-      }
-
-      if (savedPosition) {
-        this.savedSpawnData = savedPosition;
-        this.selectedCharacter = savedPosition.characterType || 'assassin';
-        console.log('📂 Loaded from save:', savedPosition);
-      } else {
-        this.savedSpawnData = null;
-        console.log('🆕 New game - will spawn at first portal');
-      }
-    } else {
-      const savedPosition = await SaveManager.getSavedPosition();
-      if (savedPosition) {
-        this.savedSpawnData = savedPosition;
-        this.selectedCharacter = savedPosition.characterType || 'assassin';
-      }
-    }
-
-    this.cameras.main.fadeIn(400, 0, 0, 0);
-    this.physics.world.gravity.y = this.mapConfig.gravity;
-
-    const { spawn, portals } = this.mapModel.create();
-    const spawnPosition = this.determineSpawnPosition(spawn, portals);
-
-    // 레이어 생성
-    if (this.mapConfig.layers && this.mapConfig.layers.length > 0) {
-      const autoScale = this.mapModel.config.autoScale;
-      const mapScale = this.mapConfig.mapScale || 1;
-
-      this.mapConfig.layers.forEach((layer, index) => {
-        const img = this.add.image(0, 0, layer.key).setOrigin(0, 0);
-        if (autoScale) {
-          img.setScale(autoScale);
-        } else {
-          img.setScale(mapScale);
-        }
-        img.setDepth(this.mapConfig.depths.backgroundStart + index);
-      });
-    }
-
-    // 캐릭터 전환 매니저 초기화
-    this.characterSwitchManager = new CharacterSwitchManager(this);
-    this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
-
-    // 플레이어 생성
-    this.spawnPosition = spawnPosition;
-    this.createPlayer(this.selectedCharacter, spawnPosition.x, spawnPosition.y);
-
-    // 카메라 설정
-    const camera = this.cameras.main;
-    camera.startFollow(this.player.sprite, true, 0.1, 0.1);
-    camera.followOffset.set(0, this.mapConfig.camera.offsetY);
-
-    // 적 매니저 생성
-    this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
-    this.enemyManager.createInitial();
-
-    // UI 텍스트 추가
-    this.createSwitchUI();
-
-    // ✅ UIScene 초기 업데이트
-    if (this.uiScene) {
-      // 현재 캐릭터 타입 설정
-      this.uiScene.currentCharacterType = this.selectedCharacter;
-
-      this.uiScene.updateUI(this.player);
-      await this.uiScene.updateExpBars();
-
-      if (this.player) {
-        await this.uiScene.restoreSkillCooldowns(this.selectedCharacter, this.player);
-      }
-    }
-
-    // 초기 위치 저장
     if (!this.savedSpawnData) {
       this.saveCurrentPosition();
     }
   }
 
+  async initializeUI() {
+    this.scene.launch('UIScene');
+    this.uiScene = this.scene.get('UIScene');
+    await GameSceneInitializer.waitForUIReady(this);
+  }
+
+  async loadSaveData() {
+    this.setupInputHandler();
+    this.preventTabDefault();
+
+    if (this.data.get('skipSaveCheck')) {
+      this.savedSpawnData = await SaveManager.getSavedPosition();
+      if (this.savedSpawnData) {
+        this.selectedCharacter = this.savedSpawnData.characterType || 'assassin';
+      }
+      return true;
+    }
+
+    const savedPosition = await SaveManager.getSavedPosition();
+
+    if (savedPosition && savedPosition.mapKey !== this.currentMapKey) {
+      this.restartWithSavedMap(savedPosition);
+      return false;
+    }
+
+    this.savedSpawnData = savedPosition;
+    if (savedPosition) {
+      this.selectedCharacter = savedPosition.characterType || 'assassin';
+    }
+
+    return true;
+  }
+
+  preventTabDefault() {
+    this.input.keyboard.on('keydown-TAB', (event) => {
+      event.preventDefault();
+    });
+  }
+
+  restartWithSavedMap(savedPosition) {
+    this.scene.start('GameScene', {
+      mapKey: savedPosition.mapKey,
+      characterType: savedPosition.characterType || 'assassin',
+      skipSaveCheck: true,
+    });
+  }
+
+  setupScene() {
+    this.cameras.main.fadeIn(400, 0, 0, 0);
+    this.physics.world.gravity.y = this.mapConfig.gravity;
+  }
+
+  createBackground() {
+    const { spawn, portals, underSolidRect } = this.mapModel.create();
+
+    this.spawnPosition = this.determineSpawnPosition(spawn, portals);
+
+    const bgManager = new BackgroundLayerManager(this);
+    this.backgroundLayers = bgManager.createLayers();
+  }
+
   determineSpawnPosition(defaultSpawn, portals) {
-    let rawPosition = null;
+    const spawnManager = new PlayerSpawnManager(this);
+    return spawnManager.determineSpawnPosition(defaultSpawn, portals);
+  }
 
-    if (!this.savedSpawnData) {
-      const firstPortalConfig = PortalManager.getPortalsByMap(this.currentMapKey)[0];
+  setupPlayer() {
+    this.characterSwitchManager = new CharacterSwitchManager(this);
+    this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
 
-      if (firstPortalConfig) {
-        rawPosition = {
-          x: firstPortalConfig.sourcePosition.x,
-          y: firstPortalConfig.sourcePosition.y,
-        };
-      } else {
-        rawPosition = defaultSpawn;
-      }
-    } else if (this.savedSpawnData.fromPortal && this.savedSpawnData.portalId) {
-      const targetPortal = PortalManager.getPortal(this.savedSpawnData.portalId);
+    this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y);
+  }
 
-      if (targetPortal && targetPortal.sourceMap === this.currentMapKey) {
-        console.log('🌀 Spawning at portal:', targetPortal);
-        rawPosition = {
-          x: targetPortal.sourcePosition.x,
-          y: targetPortal.sourcePosition.y,
-        };
-      } else {
-        console.warn('⚠️ Portal not found, using default spawn');
-        rawPosition = defaultSpawn;
-      }
-    } else if (this.savedSpawnData.x !== undefined && this.savedSpawnData.y !== undefined) {
-      console.log('📍 Spawning at saved position:', this.savedSpawnData);
-      rawPosition = { x: this.savedSpawnData.x, y: this.savedSpawnData.y };
-    } else {
-      console.log('📍 Spawning at default spawn');
-      rawPosition = defaultSpawn;
+  setupCamera() {
+    const camera = this.cameras.main;
+    camera.startFollow(this.player.sprite, true, 0.1, 0.1);
+    camera.followOffset.set(0, this.mapConfig.camera.offsetY);
+  }
+
+  setupEnemies() {
+    this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
+    this.enemyManager.createInitial();
+  }
+
+  setupUI() {
+    this.createSwitchUI();
+  }
+
+  emitInitialEvents() {
+    this.events.emit('character-changed', {
+      characterType: this.selectedCharacter,
+      player: this.player,
+    });
+  }
+
+  createPlayer(characterType, x, y, restoreState = false) {
+    const finalY = this.calculatePlayerSpawnY(y);
+
+    this.player = CharacterFactory.create(this, characterType, x, finalY, {
+      scale: this.mapConfig.playerScale || 1,
+    });
+
+    this.player.sprite.setDepth(this.mapConfig.depths.player);
+    this.playerCollider = this.mapModel.addPlayer(this.player.sprite);
+
+    this.setupSwitchCooldown();
+
+    if (restoreState) {
+      this.restorePlayerState(characterType);
+    }
+  }
+
+  calculatePlayerSpawnY(y) {
+    if (!this.savedSpawnData?.physics) {
+      return y;
     }
 
-    if (this.mapModel.config.autoScale && rawPosition) {
-      const groundY = this.mapModel.getGroundY();
-      if (rawPosition.y >= groundY - 100) {
-        const adjustedY = groundY - 150;
-        console.log(`✅ Adjusted spawn Y: ${rawPosition.y} → ${adjustedY} (ground: ${groundY})`);
-        rawPosition.y = adjustedY;
-      }
-    }
+    const offsetY = this.savedSpawnData.physics.offsetY || 100;
+    return this.mapModel.config.autoScale ? y : y - offsetY - 35;
+  }
 
-    return rawPosition;
+  setupSwitchCooldown() {
+    this.isCharacterSwitchOnCooldown = true;
+    this.time.delayedCall(1800, () => {
+      this.isCharacterSwitchOnCooldown = false;
+    });
+  }
+
+  restorePlayerState(characterType) {
+    const savedState = this.characterSwitchManager.loadCharacterState(characterType);
+    this.characterSwitchManager.applyStateToCharacter(this.player, savedState, false);
+  }
+
+  async switchCharacter(direction = 'next') {
+    const handler = new CharacterSwitchHandler(this);
+    await handler.switchCharacter(direction);
   }
 
   async saveCurrentPosition() {
-    if (!this.player || !this.player.sprite) return;
+    if (!this.player?.sprite) return;
 
     await SaveManager.savePosition(
       this.currentMapKey,
@@ -225,30 +220,14 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async onPortalEnter(targetMapKey, portalId) {
-    console.log(targetMapKey);
-    if (this.isPortalTransitioning) {
-      return;
-    }
+    if (this.isPortalTransitioning) return;
 
     this.isPortalTransitioning = true;
 
     await SaveManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
-    if (this.player) {
-      if (this.playerCollider && this.playerCollider.destroy) {
-        this.playerCollider.destroy();
-        this.playerCollider = null;
-      }
-      this.player.destroy();
-      this.player = null;
-    }
+    this.cleanupBeforeTransition();
 
-    if (this.enemyManager) {
-      this.enemyManager.destroy();
-      this.enemyManager = null;
-    }
-
-    console.log(targetMapKey);
     this.scene.start('GameScene', {
       mapKey: targetMapKey,
       characterType: this.selectedCharacter,
@@ -256,134 +235,24 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  createPlayer(characterType, x, y, restoreState = false) {
-    let finalY = y;
-
-    if (this.savedSpawnData && this.savedSpawnData['physics']) {
-      const offsetY = this.savedSpawnData['physics'].offsetY || 100;
-      if (!this.mapModel.config.autoScale) {
-        finalY = y - offsetY - 35;
-      }
+  cleanupBeforeTransition() {
+    if (this.playerCollider?.destroy) {
+      this.playerCollider.destroy();
+      this.playerCollider = null;
     }
 
-    this.player = CharacterFactory.create(this, characterType, x, finalY, {
-      scale: this.mapConfig.playerScale || 1,
-    });
-    this.player.sprite.setDepth(this.mapConfig.depths.player);
+    this.player?.destroy();
+    this.player = null;
 
-    this.playerCollider = this.mapModel.addPlayer(this.player.sprite);
-
-    this.isCharacterSwitchOnCooldown = true;
-    this.time.delayedCall(1800, () => {
-      this.isCharacterSwitchOnCooldown = false;
-    });
-
-    if (restoreState) {
-      const savedState = this.characterSwitchManager.loadCharacterState(characterType);
-      this.characterSwitchManager.applyStateToCharacter(this.player, savedState, false);
-    }
+    this.enemyManager?.destroy();
+    this.enemyManager = null;
   }
 
-  async switchCharacter(direction = 'next') {
-    if (this.characterSwitchManager.isTransitioning) {
-      console.log('⏳ Already transitioning...');
-      return;
-    }
-
-    await this.saveCurrentPosition();
-
-    if (this.uiScene && this.player) {
-      await this.uiScene.saveCurrentCooldowns(this.selectedCharacter, this.player);
-    }
-
-    this.characterSwitchManager.saveCurrentCharacterState(this.player);
-
-    const nextCharacterType =
-      direction === 'next'
-        ? this.characterSwitchManager.switchToNextCharacter()
-        : this.characterSwitchManager.switchToPreviousCharacter();
-
-    if (!nextCharacterType) {
-      console.error('❌ No next character type found');
-      return;
-    }
-
-    console.log(`🔄 Switching from ${this.selectedCharacter} to ${nextCharacterType}`);
-
-    this.characterSwitchManager.setTransitioning(true);
-
-    const currentPos = {
-      x: this.player.sprite.x,
-      y: this.player.sprite.y,
-    };
-    const currentVelocity = {
-      x: this.player.sprite.body.velocity.x,
-      y: this.player.sprite.body.velocity.y,
-    };
-    const facingRight = !this.player.sprite.flipX;
-
-    this.cameras.main.flash(200, 255, 255, 255);
-
-    if (this.player) {
-      if (this.playerCollider && this.playerCollider.destroy) {
-        this.playerCollider.destroy();
-        this.playerCollider = null;
-      }
-      this.player.destroy();
-      this.player = null;
-    }
-
-    this.time.delayedCall(100, async () => {
-      this.selectedCharacter = nextCharacterType;
-      this.characterSwitchManager.setCurrentCharacterType(nextCharacterType);
-
-      this.createPlayer(nextCharacterType, currentPos.x, currentPos.y);
-
-      this.player.sprite.body.setVelocity(currentVelocity.x, currentVelocity.y);
-      this.player.sprite.setFlipX(!facingRight);
-
-      this.cameras.main.startFollow(this.player.sprite, true, 0.1, 0.1);
-
-      if (this.enemyManager) {
-        this.enemyManager.player = this.player;
-      }
-
-      // ✅ UIScene에 캐릭터 변경 알림 (직접 참조 방식)
-      if (this.uiScene && this.uiScene.onCharacterChanged) {
-        await this.uiScene.onCharacterChanged(nextCharacterType, this.player);
-      }
-
-      // 저장된 스킬 쿨타임 복원
-      if (this.uiScene) {
-        await this.uiScene.restoreSkillCooldowns(nextCharacterType, this.player);
-      }
-
-      this.updateSwitchUI();
-
-      this.characterSwitchManager.setTransitioning(false);
-      console.log(`✅ Switched to ${nextCharacterType}`);
-
-      await this.saveCurrentPosition();
-
-      this.characterSwitchManager.debugPrintStates();
-    });
-  }
-
-  // 경험치 획득 (CharacterBase에서 호출)
   onExpGained(amount, characterType) {
-    const uiScene = this.scene.get('UIScene');
-    if (uiScene && uiScene.onExpGained) {
-      uiScene.onExpGained(amount, characterType);
-    }
-  }
-
-  update(time, delta) {
-    // HP/MP 업데이트
-    const uiScene = this.scene.get('UIScene');
-    if (uiScene && this.player) {
-      uiScene.updateUI(this.player);
-      uiScene.updateSkillCooldowns(this.player);
-    }
+    this.events.emit('exp-gained', {
+      amount,
+      characterType,
+    });
   }
 
   createSwitchUI() {
@@ -401,114 +270,99 @@ export default class GameScene extends Phaser.Scene {
   }
 
   updateSwitchUI() {
-    if (this.switchText && this.player) {
-      const hp = Math.round(this.player.health);
-      const maxHp = Math.round(this.player.maxHealth);
-      const mp = Math.round(this.player.mana);
-      const maxMp = Math.round(this.player.maxMana);
+    if (!this.switchText || !this.player) return;
 
-      this.switchText.setText([
-        `Character: ${this.selectedCharacter.toUpperCase()}`,
-        `HP: ${hp}/${maxHp} | MP: ${mp}/${maxMp}`,
-        `Press \` to switch | Map: ${this.currentMapKey}`,
-      ]);
-    }
+    const stats = this.getPlayerStats();
+    this.switchText.setText([
+      `Character: ${this.selectedCharacter.toUpperCase()}`,
+      `HP: ${stats.hp}/${stats.maxHp} | MP: ${stats.mp}/${stats.maxMp}`,
+      `Press \` to switch | Map: ${this.currentMapKey}`,
+    ]);
+  }
+
+  getPlayerStats() {
+    return {
+      hp: Math.round(this.player.health),
+      maxHp: Math.round(this.player.maxHealth),
+      mp: Math.round(this.player.mana),
+      maxMp: Math.round(this.player.maxMana),
+    };
   }
 
   update(time, delta) {
-    if (!this.player || !this.player.sprite || !this.player.sprite.active) {
-      return;
-    }
+    if (!this.isPlayerReady()) return;
 
-    if (!this.inputHandler) {
-      return;
-    }
+    this.updateGameObjects(time, delta);
+    this.handleInput(time, delta);
+    this.emitPlayerEvents();
+    this.autoSave(time);
+  }
 
+  isPlayerReady() {
+    return this.player?.sprite?.active && this.inputHandler;
+  }
+
+  updateGameObjects(time, delta) {
     this.player.update();
     this.mapModel.update(this.player.sprite);
+    this.enemyManager?.update(time, delta);
 
-    if (this.enemyManager) {
-      this.enemyManager.update(time, delta);
-    }
+    const handler = new CombatCollisionHandler(this);
+    handler.checkAttackCollisions();
 
-    this.checkAttackCollisions();
-
-    if (this.switchText && time % 100 < delta) {
+    if (time % 100 < delta) {
       this.updateSwitchUI();
     }
+  }
 
-    if (this.uiScene && this.player) {
-      this.uiScene.updateUI(this.player);
-      this.uiScene.updateSkillCooldowns(this.player);
-    }
+  setupInputHandler() {
+    this.inputHandler = new InputHandler(this); // 플레이어 움직임용
 
+    this.sceneKeys = {
+      // Scene 레벨 단축키 (캐릭터 전환, 저장 등)
+      backQuote: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACK_QUOTE),
+      tab: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB),
+      lKey: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L),
+    };
+  }
+
+  handleInput(time, delta) {
     const input = this.inputHandler.getInputState();
 
-    if (input.isBackQuotePressed && !this.isCharacterSwitchOnCooldown) {
-      console.log('🔄 Switching to next character...');
+    // Scene 레벨 키 체크 (Phaser.Input.Keyboard.JustDown 사용)
+    if (
+      Phaser.Input.Keyboard.JustDown(this.sceneKeys.backQuote) &&
+      !this.isCharacterSwitchOnCooldown
+    ) {
       this.switchCharacter('next');
     }
 
-    if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
-      console.log('🔄 Switching to prev character...');
+    if (Phaser.Input.Keyboard.JustDown(this.sceneKeys.tab) && !this.isCharacterSwitchOnCooldown) {
       this.switchCharacter('prev');
     }
 
-    if (input.isLPressed) {
-      localStorage.clear();
-      SaveManager.clear();
-      if (this.switchText) {
-        this.switchText.setText('🗑 All save data cleared! Reload the page.');
-      }
+    if (Phaser.Input.Keyboard.JustDown(this.sceneKeys.lKey)) {
+      this.clearAllSaveData();
     }
+  }
+  clearAllSaveData() {
+    localStorage.clear();
+    SaveManager.clear();
 
+    if (this.switchText) {
+      this.switchText.setText('🗑 All save data cleared! Reload the page.');
+    }
+  }
+
+  emitPlayerEvents() {
+    this.events.emit('player-stats-updated', this.player);
+    this.events.emit('skill-cooldowns-updated', { player: this.player });
+  }
+
+  autoSave(time) {
     if (!this.lastSaveTime || time - this.lastSaveTime > 5000) {
       this.lastSaveTime = time;
       this.saveCurrentPosition();
     }
-  }
-
-  checkAttackCollisions() {
-    if (!this.enemyManager || !this.enemyManager.enemies || !this.player) {
-      return;
-    }
-
-    this.enemyManager.enemies.forEach((enemy) => {
-      const enemyTarget = enemy.sprite || enemy;
-
-      // 기본 공격
-      if (this.player.isAttacking && this.player.isAttacking()) {
-        const hit = this.player.checkAttackHit(enemyTarget);
-        if (hit && enemy.takeDamage) {
-          const died = enemy.takeDamage(10);
-
-          // ✅ 적이 죽으면 플레이어가 경험치 획득
-          if (died && enemy.expReward) {
-            this.player.gainExp(enemy.expReward);
-          }
-        }
-      }
-
-      // 스킬 공격
-      if (this.player.isUsingSkill && this.player.isUsingSkill()) {
-        const skillHit = this.player.checkSkillHit(enemy);
-        if (skillHit?.hit && enemy.takeDamage) {
-          const died = enemy.takeDamage(skillHit.damage);
-
-          // ✅ 적이 죽으면 플레이어가 경험치 획득
-          if (died && enemy.expReward) {
-            this.player.gainExp(enemy.expReward);
-          }
-
-          if (skillHit.knockback && enemyTarget.body) {
-            const facingRight = !this.player.sprite.flipX;
-            enemyTarget.body.setVelocityX(
-              facingRight ? skillHit.knockback.x : -skillHit.knockback.x,
-            );
-            enemyTarget.body.setVelocityY(skillHit.knockback.y);
-          }
-        }
-      }
-    });
   }
 }

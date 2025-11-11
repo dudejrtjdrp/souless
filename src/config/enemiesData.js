@@ -1,9 +1,5 @@
-// config/enemiesData.js
-// ✅ 키를 소문자로 변경!
-
 export const EnemiesData = {
   slime: {
-    // ⚠️ Slime → slime
     sprite: {
       frameWidth: 64,
       frameHeight: 64,
@@ -35,7 +31,6 @@ export const EnemiesData = {
   },
 
   canine: {
-    // ⚠️ Canine → canine
     sprite: {
       frameWidth: 64,
       frameHeight: 64,
@@ -67,7 +62,6 @@ export const EnemiesData = {
   },
 
   bat: {
-    // ⚠️ Bat → bat
     sprite: {
       frameWidth: 64,
       frameHeight: 64,
@@ -99,7 +93,6 @@ export const EnemiesData = {
   },
 
   purple_monkey: {
-    // ⚠️ PurpleMonkey → purple_monkey
     sprite: {
       frameWidth: 32,
       frameHeight: 32,

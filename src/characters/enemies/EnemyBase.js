@@ -163,8 +163,6 @@ export default class EnemyBase {
 
     if (this.hp <= 0) {
       this.isDead = true;
-      console.log(`💀 ${this.enemyType} died!`);
-
       // 움직임 멈추기
       if (this.sprite.body) {
         this.sprite.body.setVelocity(0, 0);

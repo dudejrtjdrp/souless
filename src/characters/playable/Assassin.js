@@ -20,7 +20,6 @@ export default class Assassin extends CharacterBase {
     this.health = 120;
     this.maxMana = 150;
     this.mana = 150;
-    console.log(x, y);
   }
 
   static preload(scene) {

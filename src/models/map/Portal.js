@@ -1,7 +1,5 @@
-// src/models/map/Portal.js
-
 import Phaser from 'phaser';
-import { PortalManager } from '../../config/portalData.js';
+import { PortalManager } from '../../controllers/PortalManager';
 
 export default class Portal extends Phaser.GameObjects.Sprite {
   constructor(scene, portalData) {
@@ -37,8 +35,6 @@ export default class Portal extends Phaser.GameObjects.Sprite {
 
     // UI 텍스트 생성
     this.createPortalUI();
-
-    console.log(`🌀 Portal created: ${id} → ${targetPortalId}`);
   }
 
   createAnimation() {
@@ -94,30 +90,18 @@ export default class Portal extends Phaser.GameObjects.Sprite {
   }
 
   onPlayerActivate() {
-    console.log('🔵 onPlayerActivate called');
-    console.log('  cooldown:', this.cooldown);
-    console.log('  connectionInfo:', this.connectionInfo);
-    console.log('  isPortalTransitioning:', this.scene.isPortalTransitioning);
-
     // 🎯 쿨다운 중이거나 Scene이 전환 중이면 무시
     if (this.cooldown || !this.connectionInfo) {
-      console.log('❌ Blocked: cooldown or no connection');
       return;
     }
 
     // 🎯 Scene이 이미 전환 중이면 무시 (전역 플래그)
     if (this.scene.isPortalTransitioning) {
-      console.log('❌ Blocked: already transitioning');
       return;
     }
 
-    console.log(`✨ Player activated portal: ${this.portalId}`);
-    console.log('  Target map:', this.connectionInfo.targetMap);
-    console.log('  Target portal:', this.targetPortalId);
-
     // GameScene의 onPortalEnter 호출
     if (this.scene.onPortalEnter) {
-      console.log('✅ Calling scene.onPortalEnter');
       this.cooldown = true;
       // 🎯 플래그는 GameScene에서 설정하도록 변경
       // this.scene.isPortalTransitioning = true;

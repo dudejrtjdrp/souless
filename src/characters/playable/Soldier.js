@@ -62,15 +62,12 @@ export default class Soldier extends CharacterBase {
     }
 
     this.armor -= amount;
-    console.log(`Soldier took ${amount} damage. Armor: ${this.armor}`);
-
     if (this.armor <= 0) {
       this.onDeath();
     }
   }
 
   onDeath() {
-    console.log('Soldier died!');
     this.destroy();
   }
 

@@ -81,12 +81,10 @@ export default class magician extends CharacterBase {
     if (!skill) return;
 
     if (skill.isOnCooldown()) {
-      console.log(`${skillName} cooldown: ${Math.ceil(skill.cooldownRemaining / 1000)}s`);
       return;
     }
 
     if (!this.skillSystem.useSkill(skillName)) {
-      console.log(`Cannot use ${skillName}`);
     }
   }
 

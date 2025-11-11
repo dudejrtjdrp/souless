@@ -23,10 +23,8 @@ export default class EnemyManager {
     if (mapModel.config.autoScale) {
       const groundY = mapModel.getGroundY ? mapModel.getGroundY() : worldBounds.height - 200;
       this.spawnY = groundY - 100;
-      console.log('🎯 EnemyManager spawn Y (autoScale):', this.spawnY);
     } else {
       this.spawnY = mapConfig.enemies.yFixed;
-      console.log('🎯 EnemyManager spawn Y (fixed):', this.spawnY);
     }
   }
 

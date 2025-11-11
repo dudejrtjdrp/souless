@@ -29,7 +29,6 @@ export default class SaveManager {
 
       if (this.isElectron()) {
         data = await window.electron.loadSave();
-        console.log('📂 Loaded from Electron:', data);
       } else {
         const stored = localStorage.getItem(this.SAVE_KEY);
         data = stored ? JSON.parse(stored) : null;
@@ -138,20 +137,47 @@ export default class SaveManager {
     return saveData?.totalExp || 0;
   }
 
-  /** 특정 캐릭터의 경험치 추가 */
+  /**
+   * ✅ 경험치 추가 (총 경험치 + 캐릭터별 경험치)
+   * @param {number} amount - 추가할 경험치
+   * @param {string} characterType - 캐릭터 타입 (예: 'warrior', 'mage')
+   */
+  static async addExp(amount, characterType) {
+    if (amount <= 0) return;
+
+    const data = await this.getSaveData();
+
+    // 총 경험치 추가
+    data.totalExp = (data.totalExp || 0) + amount;
+
+    // 캐릭터별 경험치 추가
+    data.characterExp = data.characterExp || {};
+    data.characterExp[characterType] = (data.characterExp[characterType] || 0) + amount;
+
+    await this.save(data);
+
+    console.log(
+      `✨ ${characterType} 경험치 +${amount} (캐릭터: ${data.characterExp[characterType]}, 총: ${data.totalExp})`,
+    );
+
+    return {
+      characterExp: data.characterExp[characterType],
+      totalExp: data.totalExp,
+    };
+  }
+
+  /** 특정 캐릭터의 경험치 추가 (기존 메서드 유지) */
   static async addCharacterExp(characterType, amount) {
     const data = await this.getSaveData();
     data.characterExp = data.characterExp || {};
     data.characterExp[characterType] = (data.characterExp[characterType] || 0) + amount;
     await this.save(data);
-    console.log(`✨ ${characterType} 경험치 +${amount} (총 ${data.characterExp[characterType]})`);
   }
 
   static async addTotalExp(amount) {
     const data = await this.getSaveData();
     data.totalExp = (data.totalExp || 0) + amount;
     await this.save(data);
-    console.log(`🌟 총 경험치 +${amount} (누적 ${data.totalExp})`);
   }
 
   static async getExpData() {
@@ -166,10 +192,8 @@ export default class SaveManager {
   static async clear() {
     if (this.isElectron()) {
       await window.electron.clearSave();
-      console.log('🗑️ Electron save data cleared');
     } else {
       localStorage.removeItem(this.SAVE_KEY);
-      console.log('🗑️ localStorage save data cleared');
     }
   }
 
@@ -182,7 +206,6 @@ export default class SaveManager {
   /** 디버그용 전체 데이터 출력 */
   static async debug() {
     const data = await this.load();
-    console.log('📋 Save Data:', data);
     return data;
   }
 
@@ -206,7 +229,6 @@ export default class SaveManager {
     saveData.skillCooldowns[characterType] = cooldowns;
 
     await this.save(saveData);
-    console.log(`💾 ${characterType} 스킬 쿨타임 저장 완료:`, cooldowns);
   }
 
   /** 캐릭터의 스킬 쿨타임 불러오기 */
