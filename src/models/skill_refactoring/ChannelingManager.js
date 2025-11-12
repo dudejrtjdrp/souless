@@ -39,7 +39,9 @@ export default class ChannelingManager {
   consumeManaThrottled(character, config) {
     if (!this.throttledConsumeMana) {
       this.throttledConsumeMana = throttle(() => {
+        if (character.mana < config.channeling.manaPerTick) return false;
         character.mana -= config.channeling.manaPerTick;
+        return true;
       }, 500);
     }
 

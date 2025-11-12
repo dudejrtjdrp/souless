@@ -49,16 +49,13 @@ export default class UISkillCooldown {
         .setOrigin(1)
         .setDepth(2006);
 
-      // 쿨타임 오버레이
-      const cooldownOverlay = scene.add.graphics().setDepth(2002);
-      // cooldownOverlay.fillStyle(0x000000, 1);
-      // cooldownOverlay.fillRoundedRect(slotSize / 6, slotSize / 6, slotSize - 10, slotSize - 10, 8);
-      // cooldownOverlay.setVisible(false);
+      // 쿨타임 오버레이 (위에서 아래로 내려오는 검은색 사각형)
+      const cooldownOverlay = scene.add.graphics().setDepth(2003);
 
       const cooldownText = scene.add
         .text(xPos + slotSize / 2, slotSize / 2, '', {
           fontSize: '24px',
-          color: '#ff6b6b',
+          color: '#ffffff',
           fontStyle: 'bold',
           fontFamily: 'RoundedFixedsys',
           stroke: '#000000',
@@ -68,7 +65,8 @@ export default class UISkillCooldown {
         .setVisible(false)
         .setDepth(2004);
 
-      const cooldownCircle = scene.add
+      // 시전 중 표시용 서클 (기존 쿨타임 서클)
+      const castingCircle = scene.add
         .graphics()
         .setVisible(false)
         .setDepth(2003)
@@ -81,7 +79,7 @@ export default class UISkillCooldown {
         keyText,
         cooldownOverlay,
         cooldownText,
-        cooldownCircle,
+        castingCircle, // 이름 변경
         slotSize,
         xPos,
       };
@@ -93,7 +91,7 @@ export default class UISkillCooldown {
         keyText,
         cooldownOverlay,
         cooldownText,
-        cooldownCircle,
+        castingCircle,
       ]);
     });
   }
@@ -162,7 +160,7 @@ export default class UISkillCooldown {
     slot.icon.setVisible(true).setData('isEmpty', true).setAlpha(0.6);
   }
 
-  updateFromSkills(skillsMap) {
+  updateFromSkills(character, skillsMap) {
     if (!skillsMap) return;
 
     Object.entries(this.skillSlots).forEach(([uiKey, slot]) => {
@@ -184,38 +182,125 @@ export default class UISkillCooldown {
         }
       }
 
-      if (foundSkill && foundSkill.cooldownRemaining > 0) {
-        const progress =
-          foundSkill.cooldownRemaining / (slot.maxCooldown || foundSkill.cooldownRemaining);
-        slot.maxCooldown = slot.maxCooldown || foundSkill.cooldownRemaining;
+      const manaForSkill = foundSkill?.config?.cost?.mana;
 
-        slot.cooldownOverlay.setVisible(true);
-        slot.cooldownText.setVisible(true).setText(Math.ceil(foundSkill.cooldownRemaining / 1000));
-        slot.cooldownCircle.clear();
-        slot.cooldownCircle.lineStyle(3, 0xff6b6b, 0.8);
-        slot.cooldownCircle.beginPath();
-        slot.cooldownCircle.arc(
-          slot.keyText.x + 4,
-          slot.keyText.y + 2,
-          20,
-          -Math.PI / 2,
-          -Math.PI / 2 + Phaser.Math.PI2 * (1 - progress),
-          false,
-        );
-        slot.cooldownCircle.strokePath();
-        slot.cooldownCircle.setVisible(true);
+      if (!foundSkill) {
+        this.resetSlotVisuals(slot);
+        return;
+      }
 
-        if (slot.iconImage) slot.iconImage.setAlpha(0.3);
-        else slot.icon.setAlpha(0.3);
-      } else {
-        slot.cooldownOverlay.setVisible(false);
-        slot.cooldownText.setVisible(false);
-        slot.cooldownCircle.setVisible(false);
-        slot.maxCooldown = 0;
-        if (slot.iconImage) slot.iconImage.setAlpha(0.9);
-        else slot.icon.setAlpha(0.6);
+      // 1. 스킬 시전 중 (isActive === true)
+      if (foundSkill.isActive) {
+        this.showCasting(slot);
+      }
+      // 2. 쿨타임 중 (cooldownRemaining > 0)
+      else if (foundSkill.cooldownRemaining > 0) {
+        const totalCooldown = foundSkill.config?.cooldown || foundSkill.cooldownRemaining;
+        const progress = foundSkill.cooldownRemaining / totalCooldown;
+        this.showCooldown(slot, foundSkill.cooldownRemaining, progress);
+      }
+      // 힐/마나 회복 스킬 사용 불가 체크
+      else if (this.isHealingSkillUnusable(character, foundSkill.config)) {
+        this.showCasting(slot);
+        return;
+      }
+      // 3. 준비 완료
+      else {
+        this.resetSlotVisuals(slot);
+      }
+      if (manaForSkill && manaForSkill > character.mana) {
+        this.showCasting(slot);
       }
     });
+  }
+
+  isHealingSkillUnusable(character, config) {
+    const hasHealAmount = config?.healAmount > 0;
+    const hasManaAmount = config?.manaAmount > 0;
+
+    const isHpFull = character.health >= character.maxHealth;
+    const isManaFull = character.mana >= character.maxMana;
+
+    // healAmount만 있고 체력이 꽉 찬 경우
+    if (hasHealAmount && !hasManaAmount && isHpFull) {
+      return true;
+    }
+
+    // manaAmount만 있고 마나가 꽉 찬 경우
+    if (hasManaAmount && !hasHealAmount && isManaFull) {
+      return true;
+    }
+
+    // 둘 다 있고 체력과 마나가 모두 꽉 찬 경우
+    if (hasHealAmount && hasManaAmount && isHpFull && isManaFull) {
+      return true;
+    }
+
+    return false;
+  }
+
+  showDisabled(slot) {
+    // 아이콘 더 어둡게 + 회색조
+    if (slot.iconImage) {
+      slot.iconImage.setAlpha(0.3);
+      slot.iconImage.setTint(0x888888);
+    } else {
+      slot.icon.setAlpha(0.3);
+      slot.icon.setTint(0x888888);
+    }
+
+    slot.cooldownOverlay.setVisible(false);
+    slot.cooldownText.setVisible(false);
+    slot.castingCircle.setVisible(false);
+  }
+
+  showCasting(slot) {
+    // 아이콘 어둡게 + 시전 중 서클 표시
+    if (slot.iconImage) slot.iconImage.setAlpha(0.5);
+    else slot.icon.setAlpha(0.5);
+
+    slot.cooldownOverlay.setVisible(false);
+    slot.cooldownText.setVisible(false);
+  }
+
+  showCooldown(slot, cooldownMs, progress) {
+    // 아이콘 어둡게
+    if (slot.iconImage) slot.iconImage.setAlpha(0.3);
+    else slot.icon.setAlpha(0.3);
+
+    // 시전 중 서클 숨김
+    slot.castingCircle.setVisible(false);
+
+    // 쿨타임 텍스트
+    slot.cooldownText.setVisible(true).setText(Math.ceil(cooldownMs / 1000));
+
+    // 위에서 아래로 내려오는 검은색 사각형
+    slot.cooldownOverlay.clear();
+    slot.cooldownOverlay.fillStyle(0x000000, 0.7);
+
+    // progress: 1(쿨타임 시작) → 0(쿨타임 끝)
+    // 1-progress: 0(상단) → 1(하단)으로 진행
+    const totalHeight = slot.slotSize - 10; // 여백 고려
+    const currentHeight = totalHeight * (1 - progress); // 점점 늘어남
+    const overlayY = 5; // 상단에서 시작
+
+    slot.cooldownOverlay.fillRoundedRect(
+      slot.xPos + 5,
+      overlayY,
+      slot.slotSize - 10,
+      currentHeight,
+      8,
+    );
+    slot.cooldownOverlay.setVisible(true);
+  }
+
+  resetSlotVisuals(slot) {
+    slot.cooldownOverlay.setVisible(false);
+    slot.cooldownText.setVisible(false);
+    slot.castingCircle.setVisible(false);
+
+    if (slot.iconImage) slot.iconImage.setAlpha(0.9);
+    else slot.icon.setAlpha(0.6);
   }
 
   hide() {

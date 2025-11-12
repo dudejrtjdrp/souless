@@ -135,11 +135,24 @@ export class SkillSystem {
 
   updateChanneling() {
     if (!this.channelingManager.isChanneling()) return;
+    this.handlerFactory.getHandler('channeling').update();
 
     const skillName = `${this.channelingManager.currentKeyName}_skill`;
     const skill = this.skills.get(skillName);
 
     if (!skill?.config) return;
+
+    // 1. 채널링 스킬이 완료되었는지 체크
+    if (!skill.isChanneling) {
+      this.stopChannelingSkill();
+      return;
+    }
+
+    // 2. 힐링/마나 회복이 더 이상 필요 없는지 체크
+    if (SkillValidator.isHealingSkillUnusable(this.character, skill.config)) {
+      this.stopChannelingSkill();
+      return;
+    }
 
     this.channelingManager.update(this.character, skill, skill.config, () =>
       this.stopChannelingSkill(),

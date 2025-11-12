@@ -95,12 +95,12 @@ export const CharacterData = {
         channeling: {
           type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
           maxDuration: 3000, // 최대 3초
-          manaPerTick: 2, // 100ms당 2 마나 소모,
-          holdFrame: 10, // 추가: 10번째 프레임에서 멈춤
+          manaPerTick: 0, // 100ms당 2 마나 소모,
         },
         effects: ['heal', 'mana_regen'],
-        healAmount: 20,
-        manaAmount: 30,
+        cooldown: 3000,
+        healAmount: 2,
+        manaAmount: 2,
         targetType: 'single',
       },
       r_skill: {
@@ -238,11 +238,13 @@ export const CharacterData = {
         channeling: {
           type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
           maxDuration: 3000, // 최대 3초
-          manaPerTick: 2, // 100ms당 2 마나 소모,
-          frames: [303, 304], // 추가: 10번째 프레임에서 멈춤
+          manaPerTick: 0, // 100ms당 2 마나 소모,
         },
-        cost: { mana: 10 },
-        effects: ['defend'],
+        // cost: { mana: 10 },
+        cooldown: 3000,
+        healAmount: 2,
+        manaAmount: 2,
+        effects: ['heal', 'mana_regen', 'defend'],
         targetType: 'single',
       },
       r_skill: {

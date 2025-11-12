@@ -1,7 +1,14 @@
 import BaseSkillHandler from './BaseSkillHandler';
+import { throttle } from '../../../utils/throttle';
 
 export default class ChannelingSkillHandler extends BaseSkillHandler {
   execute(skillName, config) {
+    if (!this.applyEffectByConfig) {
+      this.applyEffectByConfig = throttle(() => {
+        this.applyEffects(config);
+      }, 700);
+    }
+    this.config = config;
     const frameRate = this.getFrameRate(config);
 
     this.stateLockManager.stateMachine.isLocked = true;
@@ -17,10 +24,6 @@ export default class ChannelingSkillHandler extends BaseSkillHandler {
     this.animationController.playAnimation(animKey, this.getFrameRate(config));
     this.animationController.playAnimation(`${animKey}_channeling`, this.getFrameRate(config));
     console.log(config);
-    // this.animationController.pauseAtFrame(303, () => {
-    //   console.log('Channeling animation paused at frame 303');
-    //   this.animationController.playAnimation('assassin-e_while_skill', this.getFrameRate(config));
-    // });
   }
 
   scheduleChannelingEffects(config) {
@@ -29,12 +32,16 @@ export default class ChannelingSkillHandler extends BaseSkillHandler {
     });
   }
 
+  update() {
+    this.applyEffectByConfig();
+  }
+
   applyEffects(config) {
-    if (config.effects?.includes('heal')) {
+    if (config?.effects?.includes('heal')) {
       this.character.heal(config.healAmount || 0);
     }
 
-    if (config.effects?.includes('mana_regen')) {
+    if (config?.effects?.includes('mana_regen')) {
       this.character.restoreMana(config.manaAmount || 0);
     }
   }

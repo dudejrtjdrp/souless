@@ -144,7 +144,7 @@ export default class UIScene extends Phaser.Scene {
   handleSkillCooldownsUpdated(data) {
     const { player } = data;
     if (!player || !player.skillSystem || !this.skillCooldown) return;
-    this.skillCooldown.updateFromSkills(player.skillSystem.skills);
+    this.skillCooldown.updateFromSkills(player, player.skillSystem.skills);
   }
 
   update(time, delta) {

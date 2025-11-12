@@ -60,7 +60,9 @@ export class Skill {
   }
 
   consumeMana(character, usedMana) {
+    if (character.mana < usedMana) return false;
     character.mana -= usedMana;
+    return true;
   }
 
   update(delta) {

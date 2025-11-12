@@ -27,6 +27,14 @@ export class Skill {
     return !this.config.cost?.mana || character.mana >= this.config.cost.mana;
   }
 
+  hasSufficientManaForChanneling(character) {
+    // 채널링 스킬의 경우 manaPerTick도 체크
+    if (this.config.channeling?.manaPerTick) {
+      return character.mana >= this.config.channeling.manaPerTick;
+    }
+    return true;
+  }
+
   meetsGroundRequirement(character) {
     return !this.config.requiresGround || character.movement.isOnGround();
   }
@@ -87,7 +95,22 @@ export class Skill {
 
   update(delta) {
     this.updateCooldown(delta);
-    this.updateDuration();
+
+    // 채널링이 아닌 일반 스킬의 duration 체크
+    if (this.isActive && !this.isChanneling && this.config.duration) {
+      const elapsed = Date.now() - this.activeStartTime;
+      if (elapsed >= this.config.duration) {
+        this.complete();
+      }
+    }
+
+    // 채널링 중이고 maxDuration을 초과하면 자동 종료
+    if (this.isChanneling && this.config.channeling?.maxDuration) {
+      const elapsedTime = Date.now() - this.channelStartTime;
+      if (elapsedTime >= this.config.channeling.maxDuration) {
+        this.stopChanneling();
+      }
+    }
   }
 
   updateCooldown(delta) {
