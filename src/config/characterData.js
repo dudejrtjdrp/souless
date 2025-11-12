@@ -86,7 +86,7 @@ export const CharacterData = {
         targetType: 'single',
       },
       e_skill: {
-        type: 'buff',
+        type: 'channeling',
         icon: 'assets/skills/monk/e_skill.png',
         duration: 2000,
         animation: 'e_skill',
@@ -139,9 +139,10 @@ export const CharacterData = {
       { key: 'q_skill', frames: { start: 155, end: 161 }, frameRate: 8, repeat: 0 },
       { key: 'w_skill', frames: { start: 187, end: 197 }, frameRate: 12, repeat: 0 },
       { key: 'r_skill', frames: { start: 201, end: 230 }, frameRate: 30, repeat: 0 },
-      // { key: 'e_skill', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
+      { key: 'e_skill', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
+      { key: 'e_skill_channeling', frames: { start: 232, end: 238 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 251, end: 255 }, frameRate: 10, repeat: 0 },
-      { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
+      // { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 301, end: 306 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 326, end: 340 }, frameRate: 15, repeat: 0 },
     ],
@@ -179,7 +180,7 @@ export const CharacterData = {
         animation: 'attack',
         frameRate: 6,
         knockback: { x: 100, y: 0 },
-        cooldown: 200,
+        cooldown: 0,
         targetType: 'multi',
       },
       air_attack: {
@@ -229,7 +230,7 @@ export const CharacterData = {
         targetType: 'multi',
       },
       e_skill: {
-        type: 'buff',
+        type: 'channeling',
         icon: 'assets/skills/assassin/e_skill.png',
         animation: 'e_skill',
         frameRate: 8,
@@ -238,11 +239,10 @@ export const CharacterData = {
           type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
           maxDuration: 3000, // 최대 3초
           manaPerTick: 2, // 100ms당 2 마나 소모,
-          holdFrame: 303, // 추가: 10번째 프레임에서 멈춤
+          frames: [303, 304], // 추가: 10번째 프레임에서 멈춤
         },
+        cost: { mana: 10 },
         effects: ['defend'],
-        healAmount: 20,
-        manaAmount: 30,
         targetType: 'single',
       },
       r_skill: {
@@ -302,7 +302,8 @@ export const CharacterData = {
       { key: 'q_skill', frames: { start: 215, end: 227 }, frameRate: 8, repeat: 0 },
       { key: 'w_skill', frames: { start: 253, end: 265 }, frameRate: 25, repeat: 0 },
       { key: 'r_skill', frames: { start: 270, end: 307 }, frameRate: 37, repeat: 0 },
-      { key: 'e_skill', frames: { start: 300, end: 307 }, frameRate: 8, repeat: -1 },
+      { key: 'e_skill', frames: { start: 300, end: 307 }, frameRate: 8, repeat: 0 },
+      { key: 'e_skill_channeling', frames: { start: 302, end: 304 }, frameRate: 2, repeat: -1 },
       { key: 'defend', frames: { start: 300, end: 307 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 330, end: 335 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 360, end: 378 }, frameRate: 15, repeat: 0 },

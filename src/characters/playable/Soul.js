@@ -1,6 +1,6 @@
 import CharacterBase from '../base/CharacterBase.js';
 import { CharacterDataAdapter } from '../../utils/CharacterDataAdapter.js';
-import { SkillSystem } from '../systems/SkillSystem.js';
+import { SkillSystem } from '../../models/skill_refactoring/SkillSystem.js';
 
 export default class Soul extends CharacterBase {
   constructor(scene, x, y, options = {}) {

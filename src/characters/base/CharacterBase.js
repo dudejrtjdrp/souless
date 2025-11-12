@@ -5,7 +5,6 @@ import AttackSystem from '../systems/AttackSystem.js';
 import MovementController from '../systems/MovementController.js';
 import InputHandler from '../systems/InputHandler.js';
 import CharacterNormalizer from '../../utils/CharacterNormalizer.js';
-import { SkillSystem } from '../systems/SkillSystem.js';
 import SaveManager from '../../utils/SaveManager.js';
 
 export default class CharacterBase {

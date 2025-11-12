@@ -1,3 +1,4 @@
+import { throttle } from '../../utils/throttle';
 import InputHandler from './InputHandler';
 
 export class Skill {
@@ -30,13 +31,10 @@ export class Skill {
 
   use(character) {
     if (!this.canUse(character)) return false;
-
-    // if (this.config.cost?.mana && this.config.channeling?.type !== 'hold') {
-    //   character.mana -= this.config.cost.mana;
-    // }
+    console.log(this.config);
 
     if (this.config.cost?.mana) {
-      character.mana -= this.config.cost.mana;
+      this.consumeMana(character, this.config.cost.mana);
     }
 
     if (this.config.cooldown) {
@@ -53,6 +51,16 @@ export class Skill {
     }
 
     return true;
+  }
+
+  startCooldown() {
+    if (this.config.cooldown) {
+      this.cooldownRemaining = this.config.cooldown;
+    }
+  }
+
+  consumeMana(character, usedMana) {
+    character.mana -= usedMana;
   }
 
   update(delta) {
@@ -316,9 +324,7 @@ export class SkillSystem {
     }
   }
 
-  create() {
-    this.inputHandler = new InputHandler(this.scene);
-  }
+  create() {}
 
   useSkill(skillName) {
     const skill = this.skills.get(skillName);
@@ -355,8 +361,8 @@ export class SkillSystem {
       case 'movement':
         this.handleMovementSkill(skillName, config);
         break;
-      case 'buff':
-        this.handleBuffSkill(skillName, config);
+      case 'channeling':
+        this.handleChannelingSkill(skillName, config);
         break;
       case 'instant':
         this.handleInstantSkill(skillName, config);
@@ -419,7 +425,8 @@ export class SkillSystem {
     }
   }
 
-  handleBuffSkill(name, config) {
+  handleChannelingSkill(name, config) {
+    this.character.stateMachine.isLocked = true;
     const frameRate = config.frameRate || 10;
     this.currentKeyName = name[0];
     const sprite = this.character.sprite;
@@ -438,7 +445,6 @@ export class SkillSystem {
       if (frame.textureFrame === 303) {
         // 5프레임에서 멈춤
         sprite.anims.pause();
-        this.character.stateMachine.isLocked = true;
         console.log('애니메이션 5프레임에서 멈춤');
       }
     });
@@ -602,15 +608,35 @@ export class SkillSystem {
     for (const skill of this.skills.values()) {
       skill.update(delta);
     }
+    const skill = this.skills.get(`${this.currentKeyName}_skill`);
+    const config = skill?.config;
 
-    if (
-      this.currentKeyName &&
-      Phaser.Input.Keyboard.JustUp(this.inputHandler.keys[this.currentKeyName])
-    ) {
-      console.log('스킬 키에서 손 뗌!');
-      this.stopChannelingSkill();
-      return;
+    if (this.currentKeyName) {
+      if (this.character.stateMachine.isLocked && this.character.sprite.body) {
+        this.character.sprite.body.setVelocityX(0);
+      }
+      if (this.inputHandler.isPressed(this.currentKeyName)) {
+        console.log('e');
+      }
+
+      if (this.inputHandler.isHeld(this.currentKeyName)) {
+        if (!this.throttledChannelingSkill) {
+          this.throttledChannelingSkill = throttle((key) => {
+            // character.mana -= this.config.channeling.manaPerTick;
+            skill.consumeMana(this.character, config.channeling.manaPerTick);
+          }, 500);
+        }
+
+        this.throttledChannelingSkill(this.currentKeyName);
+      }
+      if (this.inputHandler.isReleased(this.currentKeyName)) {
+        // skill.startCooldown();
+        this.stopChannelingSkill();
+        this.inputHandler.updatePrevState();
+        return;
+      }
     }
+    this.inputHandler.updatePrevState();
   }
 
   getSkill(name) {

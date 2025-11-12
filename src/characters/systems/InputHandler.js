@@ -125,14 +125,38 @@ export default class InputHandler {
     };
   }
 
+  // ✅ 새로 추가: 직접 키 상태 체크하는 헬퍼 메서드들
+  isPressed(keyName) {
+    const currentState = this.keys[keyName]?.isDown || false;
+    const prevState = this.prevState[keyName] || false;
+    console.log(currentState, prevState);
+    return currentState && !prevState;
+  }
+
+  isReleased(keyName) {
+    const currentState = this.keys[keyName]?.isDown || false;
+    const prevState = this.prevState[keyName] || false;
+    return !currentState && prevState;
+  }
+
+  isHeld(keyName) {
+    return this.keys[keyName]?.isDown || false;
+  }
+
+  // ✅ 새로 추가: 모든 입력 체크 후 prevState 갱신
+  updatePrevState() {
+    Object.keys(this.keys).forEach((key) => {
+      this.prevState[key] = this.keys[key]?.isDown || false;
+    });
+  }
+
+  // 기존 메서드들 (하위 호환성 유지)
   isDown(keyName) {
-    // Held 상태를 기준으로 체크
     const state = this.getInputState();
     return state[`is${keyName}Held`] || false;
   }
 
   isUp(keyName) {
-    // Released 상태를 기준으로 체크
     const state = this.getInputState();
     return state[`is${keyName}Released`] || false;
   }
