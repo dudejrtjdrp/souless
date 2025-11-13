@@ -8,6 +8,7 @@ import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
 import CharacterSwitchManager from '../systems/CharacterSwitchManager.js';
 import SaveManager from '../utils/SaveManager.js';
 import InputHandler from '../characters/systems/InputHandler.js';
+import CharacterSelectOverlay from '../systems/GameScene/CharacterSelectOverlay.js';
 
 // 새로운 매니저들
 import GameSceneInitializer from '../systems/GameScene/GameSceneInitializer.js';
@@ -67,6 +68,7 @@ export default class GameScene extends Phaser.Scene {
     this.setupPlayer();
     this.setupCamera();
     this.setupEnemies();
+    this.setupCharacterSelectUI(); // ✅ 캐릭터 선택 UI 생성
     this.emitInitialEvents();
 
     if (!this.savedSpawnData) {
@@ -99,7 +101,7 @@ export default class GameScene extends Phaser.Scene {
       if (this.savedSpawnData) {
         this.selectedCharacter = this.savedSpawnData.characterType || 'assassin';
       }
-      return true; // 여기서 바로 리턴해야 함
+      return true;
     }
 
     const savedPosition = await SaveManager.getSavedPosition();
@@ -154,6 +156,7 @@ export default class GameScene extends Phaser.Scene {
   setupPlayer() {
     this.characterSwitchManager = new CharacterSwitchManager(this);
     this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
+    this.characterSwitchManager.setCurrentMap(this.currentMapKey); // ✅ 맵 정보 설정
 
     this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y);
   }
@@ -167,6 +170,13 @@ export default class GameScene extends Phaser.Scene {
   setupEnemies() {
     this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
     this.enemyManager.createInitial();
+  }
+
+  // ✅ 캐릭터 선택 UI 초기화
+  setupCharacterSelectUI() {
+    this.characterSelectOverlay = new CharacterSelectOverlay(this);
+    this.isBackQuoteHeld = false;
+    this.backQuoteHoldStartTime = 0;
   }
 
   emitInitialEvents() {
@@ -217,6 +227,15 @@ export default class GameScene extends Phaser.Scene {
   async switchCharacter(direction = 'next') {
     const handler = new CharacterSwitchHandler(this);
     await handler.switchCharacter(direction);
+  }
+
+  // ✅ 캐릭터 선택 UI를 통한 직접 전환
+  async switchToSelectedCharacter(characterType) {
+    if (this.isCharacterSwitchOnCooldown) return;
+    if (characterType === this.selectedCharacter) return; // 이미 같은 캐릭터면 무시
+
+    const handler = new CharacterSwitchHandler(this);
+    await handler.switchToCharacter(characterType);
   }
 
   async saveCurrentPosition() {
@@ -299,35 +318,72 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupInputHandler() {
-    this.inputHandler = new InputHandler(this); // 플레이어 움직임용
-
-    this.sceneKeys = {
-      // Scene 레벨 단축키 (캐릭터 전환, 저장 등)
-      backQuote: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.BACK_QUOTE),
-      tab: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.TAB),
-      lKey: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.L),
-    };
+    this.inputHandler = new InputHandler(this);
   }
 
   handleInput(time, delta) {
     const input = this.inputHandler.getInputState();
 
-    // Scene 레벨 키 체크 (Phaser.Input.Keyboard.JustDown 사용)
-    if (
-      Phaser.Input.Keyboard.JustDown(this.sceneKeys.backQuote) &&
-      !this.isCharacterSwitchOnCooldown
-    ) {
-      this.switchCharacter('next');
-    }
+    // ✅ ` 키 홀드 체크 (캐릭터 선택 UI)
+    this.handleCharacterSelectInput(input, time);
 
-    if (Phaser.Input.Keyboard.JustDown(this.sceneKeys.tab) && !this.isCharacterSwitchOnCooldown) {
+    // ✅ Tab 키로 이전 캐릭터 (빠른 전환)
+    if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
       this.switchCharacter('prev');
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.sceneKeys.lKey)) {
+    // ✅ L 키로 세이브 데이터 삭제
+    if (input.isLPressed) {
       this.clearAllSaveData();
     }
   }
+
+  // ✅ 캐릭터 선택 UI 입력 처리
+  handleCharacterSelectInput(input, time) {
+    // ` 키를 누르기 시작
+    if (input.isBackQuotePressed) {
+      this.isBackQuoteHeld = true;
+      this.backQuoteHoldStartTime = time;
+    }
+
+    // ` 키를 홀드 중
+    if (input.isBackQuoteHeld && this.isBackQuoteHeld) {
+      const holdDuration = time - this.backQuoteHoldStartTime;
+
+      // 300ms 이상 누르면 UI 표시
+      if (holdDuration >= 300 && !this.characterSelectOverlay.isVisible) {
+        this.characterSelectOverlay.show();
+      }
+
+      // UI가 표시된 상태에서 방향키 입력 처리
+      if (this.characterSelectOverlay.isVisible) {
+        if (input.isLeftPressed) {
+          this.characterSelectOverlay.moveSelection('left');
+        }
+        if (input.isRightPressed) {
+          this.characterSelectOverlay.moveSelection('right');
+        }
+      }
+    }
+
+    // ` 키를 뗌
+    if (input.isBackQuoteReleased && this.isBackQuoteHeld) {
+      this.isBackQuoteHeld = false;
+
+      // UI가 표시되어 있으면 선택된 캐릭터로 전환
+      if (this.characterSelectOverlay.isVisible) {
+        const selectedChar = this.characterSelectOverlay.getSelectedCharacter();
+        this.characterSelectOverlay.hide();
+        this.switchToSelectedCharacter(selectedChar);
+      } else {
+        // 짧게 눌렀으면 다음 캐릭터로 빠른 전환
+        if (!this.isCharacterSwitchOnCooldown) {
+          this.switchCharacter('next');
+        }
+      }
+    }
+  }
+
   clearAllSaveData() {
     localStorage.clear();
     SaveManager.clear();

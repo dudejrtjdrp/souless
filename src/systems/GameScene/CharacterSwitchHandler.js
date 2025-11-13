@@ -82,7 +82,7 @@ export default class CharacterSwitchHandler {
   }
 
   async createNewPlayer(nextType, state) {
-    // ✅ 먼저 캐릭터 타입 변경
+    // 먼저 캐릭터 타입 변경
     this.scene.selectedCharacter = nextType;
     this.scene.characterSwitchManager.setCurrentCharacterType(nextType);
 
@@ -93,7 +93,7 @@ export default class CharacterSwitchHandler {
     this.updateSceneReferences();
     this.emitChangeEvents(nextType);
 
-    // ✅ 저장 후 확인 로그
+    // 저장 후 확인
     await this.scene.saveCurrentPosition();
   }
 
@@ -116,5 +116,34 @@ export default class CharacterSwitchHandler {
       characterType: nextType,
       player: this.scene.player,
     });
+  }
+
+  /**
+   * 특정 캐릭터로 직접 전환 (캐릭터 선택 UI용)
+   * @param {string} targetCharacterType - 전환할 캐릭터 타입
+   */
+  async switchToCharacter(targetCharacterType) {
+    const scene = this.scene;
+
+    // 이미 같은 캐릭터면 무시
+    if (scene.selectedCharacter === targetCharacterType) {
+      return;
+    }
+
+    // 트랜지션 체크
+    if (this.isTransitioning()) {
+      return;
+    }
+
+    // 쿨다운 체크
+    if (scene.isCharacterSwitchOnCooldown) {
+      return;
+    }
+
+    // 준비 단계 (현재 캐릭터 상태 저장)
+    await this.prepareSwitch();
+
+    // 실제 전환 수행
+    await this.performSwitch(targetCharacterType);
   }
 }
