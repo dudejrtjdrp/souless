@@ -3,7 +3,12 @@ import BaseSkillHandler from './BaseSkillHandler';
 export default class ProjectileSkillHandler extends BaseSkillHandler {
   execute(skillName, config) {
     const frameRate = this.getFrameRate(config);
-    const lockTime = this.animationController.play(config.animation, frameRate, config.duration);
+
+    // duration 대신 frameRate와 애니메이션 프레임 수로 계산
+    const frameCount = this.animationController.getAnimationFrameCount(config.animation);
+    const duration = frameCount > 0 ? (frameCount / frameRate) * 1000 : 0;
+
+    const lockTime = this.animationController.play(config.animation, frameRate, duration);
 
     this.lockState(lockTime);
     this.castProjectile(skillName);

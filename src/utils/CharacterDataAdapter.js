@@ -1,5 +1,6 @@
 import { CharacterData } from '../config/characterData.js';
 import HitboxConfig from '../config/HitBoxConfig.js';
+
 /**
  * CharacterData를 HitboxConfig 형식으로 변환
  * 기존 characterData.js를 계속 사용하면서 새로운 시스템과 호환
@@ -35,6 +36,17 @@ export class CharacterDataAdapter {
     const skillHitboxes = {};
     if (data.skills) {
       for (const [skillName, skillData] of Object.entries(data.skills)) {
+        // duration을 frameRate와 프레임 수로 계산
+        let duration = 400; // 기본값
+        if (skillData.animation) {
+          const animData = data.animations.find((anim) => anim.key === skillData.animation);
+          if (animData) {
+            const frameRate = animData.frameRate || 10;
+            const frameCount = animData.frames.end - animData.frames.start + 1;
+            duration = (frameCount / frameRate) * 1000;
+          }
+        }
+
         skillHitboxes[skillName] = HitboxConfig.createSkillHitbox(skillName, {
           size: skillData.hitbox
             ? { width: skillData.hitbox.width, height: skillData.hitbox.height }
@@ -42,7 +54,7 @@ export class CharacterDataAdapter {
           offset: skillData.hitbox
             ? { x: skillData.hitbox.offsetX || 0, y: skillData.hitbox.offsetY || 0 }
             : { x: 0, y: 0 },
-          duration: skillData.duration || 400,
+          duration: duration,
           damage: skillData.damage || 0,
           knockback: skillData.knockback || { x: 0, y: 0 },
           effects: skillData.effects || [],
@@ -50,6 +62,7 @@ export class CharacterDataAdapter {
         });
       }
     }
+
     return {
       spriteKey: data.sprite.key,
       spriteScale: options.spriteScale || data.sprite.scale,
@@ -92,5 +105,20 @@ export class CharacterDataAdapter {
     }
 
     return data.skills;
+  }
+
+  /**
+   * 애니메이션 duration 계산 헬퍼 메서드
+   */
+  static calculateAnimationDuration(characterType, animationKey) {
+    const data = CharacterData[characterType];
+    if (!data) return 0;
+
+    const animData = data.animations.find((anim) => anim.key === animationKey);
+    if (!animData) return 0;
+
+    const frameRate = animData.frameRate || 10;
+    const frameCount = animData.frames.end - animData.frames.start + 1;
+    return (frameCount / frameRate) * 1000;
   }
 }

@@ -96,13 +96,8 @@ export class Skill {
   update(delta) {
     this.updateCooldown(delta);
 
-    // 채널링이 아닌 일반 스킬의 duration 체크
-    if (this.isActive && !this.isChanneling && this.config.duration) {
-      const elapsed = Date.now() - this.activeStartTime;
-      if (elapsed >= this.config.duration) {
-        this.complete();
-      }
-    }
+    // duration은 더 이상 사용하지 않음
+    // 스킬 완료는 애니메이션 완료 이벤트나 complete() 호출로만 처리
 
     // 채널링 중이고 maxDuration을 초과하면 자동 종료
     if (this.isChanneling && this.config.channeling?.maxDuration) {
@@ -116,15 +111,6 @@ export class Skill {
   updateCooldown(delta) {
     if (this.cooldownRemaining > 0) {
       this.cooldownRemaining = Math.max(0, this.cooldownRemaining - delta);
-    }
-  }
-
-  updateDuration() {
-    if (this.isActive && this.config.duration) {
-      const elapsed = Date.now() - this.activeStartTime;
-      if (elapsed >= this.config.duration) {
-        this.complete(); // duration이 끝나면 완료 처리
-      }
     }
   }
 

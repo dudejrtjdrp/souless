@@ -9,9 +9,7 @@ export class SkillHitbox {
 
     this.active = false;
     this.hitEnemies = new Set();
-    this.hitboxes = []; // { rect, offsetX, offsetY, isMoving, damage, knockback, effects }
-
-    // 디버그 표시 기본: config.debug true/false
+    this.hitboxes = [];
     this.debug = !!config.debug;
 
     if (config.hitbox) {
@@ -42,12 +40,11 @@ export class SkillHitbox {
       effects: hitboxData.effects,
     });
 
-    // 처음엔 보이지 않게
     rect.setVisible(false);
   }
 
-  // 일반 단일 히트박스 활성화 (원본 activate)
-  activate() {
+  // duration 파라미터 추가
+  activate(duration) {
     if (this.hitboxes.length === 0) return;
 
     this.active = true;
@@ -62,12 +59,12 @@ export class SkillHitbox {
       this.scene.children.bringToTop(h.rect);
     });
 
-    // duration 후 deactivate
-    const duration = this.config.duration || 200;
-    this.scene.time.delayedCall(duration, () => this.deactivate());
+    // 외부에서 전달받은 duration 사용
+    if (duration) {
+      this.scene.time.delayedCall(duration, () => this.deactivate());
+    }
   }
 
-  // 시퀀스 활성화 (원본 activateSequence)
   activateSequence(sequence) {
     if (!sequence || sequence.length === 0) return;
 
@@ -114,6 +111,7 @@ export class SkillHitbox {
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
+        // step의 duration 사용 (InstantSkillHandler에서 계산해서 전달)
         const dur = step.duration || 200;
         this.scene.time.delayedCall(dur, () => {
           const idx = this.hitboxes.indexOf(tempHitboxData);
@@ -125,7 +123,6 @@ export class SkillHitbox {
       });
     });
 
-    // 전체가 끝나면 deactivate
     const totalDuration =
       Math.max(...sequence.map((s) => (s.delay || 0) + (s.duration || 200))) + 100;
     this.scene.time.delayedCall(totalDuration, () => {

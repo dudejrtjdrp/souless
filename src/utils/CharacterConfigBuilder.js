@@ -11,12 +11,19 @@ export class CharacterConfigBuilder {
     for (const [name, skill] of Object.entries(data.skills)) {
       // hitbox가 있는 스킬만 처리
       if (skill.hitbox) {
+        // duration을 frameRate와 프레임 수로 계산
+        const animKey = skill.animation;
+        const animData = data.animations.find((anim) => anim.key === animKey);
+        const frameRate = animData?.frameRate || 10;
+        const frameCount = animData ? animData.frames.end - animData.frames.start + 1 : 0;
+        const duration = frameCount > 0 ? (frameCount / frameRate) * 1000 : 400;
+
         skillHitboxes[name] = {
           size: { width: skill.hitbox.width, height: skill.hitbox.height },
           offset: { x: skill.hitbox.offsetX || 0, y: skill.hitbox.offsetY || 0 },
-          duration: skill.duration,
+          duration: duration,
           damage: skill.damage,
-          knockback: skill.knockback || { x: 0, y: 0 }, // 기본값 추가
+          knockback: skill.knockback || { x: 0, y: 0 },
           effects: skill.effects || [],
         };
       }

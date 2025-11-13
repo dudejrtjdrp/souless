@@ -63,6 +63,19 @@ export class SkillSystem {
     return hasHitboxType && hasHitboxData;
   }
 
+  // animations 배열에서 해당 애니메이션의 frameRate 가져오기
+  getAnimationFrameRate(animationKey) {
+    const sprite = this.character.sprite;
+    const animManager = sprite.anims.animationManager;
+    const characterType = sprite.texture.key;
+    const prefixedKey = `${characterType}-${animationKey}`;
+
+    const finalAnimKey = animManager.anims.has(prefixedKey) ? prefixedKey : animationKey;
+    const anim = animManager.get(finalAnimKey);
+
+    return anim ? anim.frameRate : 10; // 기본값 10
+  }
+
   useSkill(skillName) {
     const skill = this.skills.get(skillName);
     if (!skill) {
@@ -91,6 +104,11 @@ export class SkillSystem {
     if (!handler) {
       console.warn(`No handler for skill type: ${config.type}`);
       return;
+    }
+
+    // animations 배열에서 frameRate 가져와서 config에 추가
+    if (config.animation) {
+      config.frameRate = this.getAnimationFrameRate(config.animation);
     }
 
     const skillHitbox = this.skillHitboxes.get(skillName);

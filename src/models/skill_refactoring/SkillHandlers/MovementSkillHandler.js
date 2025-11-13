@@ -3,11 +3,11 @@ import BaseSkillHandler from './BaseSkillHandler';
 export default class MovementSkillHandler extends BaseSkillHandler {
   execute(skillName, config) {
     const frameRate = this.getFrameRate(config);
-    const lockTime = this.animationController.play(config.animation, frameRate, config.duration);
+    const lockTime = this.animationController.play(config.animation, frameRate);
 
     this.lockState(lockTime);
-    this.applyMovement(config);
-    this.applyInvincibility(config);
+    this.applyMovement(config, lockTime);
+    this.applyInvincibility(config, lockTime);
   }
 
   lockState(duration) {
@@ -17,22 +17,22 @@ export default class MovementSkillHandler extends BaseSkillHandler {
     });
   }
 
-  applyMovement(config) {
+  applyMovement(config, animationDuration) {
     if (!config.distance) return;
 
     const direction = this.character.sprite.flipX ? -1 : 1;
-    const speed = config.speed || (config.distance / config.duration) * 1000;
+    const speed = config.speed || (config.distance / animationDuration) * 1000;
 
     this.character.sprite.body.velocity.x = direction * speed;
 
-    this.scene.time.delayedCall(config.duration, () => {
+    this.scene.time.delayedCall(animationDuration, () => {
       this.stopCharacterMovement();
     });
   }
 
-  applyInvincibility(config) {
+  applyInvincibility(config, animationDuration) {
     if (config.invincible) {
-      this.character.setInvincible(config.duration);
+      this.character.setInvincible(animationDuration);
     }
   }
 }

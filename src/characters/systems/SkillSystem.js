@@ -7,11 +7,10 @@ export class Skill {
     this.config = config;
     this.cooldownRemaining = 0;
     this.isActive = false;
-    this.activeStartTime = 0;
 
-    this.isChanneling = false; // 현재 채널링 중인지
+    this.isChanneling = false;
     this.channelStartTime = 0;
-    this.channelTickInterval = config.channelTickInterval || 100; // 틱마다 실행 간격
+    this.channelTickInterval = config.channelTickInterval || 100;
     this.lastTickTime = 0;
   }
 
@@ -42,7 +41,6 @@ export class Skill {
     }
 
     this.isActive = true;
-    this.activeStartTime = Date.now();
 
     if (this.config.channeling) {
       this.isChanneling = true;
@@ -68,13 +66,6 @@ export class Skill {
   update(delta) {
     if (this.cooldownRemaining > 0) {
       this.cooldownRemaining = Math.max(0, this.cooldownRemaining - delta);
-    }
-
-    if (this.isActive && this.config.duration) {
-      const elapsed = Date.now() - this.activeStartTime;
-      if (elapsed >= this.config.duration) {
-        this.isActive = false;
-      }
     }
   }
 
@@ -143,10 +134,6 @@ export class SkillHitbox {
       h.rect.setFillStyle(0xff0000, 0.4);
       this.scene.children.bringToTop(h.rect);
     });
-
-    this.scene.time.delayedCall(this.config.duration, () => {
-      this.deactivate();
-    });
   }
 
   activateSequence(sequence) {
@@ -195,7 +182,11 @@ export class SkillHitbox {
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
-        const duration = step.duration || 200;
+        // 프레임으로 제어하려면 여기서는 수동으로 제거해야 함
+        const frames = step.frames || 10;
+        const frameRate = this.config.frameRate || 10;
+        const duration = (frames / frameRate) * 1000;
+
         this.scene.time.delayedCall(duration, () => {
           const idx = this.hitboxes.indexOf(tempHitboxData);
           if (idx > -1) {
@@ -208,12 +199,6 @@ export class SkillHitbox {
           tempHitbox.destroy();
         });
       });
-    });
-
-    const totalDuration =
-      Math.max(...sequence.map((s) => (s.delay || 0) + (s.duration || 200))) + 100;
-    this.scene.time.delayedCall(totalDuration, () => {
-      this.deactivate();
     });
   }
 
@@ -312,6 +297,7 @@ export class SkillSystem {
     this.skills = new Map();
     this.skillHitboxes = new Map();
     this.inputHandler = new InputHandler(this.scene);
+    this.activeAnimationListeners = new Map(); // 애니메이션 리스너 추적
 
     for (const [name, config] of Object.entries(skillsData)) {
       this.skills.set(name, new Skill(name, config));
@@ -341,18 +327,19 @@ export class SkillSystem {
     const isInAir = this.character.sprite.body && !this.character.sprite.body.touching.down;
     const airAllowedSkills = ['air_attack', 's_skill'];
     if (isInAir && !airAllowedSkills.includes(skillName)) {
-      return false; // 공중에서 사용 불가면 아무 일도 안 일어나도록
+      return false;
     }
 
-    // 이제 스킬 실제 사용
+    // 스킬 사용
     if (!skill.use(this.character)) {
       return false;
     }
 
-    // 이하 기존 로직
+    // 이동 스킬이 아니면 속도 0
     if (config.type !== 'movement' && this.character.sprite.body) {
       this.character.sprite.body.setVelocityX(0);
     }
+
     switch (config.type) {
       case 'melee':
         this.handleMeleeSkill(skillName, config);
@@ -376,18 +363,15 @@ export class SkillSystem {
 
   handleMeleeSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    // ✅ config.duration 사용 (애니메이션 길이가 아닌 실제 스킬 지속시간)
-    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
+    this.playAnimationWithFrames(config.animation, frameRate, config);
 
     const skillHitbox = this.skillHitboxes.get(name);
     if (skillHitbox) {
-      const delay = config.hitboxDelay || 0;
-
-      if (delay > 0) {
-        this.scene.time.delayedCall(delay, () => {
-          skillHitbox.activate();
-        });
+      // hitboxFrame이 지정되어 있으면 해당 프레임에서 활성화
+      if (config.hitboxFrame !== undefined) {
+        this.activateHitboxOnFrame(config.animation, config.hitboxFrame, skillHitbox);
       } else {
+        // 즉시 활성화
         skillHitbox.activate();
       }
     }
@@ -395,35 +379,36 @@ export class SkillSystem {
 
   handleProjectileSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
+    this.playAnimationWithFrames(config.animation, frameRate, config);
 
     const isLeft = this.character.sprite.flipX;
 
-    if (this.character.magicSystem) {
-      this.character.magicSystem.castSpell(name, isLeft);
+    // projectileFrame이 지정되어 있으면 해당 프레임에서 발사
+    if (config.projectileFrame !== undefined) {
+      this.castSpellOnFrame(config.animation, config.projectileFrame, name, isLeft);
     } else {
-      console.warn(`해당 스킬이 없습니다: ${name}`);
+      // 즉시 발사
+      if (this.character.magicSystem) {
+        this.character.magicSystem.castSpell(name, isLeft);
+      }
     }
   }
 
   handleMovementSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
+    this.playAnimationWithFrames(config.animation, frameRate, config);
 
     if (config.distance) {
       const direction = this.character.sprite.flipX ? -1 : 1;
-      const speed = config.speed || (config.distance / config.duration) * 1000;
+      const frameCount = this.getAnimationFrameCount(config.animation);
+      const duration = (frameCount / frameRate) * 1000;
+      const speed = (config.distance / duration) * 1000;
+
       this.character.sprite.body.velocity.x = direction * speed;
 
       if (config.invincible) {
-        this.character.setInvincible(config.duration);
+        this.character.setInvincible(duration);
       }
-
-      this.scene.time.delayedCall(config.duration, () => {
-        if (this.character.sprite.body) {
-          this.character.sprite.body.velocity.x = 0;
-        }
-      });
     }
   }
 
@@ -436,27 +421,14 @@ export class SkillSystem {
     const characterType = sprite.texture.key;
     const prefixedKey = `${characterType}-${name}`;
 
-    const animManager = sprite.anims.animationManager;
-    const hasAnimation = animManager.anims.has(prefixedKey);
+    sprite.anims.play(prefixedKey, true);
 
-    const finalAnimKey = prefixedKey;
-
-    sprite.anims.play(finalAnimKey, true);
-
+    // 특정 프레임에서 멈추기
+    const pauseFrame = config.pauseFrame || 303;
     sprite.on('animationupdate', (animation, frame, sprite) => {
-      if (frame.textureFrame === 303) {
-        // 5프레임에서 멈춤
+      if (frame.textureFrame === pauseFrame) {
         sprite.anims.pause();
-        console.log('애니메이션 5프레임에서 멈춤');
-      }
-    });
-
-    this.scene.time.delayedCall(config.duration, () => {
-      if (config.effects?.includes('heal')) {
-        this.character.heal(config.healAmount || 0);
-      }
-      if (config.effects?.includes('mana_regen')) {
-        this.character.restoreMana(config.manaAmount || 0);
+        console.log(`애니메이션 ${pauseFrame}프레임에서 멈춤`);
       }
     });
   }
@@ -464,86 +436,60 @@ export class SkillSystem {
   stopChannelingSkill() {
     const sprite = this.character.sprite;
 
-    // 애니메이션 lock 해제
     if (this.character.stateMachine.lockTimer) {
       clearTimeout(this.character.stateMachine.lockTimer);
       this.character.stateMachine.lockTimer = null;
     }
     this.character.stateMachine.isLocked = false;
 
-    // animationupdate 이벤트 제거
     sprite.off('animationupdate');
 
-    // idle 애니메이션으로 변경
     if (this.character.stateMachine.changeState) {
       const onGround = sprite.body?.touching.down || false;
       this.character.stateMachine.changeState(onGround ? 'idle' : 'jump');
     }
 
-    // 스킬 키 초기화
     this.currentKeyName = null;
 
-    // 멈춘 애니메이션 프레임이 남아있으면 강제로 idle 재생
     sprite.anims.stop();
     sprite.anims.play(this.character.sprite.texture.key + '-idle', true);
   }
 
   handleInstantSkill(name, config) {
     const frameRate = config.frameRate || 10;
-    this.playAnimationWithDuration(config.animation, frameRate, config.duration);
+    this.playAnimationWithFrames(config.animation, frameRate, config);
 
     const skillHitbox = this.skillHitboxes.get(name);
     if (skillHitbox) {
       if (config.hitboxSequence) {
         skillHitbox.activateSequence(config.hitboxSequence);
+      } else if (config.hitboxFrame !== undefined) {
+        this.activateHitboxOnFrame(config.animation, config.hitboxFrame, skillHitbox);
       } else {
-        const delay = config.hitboxDelay || 0;
-        if (delay > 0) {
-          this.scene.time.delayedCall(delay, () => {
-            skillHitbox.activate();
-          });
-        } else {
-          skillHitbox.activate();
-        }
+        skillHitbox.activate();
       }
     }
   }
 
-  // ✅ duration 파라미터 추가
-  playAnimationWithDuration(animationKey, frameRate, skillDuration) {
+  // 프레임 기반 애니메이션 재생
+  playAnimationWithFrames(animationKey, frameRate, config) {
     const sprite = this.character.sprite;
 
     if (!sprite || !sprite.anims) {
       console.error('[SkillSystem] Sprite or anims is null');
-      return 0;
+      return;
     }
-
-    let finalAnimKey = animationKey;
 
     const characterType = sprite.texture.key;
     const prefixedKey = `${characterType}-${animationKey}`;
-
     const animManager = sprite.anims.animationManager;
-    const hasAnimation = animManager.anims.has(prefixedKey);
 
-    if (hasAnimation) {
-      finalAnimKey = prefixedKey;
-    } else {
-      if (!animManager.anims.has(animationKey)) {
-        console.error(
-          `[SkillSystem] Animation '${animationKey}' and '${prefixedKey}' do not exist`,
-        );
-        return 0;
-      }
-      finalAnimKey = animationKey;
-    }
+    const finalAnimKey = animManager.anims.has(prefixedKey) ? prefixedKey : animationKey;
 
-    const anim = animManager.get(finalAnimKey);
-    if (!anim) {
-      console.error(`[SkillSystem] Could not get animation '${finalAnimKey}'`);
-      return 0;
+    if (!animManager.anims.has(finalAnimKey)) {
+      console.error(`[SkillSystem] Animation '${finalAnimKey}' does not exist`);
+      return;
     }
-    console.log(sprite, sprite.anims);
 
     sprite.anims.play(finalAnimKey, true);
 
@@ -552,37 +498,77 @@ export class SkillSystem {
       sprite.anims.msPerFrame = 1000 / frameRate;
     }
 
-    // ✅ skillDuration이 있으면 그것 사용, 없으면 애니메이션 길이 계산
+    // 애니메이션 완료 시 스킬 종료
+    const completeHandler = () => {
+      if (this.character.stateMachine) {
+        this.character.stateMachine.isLocked = false;
 
-    let lockTime = skillDuration;
-    if (!lockTime) {
-      const frameCount = anim.frames.length;
-      lockTime = (frameCount / frameRate) * 1000;
-    }
+        const onGround = this.character.sprite.body?.touching.down || false;
+        if (this.character.stateMachine.changeState) {
+          this.character.stateMachine.changeState(onGround ? 'idle' : 'jump');
+        }
+      }
 
+      // 히트박스 비활성화
+      for (const hitbox of this.skillHitboxes.values()) {
+        if (hitbox.isActive()) {
+          hitbox.deactivate();
+        }
+      }
+
+      sprite.off('animationcomplete', completeHandler);
+    };
+
+    sprite.once('animationcomplete', completeHandler);
+
+    // StateMachine 락
     if (this.character.stateMachine) {
       this.character.stateMachine.currentState = finalAnimKey;
       this.character.stateMachine.isLocked = true;
-
-      if (this.character.stateMachine.lockTimer) {
-        clearTimeout(this.character.stateMachine.lockTimer);
-      }
-
-      // ✅ 실제 스킬 duration으로 락 해제
-      this.character.stateMachine.lockTimer = setTimeout(() => {
-        if (this.character.stateMachine) {
-          this.character.stateMachine.isLocked = false;
-          this.character.stateMachine.lockTimer = null;
-
-          const onGround = this.character.sprite.body?.touching.down || false;
-          if (this.character.stateMachine.changeState) {
-            this.character.stateMachine.changeState(onGround ? 'idle' : 'jump');
-          }
-        }
-      }, lockTime);
     }
+  }
 
-    return lockTime;
+  // 특정 프레임에서 히트박스 활성화
+  activateHitboxOnFrame(animationKey, frameIndex, hitbox) {
+    const sprite = this.character.sprite;
+
+    const updateHandler = (animation, frame) => {
+      if (frame.index === frameIndex) {
+        hitbox.activate();
+        sprite.off('animationupdate', updateHandler);
+      }
+    };
+
+    sprite.on('animationupdate', updateHandler);
+  }
+
+  // 특정 프레임에서 발사체 생성
+  castSpellOnFrame(animationKey, frameIndex, spellName, isLeft) {
+    const sprite = this.character.sprite;
+
+    const updateHandler = (animation, frame) => {
+      if (frame.index === frameIndex) {
+        if (this.character.magicSystem) {
+          this.character.magicSystem.castSpell(spellName, isLeft);
+        }
+        sprite.off('animationupdate', updateHandler);
+      }
+    };
+
+    sprite.on('animationupdate', updateHandler);
+  }
+
+  // 애니메이션의 총 프레임 수 가져오기
+  getAnimationFrameCount(animationKey) {
+    const sprite = this.character.sprite;
+    const characterType = sprite.texture.key;
+    const prefixedKey = `${characterType}-${animationKey}`;
+    const animManager = sprite.anims.animationManager;
+
+    const finalAnimKey = animManager.anims.has(prefixedKey) ? prefixedKey : animationKey;
+    const anim = animManager.get(finalAnimKey);
+
+    return anim ? anim.frames.length : 0;
   }
 
   checkSkillHit(target) {
@@ -610,6 +596,7 @@ export class SkillSystem {
     for (const skill of this.skills.values()) {
       skill.update(delta);
     }
+
     const skill = this.skills.get(`${this.currentKeyName}_skill`);
     const config = skill?.config;
 
@@ -617,22 +604,18 @@ export class SkillSystem {
       if (this.character.stateMachine.isLocked && this.character.sprite.body) {
         this.character.sprite.body.setVelocityX(0);
       }
-      if (this.inputHandler.isPressed(this.currentKeyName)) {
-        console.log('e');
-      }
 
       if (this.inputHandler.isHeld(this.currentKeyName)) {
         if (!this.throttledChannelingSkill) {
           this.throttledChannelingSkill = throttle((key) => {
-            // character.mana -= this.config.channeling.manaPerTick;
             skill.consumeMana(this.character, config.channeling.manaPerTick);
           }, 500);
         }
 
         this.throttledChannelingSkill(this.currentKeyName);
       }
+
       if (this.inputHandler.isReleased(this.currentKeyName)) {
-        // skill.startCooldown();
         this.stopChannelingSkill();
         this.inputHandler.updatePrevState();
         return;

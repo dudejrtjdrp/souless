@@ -3,10 +3,10 @@ import BaseSkillHandler from './BaseSkillHandler';
 export default class InstantSkillHandler extends BaseSkillHandler {
   execute(skillName, config, skillHitbox) {
     const frameRate = this.getFrameRate(config);
-    const lockTime = this.animationController.play(config.animation, frameRate, config.duration);
+    const lockTime = this.animationController.play(config.animation, frameRate);
 
     this.lockState(lockTime);
-    this.activateHitbox(skillHitbox, config);
+    this.activateHitbox(skillHitbox, config, lockTime);
   }
 
   lockState(duration) {
@@ -16,18 +16,32 @@ export default class InstantSkillHandler extends BaseSkillHandler {
     });
   }
 
-  activateHitbox(skillHitbox, config) {
+  activateHitbox(skillHitbox, config, animationDuration) {
     if (!skillHitbox) return;
 
     if (config.hitboxSequence) {
-      skillHitbox.activateSequence(config.hitboxSequence);
+      // hitboxSequence의 각 step에 duration 계산해서 전달
+      const sequenceWithDuration = config.hitboxSequence.map((step) => ({
+        ...step,
+        duration: this.calculateStepDuration(step, animationDuration),
+      }));
+      skillHitbox.activateSequence(sequenceWithDuration);
     } else {
       const delay = config.hitboxDelay || 0;
+
       if (delay > 0) {
-        this.scene.time.delayedCall(delay, () => skillHitbox.activate());
+        this.scene.time.delayedCall(delay, () => skillHitbox.activate(animationDuration));
       } else {
-        skillHitbox.activate();
+        skillHitbox.activate(animationDuration);
       }
     }
+  }
+
+  calculateStepDuration(step, animationDuration) {
+    // step에 duration이 명시되어 있으면 사용
+    if (step.duration) return step.duration;
+
+    // 없으면 애니메이션 duration 사용
+    return animationDuration;
   }
 }

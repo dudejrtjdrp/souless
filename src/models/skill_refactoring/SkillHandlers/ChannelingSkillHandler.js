@@ -9,27 +9,37 @@ export default class ChannelingSkillHandler extends BaseSkillHandler {
       }, 700);
     }
     this.config = config;
-    const frameRate = this.getFrameRate(config);
 
     this.stateLockManager.stateMachine.isLocked = true;
     this.playChannelingAnimation(skillName, config);
     this.scheduleChannelingEffects(config);
 
-    return skillName[0]; // return key name for tracking
+    return skillName[0];
   }
 
   playChannelingAnimation(skillName, config) {
     const animKey = this.animationController.resolveAnimationKey(skillName);
+    const frameRate = this.getFrameRate(config);
+
     console.log(skillName, animKey);
-    this.animationController.playAnimation(animKey, this.getFrameRate(config));
-    this.animationController.playAnimation(`${animKey}_channeling`, this.getFrameRate(config));
+    this.animationController.playAnimation(animKey, frameRate);
+
+    // channeling 애니메이션의 frameRate도 가져오기
+    const channelingConfig = {
+      animation: `${config.animation}_channeling`,
+    };
+    const channelingFrameRate = this.getFrameRate(channelingConfig);
+    this.animationController.playAnimation(`${animKey}_channeling`, channelingFrameRate);
+
     console.log(config);
   }
 
   scheduleChannelingEffects(config) {
-    this.scene.time.delayedCall(config.duration, () => {
-      this.applyEffects(config);
-    });
+    if (config.channeling?.maxDuration) {
+      this.scene.time.delayedCall(config.channeling.maxDuration, () => {
+        this.applyEffects(config);
+      });
+    }
   }
 
   update() {
