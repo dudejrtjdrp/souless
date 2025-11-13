@@ -5,33 +5,46 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
     const frameRate = this.getFrameRate(config);
     // config.duration을 전달하지 않으면 애니메이션 길이로 자동 계산됨
     const lockTime = this.animationController.play(config.animation, frameRate);
-
-    this.lockState(lockTime);
+    this.lockState(lockTime, skillName);
     this.activateHitbox(skillHitbox, config, lockTime);
   }
 
-  lockState(duration) {
+  lockState(duration, skillName) {
     const sprite = this.character.sprite;
     const body = sprite.body;
 
-    const isAirborne = !body?.touching.down;
+    let isAirborne = false;
+    if (skillName === 'air_attack' || skillName === 's_skill') {
+      isAirborne = !(body?.blocked.down || body?.onFloor?.());
+    }
 
     if (isAirborne) {
-      // 1️⃣ 공중에서 멈추기
       body.setVelocityY(0);
       body.setVelocityX(0);
       body.setAllowGravity(false);
     }
 
-    // 2️⃣ 상태 잠금 + 해제 처리
     this.stateLockManager.lock(duration, () => {
       if (isAirborne) {
-        // 3️⃣ 공격 끝난 뒤 다시 중력 복원
         body.setAllowGravity(true);
+
+        const landingChecker = this.scene.time.addEvent({
+          delay: 50,
+          loop: true,
+          callback: () => {
+            const hasLanded = body.blocked.down || body.touching.down || body.onFloor?.();
+            if (!hasLanded) return;
+
+            this.animationController.playIdle();
+            landingChecker.remove();
+          },
+        });
+
+        return;
       }
 
-      const onGround = body?.touching.down || false;
-      this.character.stateMachine.changeState?.(onGround ? 'idle' : 'jump');
+      // 지상 스킬은 바로 idle
+      this.animationController.playIdle();
     });
   }
 

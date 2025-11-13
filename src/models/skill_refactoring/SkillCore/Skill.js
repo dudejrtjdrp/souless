@@ -15,12 +15,6 @@ export class Skill {
   }
 
   canUse(character) {
-    console.log(
-      this.cooldownRemaining === 0,
-      !this.isActive, // 스킬 사용 중에는 재사용 불가
-      this.hasSufficientMana(character),
-      this.meetsGroundRequirement(character),
-    );
     return (
       this.cooldownRemaining === 0 &&
       !this.isActive && // 스킬 사용 중에는 재사용 불가

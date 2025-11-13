@@ -3,12 +3,13 @@ export default class AnimationController {
     this.sprite = sprite;
   }
 
-  play(animationKey, frameRate, duration) {
+  play(animationKey, frameRate) {
+    console.log(this.sprite.stateMachine);
     const finalKey = this.resolveAnimationKey(animationKey);
     if (!finalKey) return 0;
 
     this.playAnimation(finalKey, frameRate);
-    return this.calculateLockTime(finalKey, frameRate, duration);
+    return this.calculateLockTime(finalKey, frameRate);
   }
 
   resolveAnimationKey(animationKey) {
@@ -37,13 +38,12 @@ export default class AnimationController {
     }
   }
 
-  calculateLockTime(animKey, frameRate, customDuration) {
-    if (customDuration) return customDuration;
-
+  calculateLockTime(animKey, frameRate) {
     const anim = this.sprite.anims.animationManager.get(animKey);
     if (!anim) return 0;
 
     const frameCount = anim.frames.length;
+    console.log(frameCount);
     return (frameCount / frameRate) * 1000;
   }
 

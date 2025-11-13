@@ -7,7 +7,6 @@ export default class SkillValidator {
   }
 
   static isCharacterInAir(character) {
-    console.log(3);
     return character.sprite.body && !character.sprite.body.touching.down;
   }
 
@@ -39,13 +38,11 @@ export default class SkillValidator {
   static canUseSkill(character, skill, skillName) {
     // 공중 체크
     if (this.isCharacterInAir(character) && !this.canUseInAir(skillName)) {
-      console.log(4);
       return false;
     }
 
     // 힐링 스킬 체크
     if (this.isHealingSkillUnusable(character, skill.config)) {
-      console.log(5);
       return false;
     }
 
