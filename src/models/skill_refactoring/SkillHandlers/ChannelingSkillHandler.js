@@ -21,17 +21,9 @@ export default class ChannelingSkillHandler extends BaseSkillHandler {
     const animKey = this.animationController.resolveAnimationKey(skillName);
     const frameRate = this.getFrameRate(config);
 
-    console.log(skillName, animKey);
     this.animationController.playAnimation(animKey, frameRate);
 
-    // channeling 애니메이션의 frameRate도 가져오기
-    const channelingConfig = {
-      animation: `${config.animation}_channeling`,
-    };
-    const channelingFrameRate = this.getFrameRate(channelingConfig);
-    this.animationController.playAnimation(`${animKey}_channeling`, channelingFrameRate);
-
-    console.log(config);
+    this.animationController.playAnimation(`${animKey}_channeling`, config.frameRate);
   }
 
   scheduleChannelingEffects(config) {

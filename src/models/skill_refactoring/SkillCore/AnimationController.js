@@ -4,7 +4,6 @@ export default class AnimationController {
   }
 
   play(animationKey, frameRate) {
-    console.log(this.sprite.stateMachine);
     const finalKey = this.resolveAnimationKey(animationKey);
     if (!finalKey) return 0;
 
@@ -47,14 +46,14 @@ export default class AnimationController {
     return (frameCount / frameRate) * 1000;
   }
 
-  pauseAtFrame(frameNumber, callback) {
-    this.sprite.on('animationupdate', (animation, frame) => {
-      if (frame.textureFrame === frameNumber) {
-        this.sprite.anims.pause();
-        callback?.();
-      }
-    });
-  }
+  // pauseAtFrame(frameNumber, callback) {
+  //   this.sprite.on('animationupdate', (animation, frame) => {
+  //     if (frame.textureFrame === frameNumber) {
+  //       this.sprite.anims.pause();
+  //       callback?.();
+  //     }
+  //   });
+  // }
 
   stopAndClearEvents() {
     this.sprite.off('animationupdate');

@@ -8,6 +8,7 @@ export default class BaseSkillHandler {
 
   getFrameRate(config) {
     // animations 데이터에서 frameRate 가져오기
+    console.log(config);
     if (config.animation && this.character.data?.animations) {
       const animData = this.character.data.animations.find((anim) => anim.key === config.animation);
       if (animData?.frameRate) {
