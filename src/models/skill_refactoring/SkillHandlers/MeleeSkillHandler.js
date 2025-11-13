@@ -12,6 +12,7 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
   lockState(duration, skillName) {
     const sprite = this.character.sprite;
     const body = sprite.body;
+    const input = this.inputHandler.getInputState();
 
     let isAirborne = false;
     if (skillName === 'air_attack' || skillName === 's_skill') {
@@ -23,7 +24,7 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
       body.setVelocityX(0);
       body.setAllowGravity(false);
     }
-
+    console.log(this.inputHandler.isRunning);
     this.stateLockManager.lock(duration, () => {
       if (isAirborne) {
         body.setAllowGravity(true);
@@ -35,7 +36,16 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
             const hasLanded = body.blocked.down || body.touching.down || body.onFloor?.();
             if (!hasLanded) return;
 
-            this.animationController.playIdle();
+            if (!input.isMoving) {
+              this.animationController.playIdle();
+            }
+            let newState = 'walk';
+            if (input.isRunning) {
+              newState = 'run';
+            }
+
+            this.character.stateMachine.changeState(newState);
+
             landingChecker.remove();
           },
         });
@@ -44,7 +54,7 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
       }
 
       // 지상 스킬은 바로 idle
-      this.animationController.playIdle();
+      this.animationController.playPrevState();
     });
   }
 

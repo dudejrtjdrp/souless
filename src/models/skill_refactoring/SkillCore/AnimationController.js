@@ -1,6 +1,7 @@
 export default class AnimationController {
-  constructor(sprite) {
+  constructor(sprite, stateLockManager) {
     this.sprite = sprite;
+    this.stateLockManager = stateLockManager;
   }
 
   play(animationKey, frameRate) {
@@ -60,8 +61,26 @@ export default class AnimationController {
     this.sprite.anims.stop();
   }
 
+  playPrevState() {
+    if (this.stateLockManager.getPrevState()) {
+      this.sprite.anims.play(this.stateLockManager.getPrevState(), true);
+      return;
+    }
+    console.log(this.stateLockManager.getPrevState());
+  }
+
   playIdle() {
     const idleKey = `${this.sprite.texture.key}-idle`;
     this.sprite.anims.play(idleKey, true);
+  }
+
+  playWalk() {
+    const walkKey = `${this.sprite.texture.key}-walk`;
+    this.sprite.anims.play(walkKey, true);
+  }
+
+  playRun(inputhandler) {
+    const runKey = `${this.sprite.texture.key}-run`;
+    this.sprite.anims.play(runKey, true);
   }
 }

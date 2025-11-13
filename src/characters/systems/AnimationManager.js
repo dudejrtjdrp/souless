@@ -50,6 +50,7 @@ export default class AnimationManager {
     if (!sprite || !animKey) return;
 
     const fullKey = `${this.config.spriteKey}-${animKey}`;
+    console.log(fullKey);
 
     // 애니메이션 존재 여부 확인
     if (!this.scene.anims.exists(fullKey)) {

@@ -1,9 +1,10 @@
 export default class BaseSkillHandler {
-  constructor(scene, character, animationController, stateLockManager) {
+  constructor(scene, character, animationController, stateLockManager, inputHandler) {
     this.character = character;
     this.scene = scene;
     this.animationController = animationController;
     this.stateLockManager = stateLockManager;
+    this.inputHandler = inputHandler;
   }
 
   getFrameRate(config) {

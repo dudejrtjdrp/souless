@@ -18,9 +18,9 @@ export class SkillSystem {
     this.inputHandler = new InputHandler(this.scene);
 
     // Managers
-    this.animationController = new AnimationController(character.sprite);
     this.stateLockManager = new StateLockManager(character.stateMachine);
     this.channelingManager = new ChannelingManager(this.inputHandler);
+    this.animationController = new AnimationController(character.sprite, this.stateLockManager);
 
     // Handlers
     this.handlerFactory = new SkillHandlerFactory(
@@ -28,6 +28,7 @@ export class SkillSystem {
       character,
       this.animationController,
       this.stateLockManager,
+      this.inputHandler,
     );
 
     this.initializeSkills(skillsData);
@@ -134,6 +135,15 @@ export class SkillSystem {
     const skillHitbox = this.skillHitboxes.get(skillName);
     const result = handler.execute(skillName, config, skillHitbox);
 
+    // this.animationController.getPrevState(skillName, config);
+
+    const characterType = this.character.sprite.texture.key;
+    const prevState = this.character.stateMachine.currentState;
+    const prefixedKey = `${characterType}-${prevState}`;
+
+    console.log(prefixedKey);
+    // this.animationController.playPrevState(prefixedKey);
+    this.stateLockManager.setPrevState(prefixedKey);
     // Channeling 스킬의 경우 키 이름 저장
     if (config.type === 'channeling' && result) {
       this.channelingManager.startChanneling(result);

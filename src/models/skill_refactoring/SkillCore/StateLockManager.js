@@ -4,6 +4,15 @@ export default class StateLockManager {
     this.lockTimer = null;
   }
 
+  setPrevState(prevStateKey) {
+    console.log(prevStateKey);
+    this.prevStateKey = prevStateKey;
+  }
+
+  getPrevState() {
+    return this.prevStateKey;
+  }
+
   lock(duration, onUnlock) {
     this.clearExistingLock();
 

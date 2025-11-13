@@ -51,7 +51,7 @@ export default class ChannelingSkillHandler extends BaseSkillHandler {
   stop(animationController, stateLockManager) {
     stateLockManager.forceUnlock();
     animationController.stopAndClearEvents();
-    animationController.playIdle();
+    animationController.playPrevState();
 
     const onGround = this.character.sprite.body?.touching.down || false;
     this.character.stateMachine.changeState?.(onGround ? 'idle' : 'jump');
