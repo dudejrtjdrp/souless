@@ -872,7 +872,7 @@ export const CharacterData = {
         damage: 15,
         icon: 'assets/skills/princess/q_skill.png',
         hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
-        hitstop: 'SLASH_RIGHT',
+        hitstop: 'SPEAR_THRUST',
 
         animation: 'q_skill',
         knockback: { x: 150, y: -50 },

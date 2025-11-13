@@ -12,6 +12,10 @@ export class SkillHitbox {
     this.hitboxes = [];
     this.debug = !!config.debug;
 
+    // 실시간 타이머들 (히트스톱 영향 안 받음)
+    this.deactivateTimer = null;
+    this.sequenceTimers = [];
+
     if (config.hitbox) {
       const hitboxArray = Array.isArray(config.hitbox) ? config.hitbox : [config.hitbox];
       hitboxArray.forEach((hb) => this.createHitbox(hb));
@@ -43,7 +47,7 @@ export class SkillHitbox {
     rect.setVisible(false);
   }
 
-  // duration 파라미터 추가
+  // duration 파라미터 추가 - setTimeout으로 변경
   activate(duration) {
     if (this.hitboxes.length === 0) return;
 
@@ -59,9 +63,17 @@ export class SkillHitbox {
       this.scene.children.bringToTop(h.rect);
     });
 
-    // 외부에서 전달받은 duration 사용
+    // 기존 타이머 정리
+    if (this.deactivateTimer) {
+      clearTimeout(this.deactivateTimer);
+      this.deactivateTimer = null;
+    }
+
+    // setTimeout 사용 (실시간, timeScale 영향 안 받음)
     if (duration) {
-      this.scene.time.delayedCall(duration, () => this.deactivate());
+      this.deactivateTimer = setTimeout(() => {
+        this.deactivate();
+      }, duration);
     }
   }
 
@@ -71,10 +83,14 @@ export class SkillHitbox {
     this.active = true;
     this.hitEnemies.clear();
 
+    // 기존 시퀀스 타이머들 정리
+    this.clearSequenceTimers();
+
     const activeHitboxes = [];
 
     sequence.forEach((step) => {
-      this.scene.time.delayedCall(step.delay || 0, () => {
+      // setTimeout으로 변경 (실시간)
+      const delayTimer = setTimeout(() => {
         const temp = this.scene.add.rectangle(
           0,
           0,
@@ -111,34 +127,57 @@ export class SkillHitbox {
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
-        // step의 duration 사용 (InstantSkillHandler에서 계산해서 전달)
+        // step의 duration도 setTimeout으로 변경
         const dur = step.duration || 200;
-        this.scene.time.delayedCall(dur, () => {
+        const durationTimer = setTimeout(() => {
           const idx = this.hitboxes.indexOf(tempHitboxData);
           if (idx > -1) this.hitboxes.splice(idx, 1);
           const aidx = activeHitboxes.indexOf(tempHitboxData);
           if (aidx > -1) activeHitboxes.splice(aidx, 1);
           temp.destroy();
-        });
-      });
+        }, dur);
+
+        this.sequenceTimers.push(durationTimer);
+      }, step.delay || 0);
+
+      this.sequenceTimers.push(delayTimer);
     });
 
     const totalDuration =
       Math.max(...sequence.map((s) => (s.delay || 0) + (s.duration || 200))) + 100;
-    this.scene.time.delayedCall(totalDuration, () => {
+
+    // 전체 시퀀스 종료 타이머도 setTimeout으로
+    const finalTimer = setTimeout(() => {
       this.deactivate();
-    });
+    }, totalDuration);
+
+    this.sequenceTimers.push(finalTimer);
   }
 
   deactivate() {
     this.active = false;
     this.hitEnemies.clear();
+
+    // 타이머 정리
+    if (this.deactivateTimer) {
+      clearTimeout(this.deactivateTimer);
+      this.deactivateTimer = null;
+    }
+
     this.hitboxes.forEach((h) => {
       if (this.debug && h.rect) {
         h.rect.setFillStyle(0x00ff00, 0.15);
         h.rect.setVisible(false);
       }
     });
+  }
+
+  // 시퀀스 타이머들 정리 헬퍼 메서드
+  clearSequenceTimers() {
+    this.sequenceTimers.forEach((timer) => {
+      if (timer) clearTimeout(timer);
+    });
+    this.sequenceTimers = [];
   }
 
   updatePosition() {
@@ -199,6 +238,15 @@ export class SkillHitbox {
   }
 
   destroy() {
+    // 모든 타이머 정리
+    if (this.deactivateTimer) {
+      clearTimeout(this.deactivateTimer);
+      this.deactivateTimer = null;
+    }
+
+    this.clearSequenceTimers();
+
+    // hitbox 제거
     this.hitboxes.forEach((hb) => {
       if (hb.rect) hb.rect.destroy();
     });

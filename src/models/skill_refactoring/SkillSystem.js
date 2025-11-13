@@ -34,6 +34,8 @@ export class SkillSystem {
 
     this.hitstopManager = new HitstopManager(scene);
 
+    this.isSkillActive = false;
+
     this.initializeSkills(skillsData);
     this.setupAnimationCompleteListener();
   }
@@ -138,8 +140,6 @@ export class SkillSystem {
     const skillHitbox = this.skillHitboxes.get(skillName);
     const result = handler.execute(skillName, config, skillHitbox);
 
-    // this.animationController.getPrevState(skillName, config);
-
     const characterType = this.character.sprite.texture.key;
     const prevState = this.character.stateMachine.currentState;
     const prefixedKey = `${characterType}-${prevState}`;
@@ -156,6 +156,7 @@ export class SkillSystem {
   stopCharacterMovement() {
     if (this.character.sprite.body) {
       this.character.sprite.body.setVelocityX(0);
+      // this.character.sprite.body.moves = false;
     }
   }
 
@@ -176,6 +177,9 @@ export class SkillSystem {
     this.updateSkills(delta);
     this.updateChanneling();
     this.inputHandler.updatePrevState();
+    // if (this.isSkillActive) {
+    //   this.stopCharacterMovement();
+    // }
   }
 
   updateSkills(delta) {
