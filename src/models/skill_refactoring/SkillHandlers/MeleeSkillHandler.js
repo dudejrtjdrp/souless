@@ -11,8 +11,26 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
   }
 
   lockState(duration) {
+    const sprite = this.character.sprite;
+    const body = sprite.body;
+
+    const isAirborne = !body?.touching.down;
+
+    if (isAirborne) {
+      // 1️⃣ 공중에서 멈추기
+      body.setVelocityY(0);
+      body.setVelocityX(0);
+      body.setAllowGravity(false);
+    }
+
+    // 2️⃣ 상태 잠금 + 해제 처리
     this.stateLockManager.lock(duration, () => {
-      const onGround = this.character.sprite.body?.touching.down || false;
+      if (isAirborne) {
+        // 3️⃣ 공격 끝난 뒤 다시 중력 복원
+        body.setAllowGravity(true);
+      }
+
+      const onGround = body?.touching.down || false;
       this.character.stateMachine.changeState?.(onGround ? 'idle' : 'jump');
     });
   }

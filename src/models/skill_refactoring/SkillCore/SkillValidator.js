@@ -1,11 +1,13 @@
-const AIR_ALLOWED_SKILLS = ['air_attack', 's_skill'];
+const AIR_ALLOWED_SKILLS = ['air_attack', 's_skill', 'attack'];
 
 export default class SkillValidator {
   static canUseInAir(skillName) {
+    console.log(skillName);
     return AIR_ALLOWED_SKILLS.includes(skillName);
   }
 
   static isCharacterInAir(character) {
+    console.log(3);
     return character.sprite.body && !character.sprite.body.touching.down;
   }
 
@@ -37,11 +39,13 @@ export default class SkillValidator {
   static canUseSkill(character, skill, skillName) {
     // 공중 체크
     if (this.isCharacterInAir(character) && !this.canUseInAir(skillName)) {
+      console.log(4);
       return false;
     }
 
     // 힐링 스킬 체크
     if (this.isHealingSkillUnusable(character, skill.config)) {
+      console.log(5);
       return false;
     }
 

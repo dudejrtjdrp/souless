@@ -37,13 +37,32 @@ export class SkillSystem {
   setupAnimationCompleteListener() {
     // 애니메이션 완료 이벤트 리스너
     this.character.sprite.on('animationcomplete', (animation) => {
-      // 스킬 애니메이션이 완료되면 해당 스킬의 complete() 호출
-      for (const [skillName, skill] of this.skills.entries()) {
-        if (skill.isActive && !skill.isChanneling) {
+      this.completeSkillByAnimation(animation.key);
+    });
+
+    // 애니메이션 중단 이벤트 리스너 추가
+    this.character.sprite.on('animationstop', (animation) => {
+      this.completeSkillByAnimation(animation.key);
+    });
+  }
+
+  completeSkillByAnimation(animKey) {
+    // 완료/중단된 애니메이션에 해당하는 스킬만 찾아서 complete() 호출
+    for (const [skillName, skill] of this.skills.entries()) {
+      if (skill.isActive && !skill.isChanneling) {
+        const skillAnimKey = skill.config.animation;
+        if (!skillAnimKey) continue;
+
+        // prefix가 있을 수 있으므로 두 가지 형태 모두 체크
+        const characterType = this.character.sprite.texture.key;
+        const prefixedKey = `${characterType}-${skillAnimKey}`;
+
+        if (animKey === skillAnimKey || animKey === prefixedKey) {
           skill.complete();
+          break;
         }
       }
-    });
+    }
   }
 
   initializeSkills(skillsData) {
@@ -103,6 +122,7 @@ export class SkillSystem {
     const handler = this.handlerFactory.getHandler(config.type);
     if (!handler) {
       console.warn(`No handler for skill type: ${config.type}`);
+      console.log(3);
       return;
     }
 
@@ -207,6 +227,7 @@ export class SkillSystem {
   // Cleanup
   destroy() {
     this.character.sprite.off('animationcomplete');
+    this.character.sprite.off('animationstop'); // 추가
     this.skills.clear();
 
     for (const hitbox of this.skillHitboxes.values()) {
