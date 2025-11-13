@@ -6,6 +6,7 @@ import { Skill } from './SkillCore/Skill';
 import AnimationController from './SkillCore/AnimationController';
 import StateLockManager from './SkillCore/StateLockManager';
 import SkillValidator from './SkillCore/SkillValidator';
+import HitstopManager from '../../systems/HitStopManager';
 
 export class SkillSystem {
   constructor(scene, character, skillsData) {
@@ -30,6 +31,8 @@ export class SkillSystem {
       this.stateLockManager,
       this.inputHandler,
     );
+
+    this.hitstopManager = new HitstopManager(scene);
 
     this.initializeSkills(skillsData);
     this.setupAnimationCompleteListener();
@@ -212,7 +215,22 @@ export class SkillSystem {
     for (const hitbox of this.skillHitboxes.values()) {
       if (hitbox.isActive()) {
         const result = hitbox.checkHit(target);
-        if (result) return result;
+        if (result) {
+          const skillName = hitbox.name;
+          const skill = this.skills.get(skillName);
+          // 1. 프리셋 사용
+          if (skill?.config.hitstop) {
+            this.hitstopManager.triggerPreset(skill.config.hitstop);
+          }
+
+          // 2. 연타 콤보용
+          if (skill?.config.isCombo) {
+            const comboCount = this.character.comboCounter || 1;
+            this.hitstopManager.triggerCombo(comboCount);
+          }
+
+          return result;
+        }
       }
     }
     return false;
@@ -246,5 +264,6 @@ export class SkillSystem {
     this.skillHitboxes.clear();
 
     this.channelingManager.reset();
+    this.hitstopManager.destroy();
   }
 }
