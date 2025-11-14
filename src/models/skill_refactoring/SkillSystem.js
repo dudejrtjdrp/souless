@@ -23,6 +23,13 @@ export class SkillSystem {
     this.channelingManager = new ChannelingManager(this.inputHandler);
     this.animationController = new AnimationController(character.sprite, this.stateLockManager);
 
+    // ✅ GameScene의 EffectManager 사용 (없으면 경고)
+    this.effectManager = scene.effectManager;
+
+    if (!this.effectManager) {
+      console.warn('⚠️ scene.effectManager not found! Effects will not work.');
+    }
+
     // Handlers
     this.handlerFactory = new SkillHandlerFactory(
       scene,
@@ -33,33 +40,94 @@ export class SkillSystem {
     );
 
     this.hitstopManager = new HitstopManager(scene);
-
     this.isSkillActive = false;
 
     this.initializeSkills(skillsData);
     this.setupAnimationCompleteListener();
   }
 
+  /**
+   * 스킬 데이터에서 사용되는 모든 이펙트 미리 로드
+   * (필요시 사용 - 현재는 GameScene에서 일괄 로드)
+   */
+  preloadEffects(skillsData) {
+    if (!this.effectManager) {
+      console.warn('EffectManager not available for preloading');
+      return;
+    }
+
+    const effectKeys = new Set();
+
+    for (const config of Object.values(skillsData)) {
+      // 단일 히트박스의 이펙트
+      if (config.hitbox) {
+        const hitboxArray = Array.isArray(config.hitbox) ? config.hitbox : [config.hitbox];
+        hitboxArray.forEach((hb) => {
+          if (hb.effect) effectKeys.add(hb.effect);
+        });
+      }
+
+      // 시퀀스 히트박스의 이펙트
+      if (config.hitboxSequence) {
+        config.hitboxSequence.forEach((step) => {
+          if (step.effect) effectKeys.add(step.effect);
+          if (step.hitbox?.effect) effectKeys.add(step.hitbox.effect);
+        });
+      }
+
+      // 임팩트 이펙트
+      if (config.impactEffect) {
+        effectKeys.add(config.impactEffect);
+      }
+
+      // 대시/힐 이펙트
+      if (config.dashEffect) {
+        effectKeys.add(config.dashEffect);
+      }
+      if (config.healEffect) {
+        effectKeys.add(config.healEffect);
+      }
+    }
+
+    if (effectKeys.size === 0) return;
+
+    // 모든 이펙트 로드
+    effectKeys.forEach((key) => {
+      this.effectManager.preloadEffect(key);
+    });
+
+    // 로드 완료 후 애니메이션 생성
+    const loadCompleteHandler = () => {
+      effectKeys.forEach((key) => {
+        this.effectManager.createEffectAnimation(key);
+      });
+      this.scene.load.off('complete', loadCompleteHandler);
+    };
+
+    this.scene.load.on('complete', loadCompleteHandler);
+
+    // 로드가 이미 진행 중이 아니면 시작
+    if (!this.scene.load.isLoading()) {
+      this.scene.load.start();
+    }
+  }
+
   setupAnimationCompleteListener() {
-    // 애니메이션 완료 이벤트 리스너
     this.character.sprite.on('animationcomplete', (animation) => {
       this.completeSkillByAnimation(animation.key);
     });
 
-    // 애니메이션 중단 이벤트 리스너 추가
     this.character.sprite.on('animationstop', (animation) => {
       this.completeSkillByAnimation(animation.key);
     });
   }
 
   completeSkillByAnimation(animKey) {
-    // 완료/중단된 애니메이션에 해당하는 스킬만 찾아서 complete() 호출
     for (const [skillName, skill] of this.skills.entries()) {
       if (skill.isActive && !skill.isChanneling) {
         const skillAnimKey = skill.config.animation;
         if (!skillAnimKey) continue;
 
-        // prefix가 있을 수 있으므로 두 가지 형태 모두 체크
         const characterType = this.character.sprite.texture.key;
         const prefixedKey = `${characterType}-${skillAnimKey}`;
 
@@ -76,7 +144,14 @@ export class SkillSystem {
       this.skills.set(name, new Skill(name, config));
 
       if (this.needsHitbox(config)) {
-        const hitbox = new SkillHitbox(this.scene, this.character.sprite, name, config);
+        // EffectManager를 히트박스에 전달
+        const hitbox = new SkillHitbox(
+          this.scene,
+          this.character.sprite,
+          name,
+          config,
+          this.effectManager,
+        );
         this.skillHitboxes.set(name, hitbox);
       }
     }
@@ -88,7 +163,6 @@ export class SkillSystem {
     return hasHitboxType && hasHitboxData;
   }
 
-  // animations 배열에서 해당 애니메이션의 frameRate 가져오기
   getAnimationFrameRate(animationKey) {
     const sprite = this.character.sprite;
     const animManager = sprite.anims.animationManager;
@@ -98,7 +172,7 @@ export class SkillSystem {
     const finalAnimKey = animManager.anims.has(prefixedKey) ? prefixedKey : animationKey;
     const anim = animManager.get(finalAnimKey);
 
-    return anim ? anim.frameRate : 10; // 기본값 10
+    return anim ? anim.frameRate : 10;
   }
 
   useSkill(skillName) {
@@ -128,11 +202,9 @@ export class SkillSystem {
     const handler = this.handlerFactory.getHandler(config.type);
     if (!handler) {
       console.warn(`No handler for skill type: ${config.type}`);
-      console.log(3);
       return;
     }
 
-    // animations 배열에서 frameRate 가져와서 config에 추가
     if (config.animation) {
       config.frameRate = this.getAnimationFrameRate(config.animation);
     }
@@ -144,10 +216,8 @@ export class SkillSystem {
     const prevState = this.character.stateMachine.currentState;
     const prefixedKey = `${characterType}-${prevState}`;
 
-    console.log(prefixedKey);
-    // this.animationController.playPrevState(prefixedKey);
     this.stateLockManager.setPrevState(prefixedKey);
-    // Channeling 스킬의 경우 키 이름 저장
+
     if (config.type === 'channeling' && result) {
       this.channelingManager.startChanneling(result);
     }
@@ -156,7 +226,6 @@ export class SkillSystem {
   stopCharacterMovement() {
     if (this.character.sprite.body) {
       this.character.sprite.body.setVelocityX(0);
-      // this.character.sprite.body.moves = false;
     }
   }
 
@@ -165,10 +234,9 @@ export class SkillSystem {
     handler.stop(this.animationController, this.stateLockManager);
     this.channelingManager.reset();
 
-    // 채널링 스킬 완료 처리
     for (const skill of this.skills.values()) {
       if (skill.isChanneling) {
-        skill.stopChanneling(); // stopChanneling이 complete()를 호출함
+        skill.stopChanneling();
       }
     }
   }
@@ -177,9 +245,9 @@ export class SkillSystem {
     this.updateSkills(delta);
     this.updateChanneling();
     this.inputHandler.updatePrevState();
-    // if (this.isSkillActive) {
-    //   this.stopCharacterMovement();
-    // }
+
+    // ✅ EffectManager.update()는 GameScene에서 한 번만 호출되므로
+    // 여기서는 호출하지 않음 (중복 방지)
   }
 
   updateSkills(delta) {
@@ -197,13 +265,11 @@ export class SkillSystem {
 
     if (!skill?.config) return;
 
-    // 1. 채널링 스킬이 완료되었는지 체크
     if (!skill.isChanneling) {
       this.stopChannelingSkill();
       return;
     }
 
-    // 2. 힐링/마나 회복이 더 이상 필요 없는지 체크
     if (SkillValidator.isHealingSkillUnusable(this.character, skill.config)) {
       this.stopChannelingSkill();
       return;
@@ -214,7 +280,6 @@ export class SkillSystem {
     );
   }
 
-  // Hitbox 관련 메서드
   checkSkillHit(target) {
     for (const hitbox of this.skillHitboxes.values()) {
       if (hitbox.isActive()) {
@@ -222,12 +287,11 @@ export class SkillSystem {
         if (result) {
           const skillName = hitbox.name;
           const skill = this.skills.get(skillName);
-          // 1. 프리셋 사용
+
           if (skill?.config.hitstop) {
             this.hitstopManager.triggerPreset(skill.config.hitstop);
           }
 
-          // 2. 연타 콤보용
           if (skill?.config.isCombo) {
             const comboCount = this.character.comboCounter || 1;
             this.hitstopManager.triggerCombo(comboCount);
@@ -247,7 +311,6 @@ export class SkillSystem {
     return null;
   }
 
-  // Getters
   getSkill(name) {
     return this.skills.get(name);
   }
@@ -256,10 +319,9 @@ export class SkillSystem {
     return Array.from(this.skills.values());
   }
 
-  // Cleanup
   destroy() {
     this.character.sprite.off('animationcomplete');
-    this.character.sprite.off('animationstop'); // 추가
+    this.character.sprite.off('animationstop');
     this.skills.clear();
 
     for (const hitbox of this.skillHitboxes.values()) {

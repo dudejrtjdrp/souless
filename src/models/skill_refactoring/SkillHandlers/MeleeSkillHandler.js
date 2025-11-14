@@ -24,7 +24,6 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
       body.setVelocityX(0);
       body.setAllowGravity(false);
     }
-    console.log(this.inputHandler.isRunning);
     this.stateLockManager.lock(duration, () => {
       if (isAirborne) {
         body.setAllowGravity(true);

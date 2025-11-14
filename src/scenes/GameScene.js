@@ -9,8 +9,9 @@ import CharacterSwitchManager from '../systems/CharacterSwitchManager.js';
 import SaveManager from '../utils/SaveManager.js';
 import InputHandler from '../characters/systems/InputHandler.js';
 import CharacterSelectOverlay from '../systems/GameScene/CharacterSelectOverlay.js';
+import { EffectLoader } from '../systems/Effects/EffectLoader.js';
+import { EffectManager } from '../systems/Effects/EffectManager.js';
 
-// 새로운 매니저들
 import GameSceneInitializer from '../systems/GameScene/GameSceneInitializer.js';
 import PlayerSpawnManager from '../systems/GameScene/PlayerSpawnManager.js';
 import BackgroundLayerManager from '../systems/GameScene/BackgroundLayerManager.js';
@@ -46,6 +47,17 @@ export default class GameScene extends Phaser.Scene {
   loadCharacterAssets() {
     CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
+
+    this.effectManager = new EffectManager(this);
+    this.effectManager.setDebug(true); // 디버그 활성화
+
+    // EffectLoader를 통해 모든 이펙트 로드
+    EffectLoader.preloadAllEffects(this);
+
+    // 사용할 캐릭터의 이펙트만 로드
+    // const effectKeys = EffectLoader.extractAllEffectKeys(CharacterData);
+    // console.log('Loading effects:', Array.from(effectKeys));
+    // EffectLoader.preloadEffects(this, Array.from(effectKeys));
   }
 
   loadPortalAssets() {
@@ -71,6 +83,9 @@ export default class GameScene extends Phaser.Scene {
     this.setupCharacterSelectUI(); // ✅ 캐릭터 선택 UI 생성
     this.emitInitialEvents();
 
+    EffectLoader.createAllAnimations(this);
+    this.effectManager.logStatus();
+
     if (!this.savedSpawnData) {
       this.saveCurrentPosition();
     }
@@ -83,6 +98,14 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.isPortalTransitioning = false;
+
+    // 2. 로드된 텍스처 확인
+    const effectKeys = ['slash_basic', 'impact_light', 'hit_spark'];
+
+    // 3. EffectManager 상태 확인
+    if (this.effectManager) {
+      this.effectManager.logStatus();
+    }
   }
 
   async initializeUI() {
@@ -300,6 +323,7 @@ export default class GameScene extends Phaser.Scene {
     this.updateGameObjects(time, delta);
     this.handleInput(time, delta);
     this.emitPlayerEvents();
+    this.effectManager.update();
     this.autoSave(time);
   }
 

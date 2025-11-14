@@ -854,39 +854,49 @@ export const CharacterData = {
         type: 'melee',
         damage: 10,
         icon: 'assets/skills/princess/attack.png', // 아이콘 추가
-        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100, effect: 'slash_basic' },
         animation: 'attack',
         knockback: { x: 100, y: 0 },
         targetType: 'single',
+        impactEffect: 'impact_light', // 타격 시 이펙트
       },
       air_attack: {
         type: 'melee',
         damage: 10,
-        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100, effect: 'slash_basic' },
         animation: 'air_attack',
         knockback: { x: 100, y: 0 },
         targetType: 'single',
+        impactEffect: 'impact_light',
       },
       q_skill: {
         type: 'melee',
         damage: 15,
         icon: 'assets/skills/princess/q_skill.png',
-        hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
+        hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70, effect: 'slash_heavy' },
         hitstop: 'SPEAR_THRUST',
-
         animation: 'q_skill',
         knockback: { x: 150, y: -50 },
         cooldown: 2000,
         cost: { mana: 20 },
         targetType: 'multi',
+        impactEffect: 'impact_heavy',
       },
       w_skill: {
         type: 'melee',
         damage: 25,
         icon: 'assets/skills/princess/w_skill.png',
-        hitbox: [
-          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
-          { width: 70, height: 90, offsetX: 130, offsetY: 60 },
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100, effect: 'energy_wave' },
+            damage: 10,
+          },
+          {
+            delay: 200,
+            hitbox: { width: 70, height: 90, offsetX: 130, offsetY: 60, effect: 'impact_heavy' },
+            damage: 15,
+          },
         ],
         // hitboxDelay: 300,
         hitstop: 'SMASH_DOWN',
@@ -896,6 +906,7 @@ export const CharacterData = {
         cooldown: 2000,
         cost: { mana: 20 },
         targetType: 'multi',
+        impactEffect: 'explosion', // 폭발 이펙트
       },
       s_skill: {
         type: 'movement',
@@ -905,6 +916,7 @@ export const CharacterData = {
         distance: 150,
         cooldown: 3000,
         targetType: 'single',
+        dashEffect: 'dash_trail', // 대시 트레일 이펙트
       },
       e_skill: {
         type: 'channeling',
@@ -921,6 +933,7 @@ export const CharacterData = {
         healAmount: 2,
         manaAmount: 2,
         targetType: 'single',
+        healEffect: 'heal_aura', // 힐링 오라 이펙트 (캐릭터에 부착)
       },
       r_skill: {
         type: 'instant',
@@ -928,12 +941,12 @@ export const CharacterData = {
         hitboxSequence: [
           {
             delay: 0,
-            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100, effect: 'sword_beam' },
             damage: 10,
           },
           {
             delay: 200,
-            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60, effect: 'shockwave' },
             damage: 15,
           },
         ],
@@ -944,6 +957,7 @@ export const CharacterData = {
         cooldown: 0,
         cost: { mana: 20 },
         targetType: 'multi',
+        impactEffect: 'fire_burst', // 불꽃 폭발 이펙트
       },
     },
     animations: [
