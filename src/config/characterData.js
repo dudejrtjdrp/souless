@@ -442,7 +442,7 @@ export const CharacterData = {
       maxJumps: 2,
     },
     combat: {
-      attackHitbox: { width: 50, height: 55, offsetX: 35, offsetY: 70, duration: 400 },
+      attackHitbox: { width: 150, height: 155, offsetX: 35, offsetY: 70, duration: 100 },
       comboWindow: 450,
     },
     skills: {
@@ -450,46 +450,101 @@ export const CharacterData = {
         type: 'melee',
         damage: 10,
         icon: 'assets/skills/fireknight/attack.png', // 아이콘 추가
-        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100, effect: 'slash_basic' },
+        hitboxSequence: [
+          {
+            delay: 300,
+            hitbox: {
+              width: 150,
+              height: 150,
+              offsetX: 70,
+              offsetY: 40,
+              effect: 'slash_basic',
+              duration: 300,
+              damage: 10,
+            },
+          },
+        ],
         animation: 'attack',
-        knockback: { x: 100, y: 0 },
-        targetType: 'single',
-        impactEffect: 'effect_1', // 타격 시 이펙트
+        knockback: { x: 50, y: 50 },
+        targetType: 'multi',
+        impactEffect: 'fire_knight_slash', // 타격 시 이펙트
+        isSequence: true, // ⭐ 시퀀스 히트박스임을 표시
       },
       air_attack: {
         type: 'melee',
         damage: 10,
-        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        hitboxSequence: [
+          {
+            delay: 100,
+            hitbox: { width: 80, height: 40, offsetX: 0, offsetY: 50, effect: '' },
+            movement: { velocityX: 400, velocityY: 0 },
+            damage: 10,
+          },
+        ],
         animation: 'air_attack',
         knockback: { x: 100, y: 0 },
         targetType: 'single',
       },
       q_skill: {
-        type: 'melee',
+        type: 'instant',
         damage: 15,
         icon: 'assets/skills/fireknight/q_skill.png',
-        hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70 },
+        hitboxSequence: [
+          {
+            delay: 0,
+            hitbox: { width: 250, height: 140, offsetX: 0, offsetY: 50, effect: '' },
+            damage: 10,
+          },
+        ],
         animation: 'q_skill',
         knockback: { x: 150, y: -50 },
-        cooldown: 2000,
-        cost: { mana: 20 },
+        cooldown: 0,
+        cost: { mana: 0 },
         targetType: 'multi',
+        impactEffect: ['fire_knight_q_skill', 'fire_knight_q_skill_flip'],
       },
       w_skill: {
-        type: 'melee',
+        type: 'instant',
         damage: 25,
         icon: 'assets/skills/fireknight/w_skill.png',
-        hitbox: [
-          { width: 175, height: 40, offsetX: 80, offsetY: 100 },
-          { width: 70, height: 90, offsetX: 130, offsetY: 60 },
+        hitboxSequence: [
+          {
+            delay: 100,
+            hitbox: {
+              width: 120,
+              height: 40,
+              offsetX: -30,
+              offsetY: 120,
+              effect: '',
+              duration: 200,
+            },
+            damage: 10,
+          },
+          {
+            delay: 300,
+            hitbox: { width: 40, height: 155, offsetX: 40, offsetY: 60, effect: '', duration: 200 },
+            damage: 10,
+          },
+          {
+            delay: 500,
+            hitbox: {
+              width: 150,
+              height: 130,
+              offsetX: 130,
+              offsetY: 60,
+              effect: '',
+              duration: 300,
+            },
+            damage: 15,
+          },
         ],
-        hitboxDelay: 300,
         animation: 'w_skill',
         knockback: { x: 200, y: -100 },
         effects: ['stun'],
-        cooldown: 2000,
-        cost: { mana: 20 },
+        cooldown: 0,
+        cost: { mana: 0 },
         targetType: 'multi',
+        impactEffect: ['fire_knight_w_skill'], // 타격 시 이펙트
       },
       s_skill: {
         type: 'movement',
@@ -522,12 +577,12 @@ export const CharacterData = {
         hitboxSequence: [
           {
             delay: 0,
-            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100 },
+            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100, effect: 'slash_basic' },
             damage: 10,
           },
           {
             delay: 200,
-            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60 },
+            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60, effect: 'slash_basic' },
             damage: 15,
           },
         ],
@@ -537,6 +592,7 @@ export const CharacterData = {
         cooldown: 0,
         cost: { mana: 20 },
         targetType: 'multi',
+        impactEffect: 'fire_knight_slash', // 타격 시 이펙트
       },
     },
     animations: [

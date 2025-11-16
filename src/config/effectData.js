@@ -276,7 +276,7 @@ export const EffectData = {
     offset: { x: 0, y: 10 },
   },
 
-  effect_1: {
+  fire_knight_slash: {
     url: 'assets/effects/fire_knight/slash.png',
     frameWidth: 128,
     frameHeight: 128,
@@ -284,31 +284,45 @@ export const EffectData = {
     frameRate: 10,
     repeat: 0,
     scale: 2.5,
-    offset: { x: 17, y: -39 },
-    angle: 35, // ✨ 각도 추가 (degrees)
+    offset: { x: 52, y: 60 },
+    angle: 35, // 각도 추가 (degrees)
+    flipX: true, // 기본값: 반전 안함
+  },
+
+  fire_knight_q_skill: {
+    url: 'assets/effects/fire_knight/q_skill.png',
+    frameWidth: 64,
+    frameHeight: 49,
+    frames: { start: 0, end: 14 },
+    frameRate: 13,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 55, y: 40 },
+  },
+
+  fire_knight_q_skill_flip: {
+    url: 'assets/effects/fire_knight/q_skill.png',
+    frameWidth: 64,
+    frameHeight: 49,
+    frames: { start: 0, end: 14 },
+    frameRate: 13,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: -55, y: 40 },
+    flipX: true, // 기본값: 반전 안함
+  },
+
+  fire_knight_w_skill: {
+    url: 'assets/effects/fire_knight/w_skill.png',
+    frameWidth: 128,
+    frameHeight: 128,
+    frames: { start: 7, end: 0 },
+    frameRate: 12,
+    repeat: 0,
+    scale: 1.9,
+    offset: { x: 5, y: 70 },
+    angle: -45, // ✨ 각도 추가 (degrees)
     flipX: true, // ✨ 기본값: 반전 안함
-  },
-
-  effect_2: {
-    url: 'assets/effects/effect_collection_2.png',
-    frameWidth: 64,
-    frameHeight: 64,
-    frames: { start: 88, end: 98 },
-    frameRate: 11,
-    repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
-  },
-
-  effect_3: {
-    url: 'assets/effects/effect_collection_2.png',
-    frameWidth: 64,
-    frameHeight: 64,
-    frames: { start: 77, end: 86 },
-    frameRate: 10,
-    repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
   },
 
   effect_4: {

@@ -10,15 +10,6 @@ export class EffectManager {
   }
 
   /**
-   * 디버그 모드 토글
-   */
-  setDebug(enabled) {
-    this.debug = enabled;
-    if (enabled) {
-    }
-  }
-
-  /**
    * 플레이스홀더 텍스처 생성 (실제 이펙트가 없을 때 사용)
    */
   createPlaceholderTexture(key) {
@@ -65,7 +56,6 @@ export class EffectManager {
   preloadEffect(key) {
     const data = EffectData[key];
     if (!data) {
-      console.warn(`Effect data not found: ${key}`);
       return;
     }
 
@@ -82,7 +72,6 @@ export class EffectManager {
     // 로드 실패 시 플레이스홀더 생성
     this.scene.load.once('loaderror', (file) => {
       if (file.key === key && this.usePlaceholder) {
-        console.warn(`Failed to load effect: ${key}, using placeholder`);
         this.createPlaceholderTexture(key);
       }
     });
@@ -103,42 +92,95 @@ export class EffectManager {
       return;
     }
 
-    this.scene.anims.create({
-      key: key,
-      frames: this.scene.anims.generateFrameNumbers(key, {
-        start: data.frames.start,
-        end: data.frames.end,
-      }),
-      frameRate: data.frameRate,
-      repeat: data.repeat,
-    });
+    // 텍스처가 제대로 로드되었는지 확인
+    if (!this.scene.textures.exists(key)) {
+      return;
+    }
 
-    if (this.debug) {
+    try {
+      this.scene.anims.create({
+        key: key,
+        frames: this.scene.anims.generateFrameNumbers(key, {
+          start: data.frames.start,
+          end: data.frames.end,
+        }),
+        frameRate: data.frameRate,
+        repeat: data.repeat,
+      });
+    } catch (error) {
+      console.error(`Failed to create animation for ${key}:`, error);
     }
   }
 
   /**
-   * 이펙트 재생
+   * 이펙트가 재생 가능한 상태인지 확인
    * @param {string} key - 이펙트 키
+   * @returns {boolean}
+   */
+  isEffectReady(key) {
+    return (
+      this.scene.textures.exists(key) &&
+      this.scene.anims.exists(key) &&
+      EffectData[key] !== undefined
+    );
+  }
+
+  /**
+   * 이펙트 재생 (단일 또는 배열)
+   * @param {string|string[]} key - 이펙트 키 또는 키 배열
    * @param {number} x - X 위치
    * @param {number} y - Y 위치
    * @param {boolean} flipX - X축 반전 여부 (캐릭터 방향)
    * @param {Object} options - 추가 옵션
+   * @returns {Phaser.GameObjects.Sprite|Phaser.GameObjects.Sprite[]|null}
    */
   playEffect(key, x, y, flipX = false, options = {}) {
+    // 배열인 경우 각각 재생
+    if (Array.isArray(key)) {
+      const effects = [];
+      for (const effectKey of key) {
+        const effect = this.playSingleEffect(effectKey, x, y, flipX, options);
+        if (effect) {
+          effects.push(effect);
+        }
+      }
+      return effects.length > 0 ? effects : null;
+    }
+
+    // 단일 이펙트
+    return this.playSingleEffect(key, x, y, flipX, options);
+  }
+
+  /**
+   * 단일 이펙트 재생 (내부 메서드)
+   * @param {string} key - 이펙트 키
+   * @param {number} x - X 위치
+   * @param {number} y - Y 위치
+   * @param {boolean} flipX - X축 반전 여부
+   * @param {Object} options - 추가 옵션
+   * @returns {Phaser.GameObjects.Sprite|null}
+   */
+  playSingleEffect(key, x, y, flipX = false, options = {}) {
     const data = EffectData[key];
     if (!data) {
       console.warn(`Effect data not found for key: ${key}`);
       return null;
     }
 
+    // 텍스처 확인 (이미 preload에서 로드됨)
     if (!this.scene.textures.exists(key)) {
-      console.warn(`Effect texture not loaded: ${key}`);
+      console.error(`❌ Effect texture not found: ${key} - Did you call initializeEffects()?`);
       return null;
     }
 
+    // 애니메이션 확인 (이미 create에서 생성됨)
     if (!this.scene.anims.exists(key)) {
+      console.error(`❌ Effect animation not found: ${key} - Did you call initializeEffects()?`);
+      // 비상용으로 생성 시도
       this.createEffectAnimation(key);
+      if (!this.scene.anims.exists(key)) {
+        return null;
+      }
     }
 
     let effect = this.getFromPool(key);
@@ -146,6 +188,13 @@ export class EffectManager {
     if (!effect) {
       try {
         effect = this.scene.add.sprite(0, 0, key);
+
+        // Verify the sprite has animation component
+        if (!effect.anims) {
+          console.error(`Sprite for effect ${key} has no animation component`);
+          effect.destroy();
+          return null;
+        }
       } catch (error) {
         console.error(`Failed to create sprite for effect: ${key}`, error);
         return null;
@@ -193,6 +242,13 @@ export class EffectManager {
     effect.setAlpha(data.alpha !== undefined ? data.alpha : 1.0);
     effect.setDepth(options.depth || 100);
 
+    // Verify animation component exists before trying to play
+    if (!effect.anims) {
+      console.error(`Effect sprite has no animation component: ${key}`);
+      effect.destroy();
+      return null;
+    }
+
     try {
       effect.anims.stop();
       effect.anims.play(key, true);
@@ -210,14 +266,16 @@ export class EffectManager {
       flipX: shouldFlip,
     });
 
-    if (this.debug) {
-    }
-
     return effect;
   }
 
   /**
-   * 히트박스에 이펙트 재생
+   * 히트박스에 이펙트 재생 (단일 또는 배열)
+   * @param {string|string[]} key - 이펙트 키 또는 키 배열
+   * @param {Object} hitbox - 히트박스 객체
+   * @param {boolean} flipX - X축 반전 여부
+   * @param {Object} options - 추가 옵션
+   * @returns {Phaser.GameObjects.Sprite|Phaser.GameObjects.Sprite[]|null}
    */
   playEffectOnHitbox(key, hitbox, flipX = false, options = {}) {
     if (!hitbox) {
@@ -229,32 +287,56 @@ export class EffectManager {
     const worldX = hitbox.x;
     const worldY = hitbox.y;
 
-    if (this.debug) {
-    }
-
     return this.playEffect(key, worldX, worldY, flipX, options);
   }
 
   /**
-   * 특정 대상에 이펙트 부착 (따라다니는 이펙트)
-   * @param {string} key - 이펙트 키
+   * 특정 대상에 이펙트 부착 (따라다니는 이펙트, 단일 또는 배열)
+   * @param {string|string[]} key - 이펙트 키 또는 키 배열
    * @param {Phaser.GameObjects.Sprite} target - 대상 스프라이트
    * @param {boolean} flipX - X축 반전 여부
    * @param {number} duration - 지속 시간 (ms), undefined면 수동으로 제거해야 함
    * @param {Object} options - 추가 옵션 (angle, rotation 등)
+   * @returns {Phaser.GameObjects.Sprite|Phaser.GameObjects.Sprite[]|null}
    */
   attachEffect(key, target, flipX = false, duration = undefined, options = {}) {
+    // 배열인 경우 각각 부착
+    if (Array.isArray(key)) {
+      const effects = [];
+      for (const effectKey of key) {
+        const effect = this.attachSingleEffect(effectKey, target, flipX, duration, options);
+        if (effect) {
+          effects.push(effect);
+        }
+      }
+      return effects.length > 0 ? effects : null;
+    }
+
+    // 단일 이펙트
+    return this.attachSingleEffect(key, target, flipX, duration, options);
+  }
+
+  /**
+   * 단일 이펙트 부착 (내부 메서드)
+   * @param {string} key - 이펙트 키
+   * @param {Phaser.GameObjects.Sprite} target - 대상 스프라이트
+   * @param {boolean} flipX - X축 반전 여부
+   * @param {number} duration - 지속 시간 (ms)
+   * @param {Object} options - 추가 옵션
+   * @returns {Phaser.GameObjects.Sprite|null}
+   */
+  attachSingleEffect(key, target, flipX = false, duration = undefined, options = {}) {
     const data = EffectData[key];
     if (!data || !target) {
       console.warn(`Cannot attach effect: ${key}`);
       return null;
     }
 
-    const effect = this.playEffect(key, target.x, target.y, flipX, options);
+    const effect = this.playSingleEffect(key, target.x, target.y, flipX, options);
     if (!effect) return null;
 
     // 대상을 따라다니도록 설정
-    const effectId = `attached_${key}_${Date.now()}`;
+    const effectId = `attached_${key}_${Date.now()}_${Math.random()}`;
     this.activeEffects.set(effectId, {
       sprite: effect,
       key: key,
@@ -268,10 +350,27 @@ export class EffectManager {
   }
 
   /**
-   * 부착된 이펙트 제거
-   * @param {Phaser.GameObjects.Sprite} effect - 이펙트 스프라이트
+   * 부착된 이펙트 제거 (단일 또는 배열)
+   * @param {Phaser.GameObjects.Sprite|Phaser.GameObjects.Sprite[]} effect - 이펙트 스프라이트 또는 배열
    */
   detachEffect(effect) {
+    // 배열인 경우 각각 제거
+    if (Array.isArray(effect)) {
+      for (const e of effect) {
+        this.detachSingleEffect(e);
+      }
+      return;
+    }
+
+    // 단일 이펙트
+    this.detachSingleEffect(effect);
+  }
+
+  /**
+   * 단일 이펙트 제거 (내부 메서드)
+   * @param {Phaser.GameObjects.Sprite} effect - 이펙트 스프라이트
+   */
+  detachSingleEffect(effect) {
     for (const [id, data] of this.activeEffects.entries()) {
       if (data.sprite === effect) {
         this.returnToPool(data.key, effect);
@@ -287,12 +386,27 @@ export class EffectManager {
     }
 
     const pool = this.effectPool.get(key);
-    const effect = pool.pop() || null;
 
-    if (effect && this.debug) {
+    // 풀에서 비활성 상태인 이펙트만 찾기
+    for (let i = pool.length - 1; i >= 0; i--) {
+      const effect = pool[i];
+
+      // 이펙트가 유효하고 비활성 상태인지 확인
+      if (effect && effect.scene && !effect.active && !effect.visible) {
+        // 풀에서 제거하고 반환
+        pool.splice(i, 1);
+        return effect;
+      } else if (!effect || !effect.scene) {
+        // 유효하지 않은 이펙트는 풀에서 제거
+        pool.splice(i, 1);
+        if (effect && effect.scene) {
+          effect.destroy();
+        }
+      }
     }
 
-    return effect;
+    // 풀에 사용 가능한 이펙트가 없으면 null 반환 (새로 생성)
+    return null;
   }
 
   returnToPool(key, effect) {
@@ -310,13 +424,16 @@ export class EffectManager {
     }
 
     // 애니메이션 중지 및 초기화
-    effect.anims.stop();
+    if (effect.anims) {
+      effect.anims.stop();
+    }
     effect.setVisible(false);
     effect.setActive(false);
     effect.setAlpha(1.0);
     effect.setScale(1.0);
     effect.setFlipX(false);
-    effect.setAngle(0); // 각도 초기화
+    effect.setAngle(0);
+    effect.setRotation(0); // 회전도 초기화
 
     if (!this.effectPool.has(key)) {
       this.effectPool.set(key, []);
@@ -327,6 +444,7 @@ export class EffectManager {
 
     if (pool.length < maxPoolSize) {
       pool.push(effect);
+    } else {
       effect.destroy();
     }
   }

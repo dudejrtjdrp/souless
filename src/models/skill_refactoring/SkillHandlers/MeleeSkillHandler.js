@@ -60,12 +60,30 @@ export default class MeleeSkillHandler extends BaseSkillHandler {
   activateHitbox(skillHitbox, config, animationDuration) {
     if (!skillHitbox) return;
 
-    const delay = config.hitboxDelay || 0;
-
-    if (delay > 0) {
-      this.scene.time.delayedCall(delay, () => skillHitbox.activate(animationDuration));
+    if (config.hitboxSequence) {
+      // hitboxSequence의 각 step에 duration 계산해서 전달
+      const sequenceWithDuration = config.hitboxSequence.map((step) => ({
+        ...step,
+        duration: this.calculateStepDuration(step, animationDuration),
+      }));
+      skillHitbox.activateSequence(sequenceWithDuration);
     } else {
-      skillHitbox.activate(animationDuration);
+      const delay = config.hitboxDelay || 0;
+
+      if (delay > 0) {
+        this.scene.time.delayedCall(delay, () => skillHitbox.activate(animationDuration));
+      } else {
+        skillHitbox.activate(animationDuration);
+      }
     }
+  }
+
+  calculateStepDuration(step, animationDuration) {
+    // ⭐ 우선순위: step.duration > step.hitbox.duration > animationDuration
+    if (step.duration) return step.duration;
+    if (step.hitbox && step.hitbox.duration) return step.hitbox.duration;
+
+    // 둘 다 없으면 애니메이션 duration 사용
+    return animationDuration;
   }
 }

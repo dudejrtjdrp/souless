@@ -10,7 +10,7 @@ export default class EffectTestScene extends Phaser.Scene {
   }
 
   init() {
-    this.testEffectKeys = ['effect_1', 'effect_2', 'effect_3', 'effect_4'];
+    this.testEffectKeys = ['fire_knight_slash', 'effect_2', 'effect_3', 'effect_4'];
     this.characterTypes = CharacterFactory.getAvailableTypes();
     this.floors = [];
     this.platforms = null;
@@ -22,7 +22,6 @@ export default class EffectTestScene extends Phaser.Scene {
     CharacterAssetLoader.preload(this);
 
     this.effectManager = new EffectManager(this);
-    this.effectManager.setDebug(true);
     EffectLoader.preloadAllEffects(this);
   }
 
@@ -44,9 +43,6 @@ export default class EffectTestScene extends Phaser.Scene {
 
     // 입력 설정
     this.setupInput();
-
-    // 상태 표시
-    this.effectManager.logStatus();
   }
 
   createFloors() {

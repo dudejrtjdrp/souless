@@ -1,5 +1,3 @@
-// src/utils/EffectLoader.js
-
 import { EffectData } from '../../config/effectData';
 
 export class EffectLoader {

@@ -107,16 +107,35 @@ export default class CharacterBase {
       };
     }
 
-    if (this.config.attackHitbox) {
+    // 2. 공격 히트박스 설정
+    // 우선순위: skills.attack.hitbox > attackHitbox (레거시) > 기본값
+    if (this.config.skills?.attack?.hitbox) {
+      const attackHitbox = this.config.skills.attack.hitbox;
+      const hitboxData = Array.isArray(attackHitbox) ? attackHitbox[0] : attackHitbox;
+
+      this.config.attackHitboxSize = {
+        width: hitboxData.width,
+        height: hitboxData.height,
+      };
+      this.config.attackHitboxOffset = {
+        x: hitboxData.offsetX || 0,
+        y: hitboxData.offsetY || 0,
+      };
+      this.config.attackDuration =
+        hitboxData.duration || this.config.skills.attack.hitboxDuration || 200;
+    }
+    // 레거시 지원
+    else if (this.config.attackHitbox) {
       this.config.attackHitboxSize = this.config.attackHitbox.size;
       this.config.attackHitboxOffset = this.config.attackHitbox.offset;
-      this.config.attackDuration = this.config.attackHitbox.duration;
-    } else {
+      this.config.attackDuration = this.config.attackHitbox.duration || 200;
+    }
+    // 기본값
+    else {
       this.config.attackHitboxSize = { width: 40, height: 30 };
       this.config.attackHitboxOffset = { x: 30, y: 0 };
+      this.config.attackDuration = 200;
     }
-
-    this.config.skillHitboxes = this.config.skillHitboxes || {};
   }
 
   setupPhysics() {

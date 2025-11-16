@@ -1,5 +1,12 @@
 export default class AttackSystem {
-  constructor(scene, sprite, hitboxSize, duration, offset, targetType = 'single') {
+  constructor(
+    scene,
+    sprite,
+    hitboxSize,
+    duration = 200, // 기본값 추가
+    offset = { x: 0, y: 0 }, // 기본값 추가
+    targetType = 'single',
+  ) {
     this.scene = scene;
     this.sprite = sprite;
     this.hitboxSize = hitboxSize;
@@ -11,6 +18,7 @@ export default class AttackSystem {
     this.hitbox = null;
     this.hasHitThisAttack = false;
     this.hitEnemies = new Set();
+    this.deactivateTimer = null; // 타이머 참조 저장
 
     this.createHitbox();
   }
@@ -25,18 +33,28 @@ export default class AttackSystem {
       0.3,
     );
 
-    this.hitbox.setVisible(true);
+    this.hitbox.setVisible(false); // 기본적으로 숨김
     this.scene.physics.add.existing(this.hitbox);
     this.hitbox.body.setAllowGravity(false);
   }
 
-  activate() {
+  activate(customDuration) {
     this.active = true;
     this.hasHitThisAttack = false;
     this.hitEnemies.clear();
     this.updateHitboxPosition();
+    this.hitbox.setVisible(true); // 활성화 시 표시
 
-    this.scene.time.delayedCall(this.duration, () => {
+    // 기존 타이머 정리
+    if (this.deactivateTimer) {
+      this.deactivateTimer.remove();
+      this.deactivateTimer = null;
+    }
+
+    // customDuration이 제공되면 그것을 사용, 아니면 기본 duration 사용
+    const finalDuration = customDuration !== undefined ? customDuration : this.duration;
+
+    this.deactivateTimer = this.scene.time.delayedCall(finalDuration, () => {
       this.deactivate();
     });
   }
@@ -45,6 +63,12 @@ export default class AttackSystem {
     this.active = false;
     this.hasHitThisAttack = false;
     this.hitEnemies.clear();
+    this.hitbox.setVisible(false); // 비활성화 시 숨김
+
+    if (this.deactivateTimer) {
+      this.deactivateTimer.remove();
+      this.deactivateTimer = null;
+    }
   }
 
   updateHitboxPosition() {
@@ -104,6 +128,11 @@ export default class AttackSystem {
   }
 
   destroy() {
+    if (this.deactivateTimer) {
+      this.deactivateTimer.remove();
+      this.deactivateTimer = null;
+    }
+
     if (this.hitbox) {
       this.hitbox.destroy();
     }

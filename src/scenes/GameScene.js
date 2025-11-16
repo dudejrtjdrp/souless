@@ -49,7 +49,6 @@ export default class GameScene extends Phaser.Scene {
     EnemyAssetLoader.preload(this);
 
     this.effectManager = new EffectManager(this);
-    this.effectManager.setDebug(true); // 디버그 활성화
 
     // EffectLoader를 통해 모든 이펙트 로드
     EffectLoader.preloadAllEffects(this);
@@ -68,6 +67,7 @@ export default class GameScene extends Phaser.Scene {
 
   async create() {
     await this.initializeUI();
+    EffectLoader.createAllAnimations(this);
 
     const shouldContinue = await this.loadSaveData();
     if (!shouldContinue) {
@@ -84,9 +84,6 @@ export default class GameScene extends Phaser.Scene {
     this.setupCharacterSelectUI();
     this.emitInitialEvents();
 
-    EffectLoader.createAllAnimations(this);
-    this.effectManager.logStatus();
-
     if (!this.savedSpawnData) {
       this.saveCurrentPosition();
     }
@@ -99,10 +96,6 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.isPortalTransitioning = false;
-
-    if (this.effectManager) {
-      this.effectManager.logStatus();
-    }
   }
 
   async initializeUI() {

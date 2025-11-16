@@ -11,6 +11,9 @@ export class SkillHitbox {
     this.hitboxes = [];
     this.debug = !!config.debug;
 
+    // 기본 히트박스 지속 시간 (config에서 설정 가능)
+    this.defaultHitboxDuration = config.hitboxDuration || 200;
+
     // 실시간 타이머들 (히트스톱 영향 안 받음)
     this.deactivateTimer = null;
     this.sequenceTimers = [];
@@ -38,10 +41,12 @@ export class SkillHitbox {
       offsetX: hitboxData.offsetX || 0,
       offsetY: hitboxData.offsetY || 0,
       isMoving: false,
+      isFixed: false, // 위치가 고정되었는지 여부
       damage: hitboxData.damage,
       knockback: hitboxData.knockback,
       effects: hitboxData.effects,
       effectKey: hitboxData.effect, // 이펙트 키 추가
+      duration: hitboxData.duration || this.defaultHitboxDuration, // 개별 duration 또는 기본값
     });
 
     rect.setVisible(false);
@@ -52,7 +57,28 @@ export class SkillHitbox {
 
     this.active = true;
     this.hitEnemies.clear();
-    this.updatePosition();
+
+    // 히트박스 위치를 activate 시점에 한 번만 설정하고 고정
+    const flipX = this.sprite.flipX;
+    this.hitboxes.forEach((hitbox) => {
+      const offsetX = flipX ? -hitbox.offsetX : hitbox.offsetX;
+      const x = this.sprite.x + offsetX;
+      const y = this.sprite.y + hitbox.offsetY;
+      hitbox.rect.setPosition(x, y);
+      hitbox.isFixed = true; // 위치 고정
+    });
+
+    // impactEffect는 스킬 활성화 시 캐릭터 위치를 기준으로 한 번만 재생
+    if (this.effectManager && this.config.impactEffect) {
+      try {
+        const effectX = this.sprite.x;
+        const effectY = this.sprite.y;
+
+        this.effectManager.playEffect(this.config.impactEffect, effectX, effectY, flipX);
+      } catch (error) {
+        console.warn(`Failed to play impact effect:`, error);
+      }
+    }
 
     this.hitboxes.forEach((h) => {
       // 히트박스 표시
@@ -61,20 +87,6 @@ export class SkillHitbox {
         h.rect.setFillStyle(0xff0000, 0.4);
       }
       this.scene.children.bringToTop(h.rect);
-
-      //  impactEffect는 캐릭터 기준 고정 위치에 표시
-      if (this.effectManager && this.config.impactEffect) {
-        try {
-          const flipX = this.sprite.flipX;
-          const offsetX = flipX ? -h.offsetX : h.offsetX;
-          const effectX = this.sprite.x + offsetX;
-          const effectY = this.sprite.y + h.offsetY;
-
-          this.effectManager.playEffect(this.config.impactEffect, effectX, effectY, flipX);
-        } catch (error) {
-          console.warn(`Failed to play impact effect:`, error);
-        }
-      }
     });
 
     // 기존 타이머 정리
@@ -83,10 +95,13 @@ export class SkillHitbox {
       this.deactivateTimer = null;
     }
 
-    if (duration) {
+    // duration이 명시되면 그것을 사용, 아니면 개별 히트박스 duration 중 최대값 사용
+    const finalDuration = duration || Math.max(...this.hitboxes.map((h) => h.duration));
+
+    if (finalDuration) {
       this.deactivateTimer = setTimeout(() => {
         this.deactivate();
-      }, duration);
+      }, finalDuration);
     }
   }
 
@@ -99,6 +114,19 @@ export class SkillHitbox {
     this.clearSequenceTimers();
 
     const activeHitboxes = [];
+
+    // impactEffect는 시퀀스 시작 시 캐릭터 위치를 기준으로 한 번만 재생
+    if (this.effectManager && this.config.impactEffect) {
+      try {
+        const flipX = this.sprite.flipX;
+        const effectX = this.sprite.x;
+        const effectY = this.sprite.y;
+
+        this.effectManager.playEffect(this.config.impactEffect, effectX, effectY, flipX);
+      } catch (error) {
+        console.warn(`Failed to play sequence impact effect:`, error);
+      }
+    }
 
     sequence.forEach((step) => {
       const delayTimer = setTimeout(() => {
@@ -127,18 +155,10 @@ export class SkillHitbox {
           damage: step.damage || this.config.damage,
           knockback: step.knockback || this.config.knockback,
           effects: step.effects || this.config.effects,
-          effectKey: step.effect || step.hitbox.effect, // 이펙트 키
+          effectKey: step.effect || step.hitbox.effect,
           isMoving: false,
+          isSequence: true, // 시퀀스 히트박스 표시
         };
-
-        //  시퀀스의 impactEffect는 캐릭터 기준 위치
-        if (this.effectManager && this.config.impactEffect) {
-          try {
-            this.effectManager.playEffect(this.config.impactEffect, posX, posY, flipX);
-          } catch (error) {
-            console.warn(`Failed to play sequence impact effect:`, error);
-          }
-        }
 
         if (step.movement) {
           tempHitboxData.isMoving = true;
@@ -151,13 +171,36 @@ export class SkillHitbox {
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
-        const dur = step.duration || 200;
+        // ⭐ duration 우선순위 수정
+        // 시퀀스에서는 명시적으로 지정된 duration만 사용 (defaultHitboxDuration 무시)
+        const dur = step.duration || step.hitbox.duration || 200;
+        console.log(`[SkillHitbox] Hitbox duration: ${dur}ms for step:`, step);
+
+        // ⭐ 히트박스 제거 타이머
         const durationTimer = setTimeout(() => {
+          // this.hitboxes 배열에서 제거
           const idx = this.hitboxes.indexOf(tempHitboxData);
-          if (idx > -1) this.hitboxes.splice(idx, 1);
+          if (idx > -1) {
+            this.hitboxes.splice(idx, 1);
+          }
+
+          // activeHitboxes 배열에서 제거
           const aidx = activeHitboxes.indexOf(tempHitboxData);
-          if (aidx > -1) activeHitboxes.splice(aidx, 1);
-          temp.destroy();
+          if (aidx > -1) {
+            activeHitboxes.splice(aidx, 1);
+          }
+
+          // 디버그 표시 숨김
+          if (this.debug && temp) {
+            temp.setVisible(false);
+          }
+
+          // 실제 오브젝트 파괴
+          if (temp) {
+            temp.destroy();
+          }
+
+          console.log(`[SkillHitbox] Hitbox destroyed after ${dur}ms`);
         }, dur);
 
         this.sequenceTimers.push(durationTimer);
@@ -166,8 +209,18 @@ export class SkillHitbox {
       this.sequenceTimers.push(delayTimer);
     });
 
+    // ⭐ 전체 시퀀스 종료 시간 계산 수정
+    // 각 step의 실제 duration만 사용 (defaultHitboxDuration 무시)
     const totalDuration =
-      Math.max(...sequence.map((s) => (s.delay || 0) + (s.duration || 200))) + 100;
+      Math.max(
+        ...sequence.map((s) => {
+          const delay = s.delay || 0;
+          const dur = s.duration || s.hitbox.duration || 200; // 기본값 200ms만 사용
+          return delay + dur;
+        }),
+      ) + 100;
+
+    console.log(`[SkillHitbox] Total sequence duration: ${totalDuration}ms`);
 
     const finalTimer = setTimeout(() => {
       this.deactivate();
@@ -185,12 +238,22 @@ export class SkillHitbox {
       this.deactivateTimer = null;
     }
 
+    // ⭐ 모든 히트박스 정리 (시퀀스 히트박스 포함)
     this.hitboxes.forEach((h) => {
       if (this.debug && h.rect) {
         h.rect.setFillStyle(0x00ff00, 0.15);
         h.rect.setVisible(false);
       }
+      h.isFixed = false;
+
+      // ⭐ 시퀀스 히트박스는 파괴
+      if (h.isSequence && h.rect && h.rect.scene) {
+        h.rect.destroy();
+      }
     });
+
+    // ⭐ 시퀀스 히트박스 배열에서 제거
+    this.hitboxes = this.hitboxes.filter((h) => !h.isSequence);
   }
 
   clearSequenceTimers() {
@@ -205,7 +268,9 @@ export class SkillHitbox {
     const flipX = this.sprite.flipX;
 
     this.hitboxes.forEach((hitbox) => {
-      if (hitbox.isMoving) return;
+      // isMoving이거나 이미 고정된 히트박스는 위치 업데이트 하지 않음
+      if (hitbox.isMoving || hitbox.isFixed) return;
+
       const offsetX = flipX ? -hitbox.offsetX : hitbox.offsetX;
       const x = this.sprite.x + offsetX;
       const y = this.sprite.y + hitbox.offsetY;
@@ -227,19 +292,23 @@ export class SkillHitbox {
       return false;
     }
 
-    this.updatePosition();
     const targetBounds = targetSprite.getBounds();
 
     for (const hitbox of this.hitboxes) {
+      // ⭐ 히트박스가 유효한지 확인
+      if (!hitbox.rect || !hitbox.rect.scene) {
+        continue; // 이미 파괴된 히트박스는 스킵
+      }
+
       const bounds = hitbox.rect.getBounds();
       const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds, targetBounds);
+
       if (hit) {
         this.hitEnemies.add(enemyId);
 
-        //  hitbox.effect는 적이 맞은 위치 (히트박스 위치)에 표시
+        // hitbox.effect는 적이 맞은 위치에 표시
         if (this.effectManager && hitbox.effectKey) {
           try {
-            // 히트박스의 현재 위치 사용 (적과 교차하는 지점)
             const hitEffectX = hitbox.rect.x;
             const hitEffectY = hitbox.rect.y;
 
