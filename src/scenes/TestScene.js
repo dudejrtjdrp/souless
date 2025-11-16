@@ -10,7 +10,7 @@ export default class EffectTestScene extends Phaser.Scene {
   }
 
   init() {
-    this.testEffectKeys = ['fire_knight_slash', 'effect_2', 'effect_3', 'effect_4'];
+    this.testEffectKeys = ['monk_circle_turn_in', 'effect_2', 'effect_3', 'effect_4'];
     this.characterTypes = CharacterFactory.getAvailableTypes();
     this.floors = [];
     this.platforms = null;

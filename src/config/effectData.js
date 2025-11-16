@@ -237,10 +237,10 @@ export const EffectData = {
     frameWidth: 64,
     frameHeight: 64,
     frames: { start: 55, end: 62 },
-    frameRate: 8,
+    frameRate: 15,
     repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
+    scale: 1,
+    offset: { x: 0, y: 0 },
   },
 
   princess_water_turn_out: {
@@ -360,26 +360,27 @@ export const EffectData = {
     offset: { x: 0, y: 0 },
   },
 
-  assassin_thick_pattern_turn_in: {
-    url: 'assets/effects/effect_collection_2.png',
-    frameWidth: 64,
-    frameHeight: 64,
-    frames: { start: 77, end: 86 },
+  monk_q_skill: {
+    url: 'assets/effects/monk/q_skill.png',
+    frameWidth: 48,
+    frameHeight: 48,
+    frames: { start: 0, end: 11 },
     frameRate: 10,
     repeat: 0,
     scale: 2.5,
-    offset: { x: 0, y: 10 },
+    offset: { x: 100, y: 65 },
   },
 
-  assassin_thin_pattern_turn_in: {
-    url: 'assets/effects/effect_collection_2.png',
+  monk_w_skill: {
+    url: 'assets/effects/effect_collection_3.png',
     frameWidth: 64,
     frameHeight: 64,
-    frames: { start: 88, end: 98 },
-    frameRate: 11,
+    frames: { start: 251, end: 261 },
+    frameRate: 15,
     repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
+    scale: 1,
+    offset: { x: 20, y: 80 },
+    color: '#f78e51',
   },
 
   assassin_thick_pattern_turn_in: {
