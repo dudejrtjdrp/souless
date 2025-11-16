@@ -162,7 +162,7 @@ export const EffectData = {
     frameRate: 14,
     repeat: 0,
     scale: 2.5,
-    offset: { x: 0, y: 10 },
+    offset: { x: 0, y: 0 },
   },
 
   princess_windmill: {
@@ -259,10 +259,22 @@ export const EffectData = {
     frameWidth: 64,
     frameHeight: 64,
     frames: { start: 77, end: 86 },
-    frameRate: 10,
+    frameRate: 8,
     repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
+    scale: 2,
+    offset: { x: 100, y: 80 },
+  },
+
+  assassin_q_skill: {
+    url: 'assets/effects/effect_collection_4.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 303, end: 313 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 150, y: 70 },
+    color: '#cea167',
   },
 
   assassin_thin_pattern_turn_in: {
@@ -272,8 +284,8 @@ export const EffectData = {
     frames: { start: 88, end: 98 },
     frameRate: 11,
     repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
+    scale: 2,
+    offset: { x: 10, y: 60 },
   },
 
   fire_knight_slash: {
@@ -381,27 +393,5 @@ export const EffectData = {
     scale: 1,
     offset: { x: 20, y: 80 },
     color: '#f78e51',
-  },
-
-  assassin_thick_pattern_turn_in: {
-    url: 'assets/effects/effect_collection_2.png',
-    frameWidth: 64,
-    frameHeight: 64,
-    frames: { start: 77, end: 86 },
-    frameRate: 10,
-    repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
-  },
-
-  assassin_thin_pattern_turn_in: {
-    url: 'assets/effects/effect_collection_2.png',
-    frameWidth: 64,
-    frameHeight: 64,
-    frames: { start: 88, end: 98 },
-    frameRate: 11,
-    repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
   },
 };

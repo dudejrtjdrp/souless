@@ -163,9 +163,38 @@ export class SkillHitbox {
         if (step.movement) {
           tempHitboxData.isMoving = true;
           const dir = flipX ? -1 : 1;
-          const vx = (step.movement.velocityX || 0) * dir;
-          const vy = step.movement.velocityY || 0;
+
+          let vx, vy;
+          let movementDuration;
+
+          // distance와 duration이 있으면 속도 자동 계산
+          if (step.movement.distanceX !== undefined && step.movement.duration) {
+            movementDuration = step.movement.duration;
+            // 거리 = 속도 × 시간, 따라서 속도 = 거리 / (시간/1000)
+            vx = (step.movement.distanceX / (movementDuration / 1000)) * dir;
+            vy =
+              step.movement.distanceY !== undefined
+                ? step.movement.distanceY / (movementDuration / 1000)
+                : 0;
+          } else {
+            // 기존 방식: velocity 직접 지정
+            vx = (step.movement.velocityX || 0) * dir;
+            vy = step.movement.velocityY || 0;
+            movementDuration = step.movement.duration;
+          }
+
           temp.body.setVelocity(vx, vy);
+
+          // movement duration이 설정되어 있으면 해당 시간 후 멈춤
+          if (movementDuration) {
+            const movementTimer = setTimeout(() => {
+              if (temp && temp.body) {
+                temp.body.setVelocity(0, 0);
+                tempHitboxData.isMoving = false;
+              }
+            }, movementDuration);
+            this.sequenceTimers.push(movementTimer);
+          }
         }
 
         this.hitboxes.push(tempHitboxData);
