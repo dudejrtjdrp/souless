@@ -30,7 +30,7 @@ export default class Soul extends CharacterBase {
     return CharacterDataAdapter.getAnimationConfig('soul');
   }
 
-  // ✅ updateMovement 오버라이드
+  //  updateMovement 오버라이드
   updateMovement(input) {
     if (!this.stateMachine.isStateLocked() && !this.isDashing) {
       this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
@@ -70,7 +70,7 @@ export default class Soul extends CharacterBase {
       this.scene.time.delayedCall(300, () => {
         this.isDashing = false;
 
-        // ✅ 대시 끝날 때 현재 입력 상태 확인해서 속도 설정
+        //  대시 끝날 때 현재 입력 상태 확인해서 속도 설정
         const input = this.inputHandler.getInputState();
         const speed = input.isRunning ? this.config.runSpeed : this.config.walkSpeed;
 

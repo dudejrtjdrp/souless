@@ -15,21 +15,7 @@ export class EffectManager {
   setDebug(enabled) {
     this.debug = enabled;
     if (enabled) {
-      console.log('EffectManager Debug Mode: ON');
     }
-  }
-
-  /**
-   * 현재 상태 출력
-   */
-  logStatus() {
-    console.log('=== EffectManager Status ===');
-    console.log('Active Effects:', this.activeEffects.size);
-    console.log('Pool Status:');
-    for (const [key, pool] of this.effectPool.entries()) {
-      console.log(`  ${key}: ${pool.length} available`);
-    }
-    console.log('Loaded Effects:', Array.from(this.loadedEffects));
   }
 
   /**
@@ -70,8 +56,6 @@ export class EffectManager {
 
     // Phaser 텍스처로 추가
     this.scene.textures.addCanvas(key, canvas);
-
-    console.log(`Created placeholder texture for: ${key}`);
   }
 
   /**
@@ -130,7 +114,6 @@ export class EffectManager {
     });
 
     if (this.debug) {
-      console.log(`Created animation: ${key}`);
     }
   }
 
@@ -139,9 +122,8 @@ export class EffectManager {
    * @param {string} key - 이펙트 키
    * @param {number} x - X 위치
    * @param {number} y - Y 위치
-   * @param {boolean} flipX - X축 반전 여부
+   * @param {boolean} flipX - X축 반전 여부 (캐릭터 방향)
    * @param {Object} options - 추가 옵션
-   * @returns {Phaser.GameObjects.Sprite} - 생성된 이펙트 스프라이트
    */
   playEffect(key, x, y, flipX = false, options = {}) {
     const data = EffectData[key];
@@ -150,23 +132,18 @@ export class EffectManager {
       return null;
     }
 
-    // 텍스처가 로드되어 있는지 확인
     if (!this.scene.textures.exists(key)) {
       console.warn(`Effect texture not loaded: ${key}`);
       return null;
     }
 
-    // 애니메이션이 생성되어 있지 않으면 자동으로 생성
     if (!this.scene.anims.exists(key)) {
-      console.log(`Auto-creating animation for: ${key}`);
       this.createEffectAnimation(key);
     }
 
-    // 풀에서 재사용 가능한 이펙트 찾기
     let effect = this.getFromPool(key);
 
     if (!effect) {
-      // 새로 생성
       try {
         effect = this.scene.add.sprite(0, 0, key);
       } catch (error) {
@@ -174,68 +151,73 @@ export class EffectManager {
         return null;
       }
 
-      // 애니메이션 완료 시 처리
       effect.on('animationcomplete', () => {
         if (data.repeat === 0) {
-          // 반복하지 않는 이펙트만
           this.returnToPool(key, effect);
         }
       });
     }
 
-    // 오프셋 계산 (flipX 고려)
+    // XOR 로직: baseFlip과 flipX 중 하나만 true일 때 반전
+    const baseFlip = data.flipX === true;
+    const shouldFlip = baseFlip !== flipX;
+
+    // 캐릭터 방향에 따른 오프셋 계산
     const offset = data.offset || { x: 0, y: 0 };
     const finalX = flipX ? x - offset.x : x + offset.x;
     const finalY = y + offset.y;
 
-    // 위치 설정 (오프셋 적용된 최종 위치)
     effect.setPosition(finalX, finalY);
     effect.setVisible(true);
     effect.setActive(true);
 
-    // 스케일 및 반전 설정
-    const scale = options.scale || data.scale || 1.0;
+    const scale = options.scale !== undefined ? options.scale : data.scale || 1.0;
     effect.setScale(scale);
-    effect.setFlipX(flipX);
 
-    // 알파값 설정
+    effect.setFlipX(shouldFlip);
+
+    // 회전/각도 처리
+    let finalAngle = 0;
+
+    if (options.rotation !== undefined) {
+      const rotation = flipX ? -options.rotation : options.rotation;
+      effect.setRotation(rotation);
+      finalAngle = (rotation * 180) / Math.PI;
+    } else {
+      const angle = options.angle !== undefined ? options.angle : data.angle || 0;
+      const appliedAngle = flipX ? -angle : angle;
+      effect.setAngle(appliedAngle);
+      finalAngle = appliedAngle;
+    }
+
     effect.setAlpha(data.alpha !== undefined ? data.alpha : 1.0);
-
-    // 깊이 설정 (캐릭터 위에 표시)
     effect.setDepth(options.depth || 100);
 
-    // 애니메이션 재생 (처음부터 재시작)
     try {
       effect.anims.stop();
-      effect.anims.play(key, true); // true로 강제 재시작
+      effect.anims.play(key, true);
     } catch (error) {
       console.error(`Failed to play animation for effect: ${key}`, error);
       effect.destroy();
       return null;
     }
 
-    // 활성 이펙트로 등록
     const effectId = `${key}_${Date.now()}_${Math.random()}`;
     this.activeEffects.set(effectId, {
       sprite: effect,
       key: key,
       startTime: this.scene.time.now,
-      flipX: flipX, // flipX 저장
+      flipX: shouldFlip,
     });
 
     if (this.debug) {
-      console.log(`Playing effect: ${key} at (${finalX}, ${finalY}), flipX: ${flipX}`);
     }
 
     return effect;
   }
 
   /**
-   * 히트박스 위치에 이펙트 재생
-   * @param {string} key - 이펙트 키
-   * @param {Phaser.GameObjects.Rectangle} hitbox - 히트박스
-   * @param {boolean} flipX - X축 반전 여부
-   * @param {Object} options - 추가 옵션
+   * 히트박스에 이펙트 재생
    */
   playEffectOnHitbox(key, hitbox, flipX = false, options = {}) {
     if (!hitbox) {
@@ -248,7 +230,6 @@ export class EffectManager {
     const worldY = hitbox.y;
 
     if (this.debug) {
-      console.log(`Playing effect on hitbox: ${key} at (${worldX}, ${worldY}), flipX: ${flipX}`);
     }
 
     return this.playEffect(key, worldX, worldY, flipX, options);
@@ -260,15 +241,16 @@ export class EffectManager {
    * @param {Phaser.GameObjects.Sprite} target - 대상 스프라이트
    * @param {boolean} flipX - X축 반전 여부
    * @param {number} duration - 지속 시간 (ms), undefined면 수동으로 제거해야 함
+   * @param {Object} options - 추가 옵션 (angle, rotation 등)
    */
-  attachEffect(key, target, flipX = false, duration = undefined) {
+  attachEffect(key, target, flipX = false, duration = undefined, options = {}) {
     const data = EffectData[key];
     if (!data || !target) {
       console.warn(`Cannot attach effect: ${key}`);
       return null;
     }
 
-    const effect = this.playEffect(key, target.x, target.y, flipX);
+    const effect = this.playEffect(key, target.x, target.y, flipX, options);
     if (!effect) return null;
 
     // 대상을 따라다니도록 설정
@@ -299,9 +281,6 @@ export class EffectManager {
     }
   }
 
-  /**
-   * 풀에서 이펙트 가져오기
-   */
   getFromPool(key) {
     if (!this.effectPool.has(key)) {
       this.effectPool.set(key, []);
@@ -311,15 +290,11 @@ export class EffectManager {
     const effect = pool.pop() || null;
 
     if (effect && this.debug) {
-      console.log(`Got effect from pool: ${key}, remaining in pool: ${pool.length}`);
     }
 
     return effect;
   }
 
-  /**
-   * 풀로 이펙트 반환
-   */
   returnToPool(key, effect) {
     if (!effect || !effect.scene) {
       // 이미 파괴된 이펙트
@@ -341,6 +316,7 @@ export class EffectManager {
     effect.setAlpha(1.0);
     effect.setScale(1.0);
     effect.setFlipX(false);
+    effect.setAngle(0); // 각도 초기화
 
     if (!this.effectPool.has(key)) {
       this.effectPool.set(key, []);
@@ -351,20 +327,10 @@ export class EffectManager {
 
     if (pool.length < maxPoolSize) {
       pool.push(effect);
-      if (this.debug) {
-        console.log(`Returned effect to pool: ${key}, pool size: ${pool.length}`);
-      }
-    } else {
-      if (this.debug) {
-        console.log(`Pool full for ${key}, destroying effect`);
-      }
       effect.destroy();
     }
   }
 
-  /**
-   * 부착된 이펙트 위치 갱신 및 만료 처리
-   */
   update() {
     const now = this.scene.time.now;
 
@@ -379,11 +345,15 @@ export class EffectManager {
       if (data.attached && data.target) {
         const effectData = EffectData[data.key];
         if (effectData) {
+          // flipX 결정: effectData.flipX || target.flipX
+          const shouldFlip = effectData.flipX || data.target.flipX;
+
           const offset = effectData.offset || { x: 0, y: 0 };
-          const offsetX = data.target.flipX ? -offset.x : offset.x;
+          const offsetX = shouldFlip ? -offset.x : offset.x;
+
           data.sprite.x = data.target.x + offsetX;
           data.sprite.y = data.target.y + offset.y;
-          data.sprite.setFlipX(data.target.flipX);
+          data.sprite.setFlipX(shouldFlip);
         }
       }
 
@@ -398,9 +368,6 @@ export class EffectManager {
     }
   }
 
-  /**
-   * 모든 이펙트 제거
-   */
   clearAllEffects() {
     for (const data of this.activeEffects.values()) {
       this.returnToPool(data.key, data.sprite);
@@ -408,9 +375,6 @@ export class EffectManager {
     this.activeEffects.clear();
   }
 
-  /**
-   * 정리
-   */
   destroy() {
     this.clearAllEffects();
 

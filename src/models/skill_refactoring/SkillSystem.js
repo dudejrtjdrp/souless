@@ -23,7 +23,7 @@ export class SkillSystem {
     this.channelingManager = new ChannelingManager(this.inputHandler);
     this.animationController = new AnimationController(character.sprite, this.stateLockManager);
 
-    // ✅ GameScene의 EffectManager 사용 (없으면 경고)
+    //  GameScene의 EffectManager 사용 (없으면 경고)
     this.effectManager = scene.effectManager;
 
     if (!this.effectManager) {
@@ -246,7 +246,7 @@ export class SkillSystem {
     this.updateChanneling();
     this.inputHandler.updatePrevState();
 
-    // ✅ EffectManager.update()는 GameScene에서 한 번만 호출되므로
+    //  EffectManager.update()는 GameScene에서 한 번만 호출되므로
     // 여기서는 호출하지 않음 (중복 방지)
   }
 

@@ -13,7 +13,6 @@ export default class StateMachine {
   }
 
   changeState(newState) {
-    // console.log(newState);
     if (this.isLocked && newState !== this.currentState) {
       return false;
     }

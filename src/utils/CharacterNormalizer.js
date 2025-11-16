@@ -57,7 +57,7 @@ export default class CharacterNormalizer {
    * 디버그용: 충돌 박스 정보 출력
    */
   static debugInfo(spriteKey, spriteScale, config) {
-    console.group(`🎯 [${spriteKey}] 정규화 정보`);
+    console.group(` [${spriteKey}] 정규화 정보`);
     console.groupEnd();
   }
 

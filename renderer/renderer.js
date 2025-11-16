@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import GameScene from '../src/scenes/GameScene';
 import SoulScene from '../src/scenes/SoulScene';
 import UIScene from '../src/scenes/UIScene';
+import EffectTestScene from '../src/scenes/TestScene';
 
 const config = {
   type: Phaser.AUTO,
@@ -13,7 +14,7 @@ const config = {
     default: 'arcade',
     arcade: { debug: true },
   },
-  scene: [GameScene, SoulScene, UIScene],
+  scene: [EffectTestScene, GameScene, SoulScene, UIScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,

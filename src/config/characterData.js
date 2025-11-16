@@ -450,10 +450,11 @@ export const CharacterData = {
         type: 'melee',
         damage: 10,
         icon: 'assets/skills/fireknight/attack.png', // 아이콘 추가
-        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100 },
+        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 100, effect: 'slash_basic' },
         animation: 'attack',
         knockback: { x: 100, y: 0 },
         targetType: 'single',
+        impactEffect: 'effect_1', // 타격 시 이펙트
       },
       air_attack: {
         type: 'melee',
@@ -859,6 +860,7 @@ export const CharacterData = {
         knockback: { x: 100, y: 0 },
         targetType: 'single',
         impactEffect: 'impact_light', // 타격 시 이펙트
+        hitboxDelay: 300,
       },
       air_attack: {
         type: 'melee',

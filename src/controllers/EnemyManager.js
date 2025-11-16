@@ -39,7 +39,7 @@ export default class EnemyManager {
     const { types, maxCount, respawnInterval, patrolRangeX, minPlayerDistance } =
       this.mapConfig.enemies;
 
-    // ✅ 적 업데이트 (패트롤만)
+    //  적 업데이트 (패트롤만)
     this.enemies.forEach((enemy) => {
       if (enemy && enemy.sprite && !enemy.isDead) {
         this.updatePatrol(enemy);
@@ -52,10 +52,10 @@ export default class EnemyManager {
     // ❌ 공격 체크 제거 - GameScene에서 처리함
     // 이 부분 전체 삭제!
 
-    // ✅ 제거된 적 필터링
+    //  제거된 적 필터링
     this.enemies = this.enemies.filter((e) => e && !e.isDead);
 
-    // ✅ 리젠
+    //  리젠
     if (this.enemies.length < maxCount && time - this.lastSaveTime > respawnInterval) {
       this.spawnRandomEnemyNearPlayer(types, patrolRangeX, minPlayerDistance);
       this.lastSpawnTime = time;

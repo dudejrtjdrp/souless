@@ -90,13 +90,12 @@ export default class Portal extends Phaser.GameObjects.Sprite {
   }
 
   onPlayerActivate() {
-    // 🎯 쿨다운 중이거나 Scene이 전환 중이면 무시
+    // 쿨다운 중이거나 Scene이 전환 중이면 무시
     if (this.cooldown || !this.connectionInfo) {
       return;
     }
 
-    console.log('asd');
-    // 🎯 Scene이 이미 전환 중이면 무시 (전역 플래그)
+    // Scene이 이미 전환 중이면 무시 (전역 플래그)
     if (this.scene.isPortalTransitioning) {
       return;
     }
@@ -104,7 +103,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     // GameScene의 onPortalEnter 호출
     if (this.scene.onPortalEnter) {
       this.cooldown = true;
-      // 🎯 플래그는 GameScene에서 설정하도록 변경
+      //  플래그는 GameScene에서 설정하도록 변경
       // this.scene.isPortalTransitioning = true;
       this.portalText.setVisible(false); // UI 숨기기
 

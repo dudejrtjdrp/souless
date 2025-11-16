@@ -7,7 +7,7 @@ export default class EnemyBase {
     this.scene = scene;
     this.enemyType = enemyType;
 
-    // ✅ 데이터 가져오기
+    //  데이터 가져오기
     this.data = EnemiesData[enemyType];
     if (!this.data) {
       console.error(`❌ Enemy data not found: ${enemyType}`);
@@ -15,7 +15,7 @@ export default class EnemyBase {
       return;
     }
 
-    // ✅ 스탯 설정 (랜덤 범위 적용)
+    // 스탯 설정 (랜덤 범위 적용)
     const stats = this.data.stats;
     this.maxHP = stats.maxHP;
     this.hp = this.maxHP;
@@ -29,7 +29,7 @@ export default class EnemyBase {
     this.lastDamageTime = 0;
     this.direction = direction;
 
-    // ✅ 스프라이트 생성
+    // 스프라이트 생성
     const spriteKey = `${enemyType}_idle`;
 
     // 텍스처 존재 확인
@@ -49,19 +49,19 @@ export default class EnemyBase {
     this.sprite.body.setCollideWorldBounds(physics.collideWorldBounds);
     this.sprite.body.setVelocityX(this.speed * this.direction);
 
-    // ✅ HP바 생성
+    // HP바 생성
     const hpBarWidth = physics.width;
     this.hpBar = scene.add.rectangle(x, y - physics.height / 2 - 5, hpBarWidth, 5, 0x00ff00);
     this.hpBar.setOrigin(0.5, 0.5);
     this.hpBarMaxWidth = hpBarWidth;
 
-    // ✅ 애니메이션 생성
+    //  애니메이션 생성
     this.createAnimations();
     this.sprite.play(`${enemyType}_idle`);
   }
 
   /**
-   * ✅ 애니메이션 생성 (데이터 기반)
+   *  애니메이션 생성 (데이터 기반)
    */
   createAnimations() {
     if (!this.data || !this.data.animations) {
@@ -93,7 +93,7 @@ export default class EnemyBase {
   }
 
   /**
-   * ✅ 정적 메서드: 에셋 로드
+   *  정적 메서드: 에셋 로드
    */
   static preload(scene, enemyType) {
     const data = EnemiesData[enemyType];
@@ -122,7 +122,7 @@ export default class EnemyBase {
       this.sprite.body.setVelocityX(this.speed * this.direction);
     }
 
-    // 🎯 방향에 따라 flipX 조정
+    //  방향에 따라 flipX 조정
     // 기본 flipX 값은 enemiesData에서 설정된 초기값
     const baseFlip = this.data.sprite.flipX || false;
 
@@ -135,7 +135,7 @@ export default class EnemyBase {
   }
 
   /**
-   * ✅ 데미지 받기 (경험치 반환 포함)
+   *  데미지 받기 (경험치 반환 포함)
    */
   takeDamage(amount = 1) {
     if (this.isDead) return false;
@@ -174,10 +174,10 @@ export default class EnemyBase {
       if (this.hpBar) this.hpBar.visible = false;
 
       this.playDeath();
-      return true; // ✅ 죽음 반환
+      return true; //  죽음 반환
     } else {
       this.playHit();
-      return false; // ✅ 살아있음 반환
+      return false; //  살아있음 반환
     }
   }
 

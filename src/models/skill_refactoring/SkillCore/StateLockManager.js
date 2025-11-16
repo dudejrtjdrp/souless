@@ -5,7 +5,6 @@ export default class StateLockManager {
   }
 
   setPrevState(prevStateKey) {
-    console.log(prevStateKey);
     this.prevStateKey = prevStateKey;
   }
 

@@ -48,7 +48,7 @@ export default class SkillIconLoader {
       slot.icon.setVisible(false);
       slot.icon.setData('isEmpty', false);
 
-      // ✅ xPos 기준으로 중앙 계산
+      //  xPos 기준으로 중앙 계산
       const iconImage = scene.add
         .image(slot.xPos + slot.slotSize / 2, slot.slotSize / 2, textureKey)
         .setDisplaySize(48, 48)
@@ -56,7 +56,7 @@ export default class SkillIconLoader {
 
       slot.iconImage = iconImage;
 
-      // ✅ 명시적으로 전달받은 container 사용
+      //  명시적으로 전달받은 container 사용
       const targetContainer = container || (slot.bg && slot.bg.parentContainer);
 
       if (targetContainer) {

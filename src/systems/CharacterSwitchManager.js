@@ -61,11 +61,6 @@ export default class CharacterSwitchManager {
     // 맵별 + 캐릭터별로 저장
     const stateKey = `${this.currentMapKey}_${this.currentCharacterType}`;
     this.characterStates.set(stateKey, state);
-
-    console.log(
-      `💾 Saved ${saveType} state for ${this.currentCharacterType} at ${this.currentMapKey}:`,
-      state,
-    );
   }
 
   /**
@@ -75,12 +70,9 @@ export default class CharacterSwitchManager {
     const stateKey = `${mapKey}_${characterType}`;
     const state = this.characterStates.get(stateKey);
 
-    console.log(state);
     if (!state) {
-      console.log(`📂 No saved state for ${characterType} at ${mapKey} - will use default spawn`);
       return null;
     }
-    console.log(`📂 Loaded state for ${characterType} at ${mapKey}:`, state);
     return state;
   }
 
@@ -100,8 +92,6 @@ export default class CharacterSwitchManager {
       console.warn(`Portal index ${portalIndex} not found`);
       return null;
     }
-
-    console.log(this.scene);
 
     return {
       x: portal.x,
@@ -164,8 +154,6 @@ export default class CharacterSwitchManager {
         }
       });
     }
-
-    console.log(`✅ Applied state to ${state.type}`);
   }
 
   /**
@@ -217,7 +205,6 @@ export default class CharacterSwitchManager {
     });
 
     keysToDelete.forEach((key) => this.characterStates.delete(key));
-    console.log(`🗑️ Cleared all character states for map: ${mapKey}`);
   }
 
   /**
@@ -225,23 +212,10 @@ export default class CharacterSwitchManager {
    */
   resetAllStates() {
     this.characterStates.clear();
-    console.log('🗑️ All character states cleared');
   }
 
   /**
    * 디버그: 모든 저장된 상태 출력
    */
-  debugPrintStates() {
-    console.log('=== Character States ===');
-    this.characterStates.forEach((state, key) => {
-      console.log(`${key}:`, {
-        SaveType: state.saveType,
-        HP: `${state.health}/${state.maxHealth}`,
-        MP: `${state.mana}/${state.maxMana}`,
-        Position: `(${Math.round(state.position.x)}, ${Math.round(state.position.y)})`,
-        Map: state.mapKey,
-      });
-    });
-    console.log('=======================');
-  }
+  debugPrintStates() {}
 }

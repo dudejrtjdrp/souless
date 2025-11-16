@@ -89,7 +89,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 레이어 자동 스케일링
+   *  레이어 자동 스케일링
    */
   autoScaleLayers() {
     if (!this.config.layers || this.config.layers.length === 0) return;
@@ -147,7 +147,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 배경 레이어들을 위로 이동 (MapView에서 호출)
+   *  배경 레이어들을 위로 이동 (MapView에서 호출)
    * @param {Array} layers - 배경 레이어 이미지 객체들
    */
   adjustBackgroundLayers(layers) {
@@ -200,7 +200,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 스폰 위치 계산
+   *  스폰 위치 계산
    * - collision ground 위에 확실히 생성
    */
   calculateSpawn() {
@@ -244,7 +244,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 강화된 Collision Ground 생성
+   *  강화된 Collision Ground 생성
    */
   createFixedCollisionGround() {
     const { width, height } = this.getScaledMapSize();
@@ -359,7 +359,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 안전한 스폰 위치 계산
+   *  안전한 스폰 위치 계산
    * - collision ground 위에 확실히 생성되도록 보장
    */
   getSafeSpawnPosition(x, offsetY = 150) {
@@ -375,7 +375,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 플레이어 추가 (collision ground 위에 확실히 배치)
+   *  플레이어 추가 (collision ground 위에 확실히 배치)
    */
   addPlayer(playerSprite) {
     if (!playerSprite || !playerSprite.body) {
@@ -399,7 +399,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 적 추가 (collision ground 위에 확실히 배치)
+   *  적 추가 (collision ground 위에 확실히 배치)
    */
   addEnemy(enemySprite) {
     if (!enemySprite) {
@@ -436,7 +436,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 강화된 Entity Collision 추가
+   *  강화된 Entity Collision 추가
    */
   addEntityCollision(entitySprite, entityType = 'Entity') {
     if (!this.collisionGround) {
@@ -464,7 +464,7 @@ export default class MapModel {
   }
 
   /**
-   * 🎯 모든 collider 상태 확인 (디버그용)
+   *  모든 collider 상태 확인 (디버그용)
    */
   checkColliders() {
     this.entityColliders.forEach((collider, i) => {});

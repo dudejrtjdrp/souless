@@ -43,7 +43,6 @@ export default class AnimationController {
     if (!anim) return 0;
 
     const frameCount = anim.frames.length;
-    console.log(frameCount);
     return (frameCount / frameRate) * 1000;
   }
 
@@ -66,7 +65,6 @@ export default class AnimationController {
       this.sprite.anims.play(this.stateLockManager.getPrevState(), true);
       return;
     }
-    console.log(this.stateLockManager.getPrevState());
   }
 
   playIdle() {

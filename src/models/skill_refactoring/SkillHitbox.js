@@ -62,7 +62,7 @@ export class SkillHitbox {
       }
       this.scene.children.bringToTop(h.rect);
 
-      // ✅ impactEffect는 캐릭터 기준 고정 위치에 표시
+      //  impactEffect는 캐릭터 기준 고정 위치에 표시
       if (this.effectManager && this.config.impactEffect) {
         try {
           const flipX = this.sprite.flipX;
@@ -71,14 +71,6 @@ export class SkillHitbox {
           const effectY = this.sprite.y + h.offsetY;
 
           this.effectManager.playEffect(this.config.impactEffect, effectX, effectY, flipX);
-
-          console.log(`🎆 ImpactEffect at character position:`, {
-            effect: this.config.impactEffect,
-            x: effectX.toFixed(2),
-            y: effectY.toFixed(2),
-            charX: this.sprite.x.toFixed(2),
-            charY: this.sprite.y.toFixed(2),
-          });
         } catch (error) {
           console.warn(`Failed to play impact effect:`, error);
         }
@@ -139,7 +131,7 @@ export class SkillHitbox {
           isMoving: false,
         };
 
-        // ✅ 시퀀스의 impactEffect는 캐릭터 기준 위치
+        //  시퀀스의 impactEffect는 캐릭터 기준 위치
         if (this.effectManager && this.config.impactEffect) {
           try {
             this.effectManager.playEffect(this.config.impactEffect, posX, posY, flipX);
@@ -244,7 +236,7 @@ export class SkillHitbox {
       if (hit) {
         this.hitEnemies.add(enemyId);
 
-        // ✅ hitbox.effect는 적이 맞은 위치 (히트박스 위치)에 표시
+        //  hitbox.effect는 적이 맞은 위치 (히트박스 위치)에 표시
         if (this.effectManager && hitbox.effectKey) {
           try {
             // 히트박스의 현재 위치 사용 (적과 교차하는 지점)
@@ -257,14 +249,6 @@ export class SkillHitbox {
               hitEffectY,
               this.sprite.flipX,
             );
-
-            console.log(`⚔️ Hitbox effect at hit position:`, {
-              effect: hitbox.effectKey,
-              x: hitEffectX.toFixed(2),
-              y: hitEffectY.toFixed(2),
-              enemyX: targetSprite.x.toFixed(2),
-              enemyY: targetSprite.y.toFixed(2),
-            });
           } catch (error) {
             console.warn(`Failed to play hitbox effect:`, error);
           }

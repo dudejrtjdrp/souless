@@ -4,6 +4,7 @@ export default class CharacterSwitchHandler {
   }
 
   async switchCharacter(direction = 'next') {
+    //  수정: 원래 로직으로 복원
     if (this.isTransitioning()) {
       return;
     }
@@ -25,8 +26,23 @@ export default class CharacterSwitchHandler {
 
   async prepareSwitch() {
     await this.scene.saveCurrentPosition();
+
+    //  현재 캐릭터의 체력/마나 저장
+    await this.saveCurrentResources();
+
     await this.saveCooldowns();
     this.scene.characterSwitchManager.saveCurrentCharacterState(this.scene.player);
+  }
+
+  /**
+   *  현재 캐릭터의 체력/마나 저장
+   */
+  async saveCurrentResources() {
+    const { player } = this.scene;
+
+    if (player && player.saveResources) {
+      await player.saveResources();
+    }
   }
 
   async saveCooldowns() {
@@ -87,7 +103,14 @@ export default class CharacterSwitchHandler {
     this.scene.characterSwitchManager.setCurrentCharacterType(nextType);
 
     const { x, y } = state.position;
-    this.scene.createPlayer(nextType, x, y);
+
+    //  캐릭터 생성
+    this.scene.createPlayer(nextType, x, y, true);
+
+    //  생성 후 체력/마나 복원
+    if (this.scene.player && this.scene.player.loadSavedResources) {
+      await this.scene.player.loadSavedResources();
+    }
 
     this.restorePlayerState(state);
     this.updateSceneReferences();

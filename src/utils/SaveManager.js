@@ -16,7 +16,7 @@ export default class SaveManager {
     return {
       totalExp: 0,
       characterExp: {},
-      characters: {},
+      characters: {}, // 캐릭터별 상태 (HP, MP, 레벨 등)
       skillCooldowns: {}, // 캐릭터별 스킬 쿨타임 저장
       lastPosition: null,
     };
@@ -99,13 +99,17 @@ export default class SaveManager {
     return await this.load();
   }
 
-  /** 캐릭터별 상태 저장 (체력, 마나, 경험치 등) */
+  /**
+   *  캐릭터별 상태 저장 (체력, 마나, 경험치 등)
+   * @param {string} characterType - 캐릭터 타입
+   * @param {Object} state - 저장할 상태 { hp, mp, maxHp, maxMp, exp, level, ... }
+   */
   static async saveCharacterState(characterType, state) {
     const saveData = await this.load();
 
     if (!saveData.characters) saveData.characters = {};
 
-    // 기존 캐릭터 데이터 병합
+    // 기존 캐릭터 데이터와 병합
     const prevCharacterState = saveData.characters[characterType] || {};
 
     saveData.characters[characterType] = {
@@ -114,23 +118,71 @@ export default class SaveManager {
       timestamp: Date.now(),
     };
 
-    // 캐릭터 경험치 저장
+    // 경험치 관련 처리
     if (state.exp !== undefined) {
       saveData.characters[characterType].exp = state.exp;
     }
 
     // 총 경험치 자동 업데이트
     if (state.gainedExp) {
-      saveData.totalExp += state.gainedExp;
+      saveData.totalExp = (saveData.totalExp || 0) + state.gainedExp;
     }
+
+    const success = await this.save(saveData);
+
+    if (success) {
+    }
+
+    return success;
+  }
+
+  /**
+   *  캐릭터 상태 로드
+   * @param {string} characterType - 캐릭터 타입
+   * @returns {Object|null} 저장된 캐릭터 상태 또는 null
+   */
+  static async getCharacterState(characterType) {
+    const saveData = await this.load();
+    const state = saveData?.characters?.[characterType] || null;
+
+    return state;
+  }
+
+  /**
+   *  캐릭터의 체력/마나만 빠르게 저장
+   * @param {string} characterType - 캐릭터 타입
+   * @param {number} hp - 현재 체력
+   * @param {number} mp - 현재 마나
+   */
+  static async saveCharacterResources(characterType, hp, mp) {
+    const saveData = await this.load();
+
+    if (!saveData.characters) saveData.characters = {};
+    if (!saveData.characters[characterType]) saveData.characters[characterType] = {};
+
+    saveData.characters[characterType].hp = hp;
+    saveData.characters[characterType].mp = mp;
+    saveData.characters[characterType].timestamp = Date.now();
 
     return await this.save(saveData);
   }
 
-  /** 캐릭터 상태 로드 */
-  static async getCharacterState(characterType) {
-    const saveData = await this.load();
-    return saveData?.characters?.[characterType] || null;
+  /**
+   *  캐릭터의 체력/마나 로드
+   * @param {string} characterType - 캐릭터 타입
+   * @returns {Object|null} { hp, mp } 또는 null
+   */
+  static async getCharacterResources(characterType) {
+    const state = await this.getCharacterState(characterType);
+
+    if (state && state.hp !== undefined && state.mp !== undefined) {
+      return {
+        hp: state.hp,
+        mp: state.mp,
+      };
+    }
+
+    return null;
   }
 
   /** 총 경험치 불러오기 */
@@ -140,7 +192,7 @@ export default class SaveManager {
   }
 
   /**
-   * ✅ 경험치 추가 (총 경험치 + 캐릭터별 경험치)
+   *  경험치 추가 (총 경험치 + 캐릭터별 경험치)
    * @param {number} amount - 추가할 경험치
    * @param {string} characterType - 캐릭터 타입 (예: 'warrior', 'mage')
    */
@@ -156,11 +208,12 @@ export default class SaveManager {
     data.characterExp = data.characterExp || {};
     data.characterExp[characterType] = (data.characterExp[characterType] || 0) + amount;
 
-    await this.save(data);
+    // 캐릭터 상태에도 경험치 업데이트
+    if (!data.characters) data.characters = {};
+    if (!data.characters[characterType]) data.characters[characterType] = {};
+    data.characters[characterType].exp = data.characterExp[characterType];
 
-    console.log(
-      `✨ ${characterType} 경험치 +${amount} (캐릭터: ${data.characterExp[characterType]}, 총: ${data.totalExp})`,
-    );
+    await this.save(data);
 
     return {
       characterExp: data.characterExp[characterType],
@@ -173,6 +226,12 @@ export default class SaveManager {
     const data = await this.getSaveData();
     data.characterExp = data.characterExp || {};
     data.characterExp[characterType] = (data.characterExp[characterType] || 0) + amount;
+
+    // 캐릭터 상태에도 반영
+    if (!data.characters) data.characters = {};
+    if (!data.characters[characterType]) data.characters[characterType] = {};
+    data.characters[characterType].exp = data.characterExp[characterType];
+
     await this.save(data);
   }
 
@@ -203,12 +262,6 @@ export default class SaveManager {
   static async exists() {
     const data = await this.load();
     return data !== null && data !== undefined;
-  }
-
-  /** 디버그용 전체 데이터 출력 */
-  static async debug() {
-    const data = await this.load();
-    return data;
   }
 
   /** 스킬 쿨타임 저장 */

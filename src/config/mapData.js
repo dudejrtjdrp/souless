@@ -172,6 +172,6 @@ export const MAPS = {
   },
 };
 
-// 🎯 디버그: 포탈 정보 출력 (개발 중)
+//  디버그: 포탈 정보 출력 (개발 중)
 if (import.meta.env.DEV) {
 }

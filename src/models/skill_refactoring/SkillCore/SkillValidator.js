@@ -2,7 +2,6 @@ const AIR_ALLOWED_SKILLS = ['air_attack', 's_skill', 'attack'];
 
 export default class SkillValidator {
   static canUseInAir(skillName) {
-    console.log(skillName);
     return AIR_ALLOWED_SKILLS.includes(skillName);
   }
 

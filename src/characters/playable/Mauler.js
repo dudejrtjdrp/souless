@@ -7,7 +7,7 @@ export default class Mauler extends CharacterBase {
   constructor(scene, x, y, options = {}) {
     const config = CharacterDataAdapter.buildConfig('mauler', options);
 
-    // ✅ 수정: 전달받은 x, y를 그대로 사용 (포탈 위치 강제 제거)
+    //  수정: 전달받은 x, y를 그대로 사용 (포탈 위치 강제 제거)
     super(scene, x, y, config);
 
     // SkillSystem 초기화

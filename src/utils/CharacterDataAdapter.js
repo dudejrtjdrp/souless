@@ -15,7 +15,7 @@ export class CharacterDataAdapter {
       throw new Error(`Character data not found: ${characterType}`);
     }
 
-    // ✅ 충돌 박스 변환
+    //  충돌 박스 변환
     const collisionBox = HitboxConfig.createCollisionBox(
       data.physics.collisionBox.width,
       data.physics.collisionBox.height,
@@ -23,7 +23,7 @@ export class CharacterDataAdapter {
       data.physics.collisionBox.offsetY || 0,
     );
 
-    // ✅ 기본 공격 히트박스 변환
+    //  기본 공격 히트박스 변환
     const attackHitbox = HitboxConfig.createAttackHitbox(
       data.combat.attackHitbox.width,
       data.combat.attackHitbox.height,
@@ -32,7 +32,7 @@ export class CharacterDataAdapter {
       data.combat.attackHitbox.duration,
     );
 
-    // ✅ 스킬 히트박스 변환
+    //  스킬 히트박스 변환
     const skillHitboxes = {};
     if (data.skills) {
       for (const [skillName, skillData] of Object.entries(data.skills)) {

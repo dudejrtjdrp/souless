@@ -23,8 +23,8 @@ export const EffectData = {
   },
 
   // 타격 이펙트
-  impact_light: {
-    url: 'assets/effects/impact_light.png',
+  default_sword: {
+    url: 'assets/effects/default_sword.png',
     frameWidth: 128,
     frameHeight: 128,
     frames: { start: 0, end: 8 },
@@ -137,6 +137,230 @@ export const EffectData = {
     frameHeight: 128,
     frames: { start: 0, end: 7 },
     frameRate: 15,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  //스킬 이펙트
+  princess_multiple_circle_turn_out: {
+    url: 'assets/effects/effect_collection_1.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 0, end: 16 },
+    frameRate: 17,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_multiple_rectangle: {
+    url: 'assets/effects/effect_collection_1.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 19, end: 32 },
+    frameRate: 14,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  princess_windmill: {
+    url: 'assets/effects/effect_collection_1.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 38, end: 54 },
+    frameRate: 17,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  bladekeeper_arrow_circle: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 0, end: 7 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  ranger_cirle_bomb: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 17, end: 11 },
+    // frames: { start: 11, end: 17 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  mauler_rectangle_shield: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 22, end: 29 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  bladekeeper_blade_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 33, end: 41 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  princess_water_four_circles_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 44, end: 51 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  monk_circle_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 55, end: 62 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  princess_water_turn_out: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 66, end: 73 },
+    frameRate: 8,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_thick_pattern_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 77, end: 86 },
+    frameRate: 10,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_thin_pattern_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 88, end: 98 },
+    frameRate: 11,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  effect_1: {
+    url: 'assets/effects/fire_knight/slash.png',
+    frameWidth: 128,
+    frameHeight: 128,
+    frames: { start: 0, end: 8 },
+    frameRate: 10,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 17, y: -39 },
+    angle: 35, // ✨ 각도 추가 (degrees)
+    flipX: true, // ✨ 기본값: 반전 안함
+  },
+
+  effect_2: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 88, end: 98 },
+    frameRate: 11,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  effect_3: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 77, end: 86 },
+    frameRate: 10,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  effect_4: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 88, end: 98 },
+    frameRate: 11,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_thick_pattern_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 77, end: 86 },
+    frameRate: 10,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_thin_pattern_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 88, end: 98 },
+    frameRate: 11,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_thick_pattern_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 77, end: 86 },
+    frameRate: 10,
+    repeat: 0,
+    scale: 2.5,
+    offset: { x: 0, y: 10 },
+  },
+
+  assassin_thin_pattern_turn_in: {
+    url: 'assets/effects/effect_collection_2.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 88, end: 98 },
+    frameRate: 11,
     repeat: 0,
     scale: 2.5,
     offset: { x: 0, y: 10 },

@@ -69,18 +69,19 @@ export default class GameScene extends Phaser.Scene {
   async create() {
     await this.initializeUI();
 
-    // loadSaveData가 false를 반환하면 씬 전환 중이므로 create 중단
     const shouldContinue = await this.loadSaveData();
     if (!shouldContinue) {
-      return; // 씬 전환 중이므로 create를 멈춤
+      return;
     }
 
     this.setupScene();
     this.createBackground();
-    this.setupPlayer();
+
+    await this.setupPlayer(); //  async/await 추가
+
     this.setupCamera();
     this.setupEnemies();
-    this.setupCharacterSelectUI(); // ✅ 캐릭터 선택 UI 생성
+    this.setupCharacterSelectUI();
     this.emitInitialEvents();
 
     EffectLoader.createAllAnimations(this);
@@ -99,10 +100,6 @@ export default class GameScene extends Phaser.Scene {
 
     this.isPortalTransitioning = false;
 
-    // 2. 로드된 텍스처 확인
-    const effectKeys = ['slash_basic', 'impact_light', 'hit_spark'];
-
-    // 3. EffectManager 상태 확인
     if (this.effectManager) {
       this.effectManager.logStatus();
     }
@@ -176,12 +173,17 @@ export default class GameScene extends Phaser.Scene {
     return spawnManager.determineSpawnPosition(defaultSpawn, portals);
   }
 
-  setupPlayer() {
+  async setupPlayer() {
     this.characterSwitchManager = new CharacterSwitchManager(this);
     this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
-    this.characterSwitchManager.setCurrentMap(this.currentMapKey); // ✅ 맵 정보 설정
+    this.characterSwitchManager.setCurrentMap(this.currentMapKey);
 
     this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y);
+
+    //  생성 후 체력/마나 복원
+    if (this.player && this.player.loadSavedResources) {
+      await this.player.loadSavedResources();
+    }
   }
 
   setupCamera() {
@@ -195,7 +197,7 @@ export default class GameScene extends Phaser.Scene {
     this.enemyManager.createInitial();
   }
 
-  // ✅ 캐릭터 선택 UI 초기화
+  //  캐릭터 선택 UI 초기화
   setupCharacterSelectUI() {
     this.characterSelectOverlay = new CharacterSelectOverlay(this);
     this.isBackQuoteHeld = false;
@@ -209,7 +211,8 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  createPlayer(characterType, x, y, restoreState = false) {
+  createPlayer(characterType, x, y, restoreState = true) {
+    //  기본값을 true로
     const finalY = this.calculatePlayerSpawnY(y);
 
     this.player = CharacterFactory.create(this, characterType, x, finalY, {
@@ -220,10 +223,6 @@ export default class GameScene extends Phaser.Scene {
     this.playerCollider = this.mapModel.addPlayer(this.player.sprite);
 
     this.setupSwitchCooldown();
-
-    if (restoreState) {
-      this.restorePlayerState(characterType);
-    }
   }
 
   calculatePlayerSpawnY(y) {
@@ -248,14 +247,18 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async switchCharacter(direction = 'next') {
+    await this.saveCurrentCharacterResources();
+
     const handler = new CharacterSwitchHandler(this);
     await handler.switchCharacter(direction);
   }
 
-  // ✅ 캐릭터 선택 UI를 통한 직접 전환
+  //  캐릭터 선택 UI를 통한 직접 전환
   async switchToSelectedCharacter(characterType) {
     if (this.isCharacterSwitchOnCooldown) return;
-    if (characterType === this.selectedCharacter) return; // 이미 같은 캐릭터면 무시
+    if (characterType === this.selectedCharacter) return;
+
+    await this.saveCurrentCharacterResources();
 
     const handler = new CharacterSwitchHandler(this);
     await handler.switchToCharacter(characterType);
@@ -277,6 +280,8 @@ export default class GameScene extends Phaser.Scene {
 
     this.isPortalTransitioning = true;
 
+    await this.saveCurrentCharacterResources();
+
     // 포탈 위치 저장
     await SaveManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
@@ -286,6 +291,12 @@ export default class GameScene extends Phaser.Scene {
       characterType: this.selectedCharacter,
       skipSaveCheck: true,
     });
+  }
+
+  async saveCurrentCharacterResources() {
+    if (this.player && this.player.saveResources) {
+      await this.player.saveResources();
+    }
   }
 
   cleanupBeforeTransition() {
@@ -348,21 +359,26 @@ export default class GameScene extends Phaser.Scene {
   handleInput(time, delta) {
     const input = this.inputHandler.getInputState();
 
-    // ✅ ` 키 홀드 체크 (캐릭터 선택 UI)
+    //  ` 키 홀드 체크 (캐릭터 선택 UI)
     this.handleCharacterSelectInput(input, time);
 
-    // ✅ Tab 키로 이전 캐릭터 (빠른 전환)
+    //  Tab 키로 이전 캐릭터 (빠른 전환)
     if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
       this.switchCharacter('prev');
     }
 
-    // ✅ L 키로 세이브 데이터 삭제
+    //  L 키로 세이브 데이터 삭제
     if (input.isLPressed) {
       this.clearAllSaveData();
     }
+
+    if (input.isDownPressed) {
+      // T키로 테스트 씬 열기
+      this.scene.start('EffectTestScene');
+    }
   }
 
-  // ✅ 캐릭터 선택 UI 입력 처리
+  //  캐릭터 선택 UI 입력 처리
   handleCharacterSelectInput(input, time) {
     // ` 키를 누르기 시작
     if (input.isBackQuotePressed) {
@@ -426,6 +442,7 @@ export default class GameScene extends Phaser.Scene {
     if (!this.lastSaveTime || time - this.lastSaveTime > 5000) {
       this.lastSaveTime = time;
       this.saveCurrentPosition();
+      this.saveCurrentCharacterResources();
     }
   }
 }

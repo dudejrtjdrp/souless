@@ -8,15 +8,11 @@ export class EffectLoader {
    * @param {Phaser.Scene} scene - Phaser Scene
    */
   static preloadAllEffects(scene) {
-    console.log('Preloading all effects...');
-
     for (const [key, data] of Object.entries(EffectData)) {
       scene.load.spritesheet(key, data.url, {
         frameWidth: data.frameWidth,
         frameHeight: data.frameHeight,
       });
-
-      console.log(`Queued effect: ${key}`);
     }
   }
 
@@ -26,8 +22,6 @@ export class EffectLoader {
    * @param {string[]} effectKeys - 로드할 이펙트 키 배열
    */
   static preloadEffects(scene, effectKeys) {
-    console.log('Preloading selected effects:', effectKeys);
-
     for (const key of effectKeys) {
       const data = EffectData[key];
       if (!data) {
@@ -47,8 +41,6 @@ export class EffectLoader {
    * @param {Phaser.Scene} scene - Phaser Scene
    */
   static createAllAnimations(scene) {
-    console.log('Creating effect animations...');
-
     for (const [key, data] of Object.entries(EffectData)) {
       if (!scene.textures.exists(key)) {
         console.warn(`Texture not loaded, skipping animation: ${key}`);
@@ -69,8 +61,6 @@ export class EffectLoader {
         frameRate: data.frameRate,
         repeat: data.repeat,
       });
-
-      console.log(`Created animation: ${key}`);
     }
   }
 

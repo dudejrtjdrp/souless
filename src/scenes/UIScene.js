@@ -47,13 +47,13 @@ export default class UIScene extends Phaser.Scene {
       .setDepth(1000)
       .setAlpha(0.8);
 
-    // 🎯 게임 이벤트 리스너 등록
+    //  게임 이벤트 리스너 등록
     this.setupEventListeners();
 
     // 초기 데이터 로드
     await this.updateExpBars();
 
-    // 🎯 create 완료 이벤트
+    //  create 완료 이벤트
     this.events.emit('ui-ready');
 
     const gameScene = this.scene.get('GameScene');
@@ -92,19 +92,19 @@ export default class UIScene extends Phaser.Scene {
   }
 
   /**
-   * 🎯 캐릭터 변경 핸들러
+   *  캐릭터 변경 핸들러
    */
   async handleCharacterChanged(data) {
     const { characterType, player } = data;
     this.currentCharacterType = characterType;
 
-    // 스킬 아이콘 업데이트 (container 전달)
+    // 스킬 아이콘 업데이트
     if (player && player.skillSystem) {
       SkillIconLoader.updateAllIcons(
         this,
         this.skillCooldown,
         characterType,
-        this.skillCooldown.container, // ✅ container 명시적 전달
+        this.skillCooldown.container,
       );
       await this.restoreSkillCooldowns(characterType, player);
     }
@@ -112,7 +112,7 @@ export default class UIScene extends Phaser.Scene {
     // 경험치 바 업데이트
     await this.updatePlayerExp(characterType);
 
-    // HP/MP 업데이트
+    //  HP/MP 업데이트 (이미 CharacterBase에서 복원됨)
     if (player) {
       this.updateUI(player);
     }
@@ -121,7 +121,7 @@ export default class UIScene extends Phaser.Scene {
   }
 
   /**
-   * 🎯 경험치 획득 핸들러
+   *  경험치 획득 핸들러
    */
   async handleExpGained(data) {
     const { amount, characterType } = data;
@@ -131,7 +131,7 @@ export default class UIScene extends Phaser.Scene {
   }
 
   /**
-   * 🎯 플레이어 스탯 업데이트 핸들러
+   *  플레이어 스탯 업데이트 핸들러
    */
   handlePlayerStatsUpdated(player) {
     if (!player) return;
@@ -139,7 +139,7 @@ export default class UIScene extends Phaser.Scene {
   }
 
   /**
-   * 🎯 스킬 쿨다운 업데이트 핸들러
+   *  스킬 쿨다운 업데이트 핸들러
    */
   handleSkillCooldownsUpdated(data) {
     const { player } = data;

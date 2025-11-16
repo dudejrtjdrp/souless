@@ -50,7 +50,6 @@ export default class AnimationManager {
     if (!sprite || !animKey) return;
 
     const fullKey = `${this.config.spriteKey}-${animKey}`;
-    console.log(fullKey);
 
     // 애니메이션 존재 여부 확인
     if (!this.scene.anims.exists(fullKey)) {
@@ -80,8 +79,6 @@ export default class AnimationManager {
 
     try {
       sprite.anims.pause();
-      // 디버그용 로그 (필요 시 주석 해제)
-      // console.log(`[AnimationManager] Animation paused: ${sprite.anims.currentAnim?.key}`);
     } catch (err) {
       console.error('[AnimationManager] Failed to pause animation', err);
     }
@@ -95,7 +92,6 @@ export default class AnimationManager {
 
     try {
       sprite.anims.resume();
-      // console.log(`[AnimationManager] Animation resumed: ${sprite.anims.currentAnim?.key}`);
     } catch (err) {
       console.error('[AnimationManager] Failed to resume animation', err);
     }
@@ -110,7 +106,6 @@ export default class AnimationManager {
 
     try {
       sprite.anims.stop();
-      // console.log(`[AnimationManager] Animation stopped: ${sprite.anims.currentAnim?.key}`);
     } catch (err) {
       console.error('[AnimationManager] Failed to stop animation', err);
     }

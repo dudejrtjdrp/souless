@@ -12,6 +12,7 @@ export default class CharacterBase {
     this.scene = scene;
     this.config = this.getDefaultConfig();
     Object.assign(this.config, config || {});
+    this.characterType = config.spriteKey || 'warrior';
 
     this.maxHealth = 100;
     this.health = 100;
@@ -31,9 +32,35 @@ export default class CharacterBase {
     if (this.config.debug) {
       this.debugGraphics = this.scene.add.graphics();
     }
+  }
 
-    // ✅ 캐릭터 타입 저장 (spriteKey에서 추출)
-    this.characterType = config.spriteKey || 'warrior';
+  async loadSavedResources() {
+    try {
+      const savedResources = await SaveManager.getCharacterResources(this.characterType);
+
+      if (savedResources) {
+        this.health = savedResources.hp;
+        this.mana = savedResources.mp;
+
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error(`❌ ${this.characterType} 체력/마나 복원 실패:`, error);
+      return false;
+    }
+  }
+
+  async saveResources() {
+    try {
+      await SaveManager.saveCharacterResources(this.characterType, this.health, this.mana);
+
+      return true;
+    } catch (error) {
+      console.error(`❌ ${this.characterType} 체력/마나 저장 실패:`, error);
+      return false;
+    }
   }
 
   getDefaultConfig() {
@@ -233,10 +260,8 @@ export default class CharacterBase {
       this.jump();
     }
     if (input.isEPressed) {
-      console.log(input);
     }
     if (input.isEReleased) {
-      console.log(input);
     }
   }
 
@@ -317,7 +342,7 @@ export default class CharacterBase {
     // SaveManager에 경험치 저장
     await SaveManager.addExp(amount, this.characterType);
 
-    // ✅ GameScene에 이벤트 발생 알림
+    // GameScene에 이벤트 발생 알림
     if (this.scene && this.scene.events) {
       this.scene.onExpGained(amount, this.characterType);
     }
