@@ -213,8 +213,16 @@ export class EffectManager {
 
     // 캐릭터 방향에 따른 오프셋 계산
     const offset = data.offset || { x: 0, y: 0 };
-    const finalX = flipX ? x - offset.x : x + offset.x;
-    const finalY = y + offset.y;
+
+    // ignoreOffset 옵션이 true면 offset 무시
+    let finalX, finalY;
+    if (options.ignoreOffset) {
+      finalX = x;
+      finalY = y;
+    } else {
+      finalX = flipX ? x - offset.x : x + offset.x;
+      finalY = y + offset.y;
+    }
 
     effect.setPosition(finalX, finalY);
     effect.setVisible(true);
@@ -241,6 +249,24 @@ export class EffectManager {
 
     effect.setAlpha(data.alpha !== undefined ? data.alpha : 1.0);
     effect.setDepth(options.depth || 100);
+
+    // 색상 적용 (color 또는 tint)
+    if (data.color !== undefined) {
+      // color는 hex string 또는 number로 받음
+      const tintColor =
+        typeof data.color === 'string' ? parseInt(data.color.replace('#', ''), 16) : data.color;
+      effect.setTint(tintColor);
+    } else if (options.color !== undefined) {
+      // options로도 색상 전달 가능
+      const tintColor =
+        typeof options.color === 'string'
+          ? parseInt(options.color.replace('#', ''), 16)
+          : options.color;
+      effect.setTint(tintColor);
+    } else {
+      // 색상이 없으면 tint 제거
+      effect.clearTint();
+    }
 
     // Verify animation component exists before trying to play
     if (!effect.anims) {
@@ -434,6 +460,7 @@ export class EffectManager {
     effect.setFlipX(false);
     effect.setAngle(0);
     effect.setRotation(0); // 회전도 초기화
+    effect.clearTint(); // 색상 초기화
 
     if (!this.effectPool.has(key)) {
       this.effectPool.set(key, []);

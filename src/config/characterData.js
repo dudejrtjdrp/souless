@@ -464,11 +464,11 @@ export const CharacterData = {
             },
           },
         ],
+        hitstop: 'FIREKNIGHT',
         animation: 'attack',
-        knockback: { x: 50, y: 50 },
+        knockback: { x: 150, y: -100 },
         targetType: 'multi',
-        impactEffect: 'fire_knight_slash', // 타격 시 이펙트
-        isSequence: true, // ⭐ 시퀀스 히트박스임을 표시
+        impactEffect: 'fire_knight_slash',
       },
       air_attack: {
         type: 'melee',
@@ -481,6 +481,7 @@ export const CharacterData = {
             damage: 10,
           },
         ],
+        hitstop: 'FIREKNIGHT',
         animation: 'air_attack',
         knockback: { x: 100, y: 0 },
         targetType: 'single',
@@ -496,6 +497,7 @@ export const CharacterData = {
             damage: 10,
           },
         ],
+        hitstop: 'FIREKNIGHT',
         animation: 'q_skill',
         knockback: { x: 150, y: -50 },
         cooldown: 0,
@@ -538,6 +540,7 @@ export const CharacterData = {
             damage: 15,
           },
         ],
+        hitstop: 'FIREKNIGHT',
         animation: 'w_skill',
         knockback: { x: 200, y: -100 },
         effects: ['stun'],
@@ -577,12 +580,35 @@ export const CharacterData = {
         hitboxSequence: [
           {
             delay: 0,
-            hitbox: { width: 175, height: 40, offsetX: 80, offsetY: 100, effect: 'slash_basic' },
+            hitbox: {
+              width: 175,
+              height: 40,
+              offsetX: 80,
+              offsetY: 20,
+              duration: 700,
+            },
             damage: 10,
           },
           {
-            delay: 200,
-            hitbox: { width: 90, height: 90, offsetX: 80, offsetY: 60, effect: 'slash_basic' },
+            delay: 700,
+            hitbox: {
+              width: 100,
+              height: 90,
+              offsetX: -30,
+              offsetY: 80,
+              duration: 500,
+            },
+            damage: 15,
+          },
+          {
+            delay: 1000,
+            hitbox: {
+              width: 140,
+              height: 150,
+              offsetX: 100,
+              offsetY: 50,
+              duration: 500,
+            },
             damage: 15,
           },
         ],
@@ -590,9 +616,10 @@ export const CharacterData = {
         knockback: { x: 250, y: -150 },
         effects: ['burn'],
         cooldown: 0,
-        cost: { mana: 20 },
+        cost: { mana: 0 },
         targetType: 'multi',
-        impactEffect: 'fire_knight_slash', // 타격 시 이펙트
+        hitstop: 'FIREKNIGHT_ULTIMATE',
+        impactEffect: ['fire_knight_r_skill_ready', 'fire_knight_r_skill'], // 타격 시 이펙트
       },
     },
     animations: [
@@ -605,7 +632,7 @@ export const CharacterData = {
       { key: 'attack', frames: { start: 196, end: 206 }, frameRate: 10, repeat: 0 },
       { key: 'q_skill', frames: { start: 231, end: 242 }, frameRate: 13, repeat: 0 },
       { key: 'w_skill', frames: { start: 270, end: 279 }, frameRate: 12, repeat: 0 },
-      { key: 'r_skill', frames: { start: 280, end: 297 }, frameRate: 15, repeat: 0 },
+      { key: 'r_skill', frames: { start: 280, end: 297 }, frameRate: 10, repeat: 0 },
       { key: 'e_skill', frames: { start: 308, end: 317 }, frameRate: 8, repeat: -1 },
       { key: 'e_skill_channeling', frames: { start: 310, end: 315 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 168, end: 175 }, frameRate: 14, repeat: 0 },
@@ -932,7 +959,7 @@ export const CharacterData = {
         damage: 15,
         icon: 'assets/skills/princess/q_skill.png',
         hitbox: { width: 90, height: 40, offsetX: 30, offsetY: 70, effect: 'slash_heavy' },
-        hitstop: 'SPEAR_THRUST',
+        hitstop: 'BOSS_NORMAL',
         animation: 'q_skill',
         knockback: { x: 150, y: -50 },
         cooldown: 2000,
@@ -979,6 +1006,7 @@ export const CharacterData = {
       e_skill: {
         type: 'channeling',
         icon: 'assets/skills/princess/e_skill.png',
+        hitstop: 'BOSS_ULTIMATE',
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
@@ -1008,7 +1036,7 @@ export const CharacterData = {
             damage: 15,
           },
         ],
-        hitstop: 'CRITICAL',
+        hitstop: 'BOSS_ULTIMATE',
         animation: 'r_skill',
         knockback: { x: 250, y: -150 },
         effects: ['burn'],

@@ -325,15 +325,39 @@ export const EffectData = {
     flipX: true, // ✨ 기본값: 반전 안함
   },
 
-  effect_4: {
-    url: 'assets/effects/effect_collection_2.png',
+  fire_knight_r_skill: {
+    url: 'assets/effects/effect_collection_3.png',
     frameWidth: 64,
     frameHeight: 64,
-    frames: { start: 88, end: 98 },
-    frameRate: 11,
+    frames: { start: 11, end: 21 },
+    frameRate: 9,
     repeat: 0,
-    scale: 2.5,
-    offset: { x: 0, y: 10 },
+    scale: 3,
+    offset: { x: 150, y: 120 },
+    color: '#e9470c',
+  },
+
+  fire_knight_r_skill_ready: {
+    url: 'assets/effects/effect_collection_3.png',
+    frameWidth: 64,
+    frameHeight: 64,
+    frames: { start: 35, end: 45 },
+    frameRate: 12,
+    repeat: 0,
+    scale: 1.2,
+    offset: { x: -40, y: 100 },
+    color: '#d10707',
+  },
+
+  fire_knight_hit: {
+    url: 'assets/effects/fire_knight/hit/hit.png',
+    frameWidth: 128,
+    frameHeight: 128,
+    frames: { start: 0, end: 9 },
+    frameRate: 20,
+    repeat: 0,
+    scale: 0.5,
+    offset: { x: 0, y: 0 },
   },
 
   assassin_thick_pattern_turn_in: {
