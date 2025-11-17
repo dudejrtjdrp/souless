@@ -61,10 +61,22 @@ export const EffectData = {
     frameWidth: 64,
     frameHeight: 64,
     frames: { start: 22, end: 29 },
-    frameRate: 8,
+    frameRate: 10,
     repeat: 0,
     scale: 2.5,
-    offset: { x: 0, y: 10 },
+    offset: { x: 0, y: 0 },
+  },
+
+  mauler_q_skill: {
+    url: 'assets/effects/mauler/q_skill.png',
+    frameWidth: 128,
+    frameHeight: 128,
+    frames: { start: 0, end: 9 },
+    frameRate: 10,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 50, y: 50 },
+    flipX: true, // 기본값: 반전 안함
   },
 
   bladekeeper_blade_turn_in: {
