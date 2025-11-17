@@ -1606,7 +1606,7 @@ export const CharacterData = {
       walkSpeed: 200,
       runSpeed: 350,
       jumpPower: 300,
-      maxJumps: 2,
+      maxJumps: 1,
     },
     combat: {
       attackHitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0, duration: 400 },
@@ -1614,7 +1614,7 @@ export const CharacterData = {
     },
     skills: {
       attack: {
-        type: 'instant',
+        type: 'melee',
         icon: 'assets/skills/soul/attack.png',
         animation: 'attack',
         hitboxSequence: [

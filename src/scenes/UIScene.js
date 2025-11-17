@@ -113,14 +113,14 @@ export default class UIScene extends Phaser.Scene {
         this.skillCooldown,
         characterType,
         this.skillCooldown.container,
-      ); // **수정:** 쿨다운 복원은 SaveManager 내부에서 최신 상태로 갱신 (player.skillSystem에 반영)
+      ); // 쿨다운 복원 로직 (만료된 쿨다운 정리)
       await this.restoreSkillCooldowns(characterType, player);
     } // 경험치 바 업데이트
 
-    await this.updatePlayerExp(characterType); //  HP/MP 업데이트
+    await this.updatePlayerExp(characterType); //  HP/MP 업데이트 및 쿨다운 UI 갱신
 
     if (player) {
-      this.updateUI(player); // **추가:** 복원 후 UI 쿨다운 강제 갱신
+      this.updateUI(player); // **수정:** 쿨다운 데이터가 player.skillSystem에 로드되었다고 가정하고 UI를 갱신
       this.handleSkillCooldownsUpdated(data);
     }
 
@@ -179,13 +179,13 @@ export default class UIScene extends Phaser.Scene {
   }
   /**
    * 저장된 쿨타임 복원 (캐릭터 전환 시)
-   * **SaveManager.loadAllSkillCooldowns()로직이 player.skillSystem에 직접 반영된다고 가정**
+   * (주의: SaveManager.loadAllSkillCooldowns 함수가 없으므로 cleanExpiredCooldowns만 호출)
    */
 
   async restoreSkillCooldowns(characterType, player) {
-    if (!this.skillCooldown || !player || !player.skillSystem) return; // SaveManager를 사용하여 만료된 쿨다운 정리 및 현재 캐릭터의 스킬 쿨다운 복원
+    if (!this.skillCooldown || !player || !player.skillSystem) return; // 현재 캐릭터의 만료된 쿨다운 데이터만 정리 (에러 수정)
 
-    await SaveManager.loadAllSkillCooldowns(characterType, player.skillSystem);
+    await SaveManager.cleanExpiredCooldowns(characterType);
   }
   /**
    * 현재 쿨타임 저장 (캐릭터 전환 전)
@@ -284,7 +284,7 @@ export default class UIScene extends Phaser.Scene {
   shutdown() {
     const gameScene = this.scene.get('GameScene');
     if (gameScene) {
-      gameScene.events.off('character-switching', this.handleCharacterSwitching, this); // **추가됨**
+      gameScene.events.off('character-switching', this.handleCharacterSwitching, this);
       gameScene.events.off('character-changed', this.handleCharacterChanged, this);
       gameScene.events.off('exp-gained', this.handleExpGained, this);
       gameScene.events.off('player-stats-updated', this.handlePlayerStatsUpdated, this);

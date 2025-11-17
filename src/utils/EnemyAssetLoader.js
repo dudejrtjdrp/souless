@@ -1,7 +1,7 @@
-import Canine from '../characters/enemies/Canine.js';
-import Slime from '../characters/enemies/Slime.js';
-import Bat from '../characters/enemies/Bat.js';
-import PurpleMonkey from '../characters/enemies/PurpleMonkey.js';
+import Canine from '../entities/enemies/useable/Canine.js';
+import Slime from '../entities/enemies/useable/Slime.js';
+import Bat from '../entities/enemies/useable/Bat.js';
+import PurpleMonkey from '../entities/enemies/useable/PurpleMonkey.js';
 
 export default class EnemyAssetLoader {
   static preload(scene) {

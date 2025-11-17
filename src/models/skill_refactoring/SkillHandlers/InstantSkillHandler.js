@@ -38,7 +38,7 @@ export default class InstantSkillHandler extends BaseSkillHandler {
   }
 
   calculateStepDuration(step, animationDuration) {
-    // ⭐ 우선순위: step.duration > step.hitbox.duration > animationDuration
+    // 우선순위: step.duration > step.hitbox.duration > animationDuration
     if (step.duration) return step.duration;
     if (step.hitbox && step.hitbox.duration) return step.hitbox.duration;
 

@@ -1,0 +1,352 @@
+import Phaser from 'phaser';
+import { EnemiesData } from '../../../config/enemiesData.js';
+import EnemyController from '../systems/EnemyController.js';
+import EnemyAttackSystem from '../systems/EnemyAttackSystem.js';
+import EnemySkillSystem from '../systems/EnemySkillSystem.js';
+import BossController from '../systems/BossController.js';
+
+export default class EnemyBase {
+  constructor(scene, x, y, enemyType, direction = 1) {
+    this.scene = scene;
+    this.enemyType = enemyType; // 1. EnemiesData에서 해당 몬스터의 모든 설정 데이터를 가져옵니다.
+
+    this.data = EnemiesData[enemyType];
+    if (!this.data) {
+      console.error(`❌ Enemy data not found: ${enemyType}`);
+      this.sprite = scene.add.sprite(x, y, 'MISSING');
+      return;
+    } // === 스탯 설정 === (EnemiesData.stats 기반)
+
+    const stats = this.data.stats;
+    this.maxHP = stats.maxHP;
+    this.hp = this.maxHP;
+    this.speed = Phaser.Math.Between(stats.speed.min, stats.speed.max);
+    this.patrolRangeX = Phaser.Math.Between(stats.patrolRange.min, stats.patrolRange.max);
+    this.expReward = stats.expReward;
+    this.damageCooldown = stats.damageCooldown || 300;
+
+    this.startX = x;
+    this.isDead = false;
+    this.lastDamageTime = 0;
+    this.direction = direction; // === 스프라이트 생성 ===
+
+    const spriteKey = `${enemyType}_idle`;
+    if (!scene.textures.exists(spriteKey)) {
+      console.error(`❌ Texture "${spriteKey}" not found. Did you preload it?`);
+      this.sprite = scene.add.sprite(x, y, '__MISSING');
+      return;
+    }
+
+    this.sprite = scene.add.sprite(x, y, spriteKey);
+    this.sprite.setScale(this.data.sprite.scale); // === 물리 설정 === (EnemiesData.physics 기반)
+
+    scene.physics.add.existing(this.sprite);
+    const physics = this.data.physics;
+    const spriteConfig = this.data.sprite;
+
+    this.sprite.body.setSize(physics.width, physics.height);
+    this.sprite.body.setCollideWorldBounds(physics.collideWorldBounds);
+    this.sprite.body.setVelocityX(this.speed * this.direction); // 물리 Body 오프셋 자동 계산 (스프라이트 시트 크기와 물리 크기 차이 기반)
+
+    // (예: 프레임 64x64, 물리 32x24 -> X 오프셋 (64-32)/2 = 16)
+    const offsetX = (spriteConfig.frameWidth - physics.width) / 2;
+    // (예: 프레임 64x64, 물리 32x24 -> Y 오프셋 64-24 = 40)
+    const offsetY = spriteConfig.frameHeight - physics.height;
+    this.sprite.body.setOffset(offsetX, offsetY); // === HP바 ===
+
+    const hpBarWidth = physics.width;
+    this.hpBar = scene.add.rectangle(x, y - physics.height / 2 - 5, hpBarWidth, 5, 0x00ff00);
+    this.hpBar.setOrigin(0.5, 0.5);
+    this.hpBarMaxWidth = hpBarWidth; // === 애니메이션 생성 === (EnemiesData.animations 기반)
+
+    this.createAnimations();
+    this.sprite.play(`${enemyType}_idle`); // === AI 시스템 초기화 === (EnemiesData.ai 기반)
+
+    this.initializeAI();
+  }
+  /**
+   * AI 시스템 초기화
+   */
+
+  initializeAI() {
+    const aiConfig = this.data.ai;
+
+    if (!aiConfig) {
+      console.error(`❌ No AI config for ${this.enemyType}`);
+      return;
+    }
+
+    // 🔍 공격 범위 통일
+    const attackRange = aiConfig.attack?.range || 70;
+
+    console.log(`🎯 ${this.enemyType} AI initialized:`, {
+      attackRange: attackRange,
+      detectRange: aiConfig.detectRange || 200,
+      attackDamage: aiConfig.attack?.damage || 10,
+      attackCooldown: aiConfig.attack?.cooldown || 1500,
+    });
+
+    // 공격 시스템 설정
+    if (aiConfig.attack) {
+      this.attackSystem = new EnemyAttackSystem(this, this.scene, {
+        range: attackRange, // ✅ 통일된 범위 사용
+        damage: aiConfig.attack.damage || 10,
+        cooldown: aiConfig.attack.cooldown || 1500,
+        hitDelay: aiConfig.attack.hitDelay || 200,
+        animationKey: aiConfig.attack.animationKey || `${this.enemyType}_attack`,
+      });
+    }
+
+    // 스킬 시스템 설정 (있는 경우)
+    if (aiConfig.skills && aiConfig.skills.length > 0) {
+      this.skillSystem = new EnemySkillSystem(this, this.scene, aiConfig.skills);
+    }
+
+    // 컨트롤러 설정 (AI 타입별)
+    if (aiConfig.type === 'boss') {
+      this.controller = new BossController(this, {
+        attackRange: attackRange, // ✅ 통일된 범위 사용
+        detectRange: aiConfig.detectRange || 300,
+        attackCooldown: aiConfig.attack?.cooldown || 1500,
+        skillCooldown: aiConfig.skillCooldown || 3000,
+        skills: aiConfig.skillNames || [],
+      });
+    } else if (aiConfig.type === 'aggressive' || aiConfig.type === 'patrol') {
+      this.controller = new EnemyController(this, {
+        attackRange: attackRange, // ✅ 통일된 범위 사용
+        detectRange: aiConfig.detectRange || 200,
+        attackCooldown: aiConfig.attack?.cooldown || 1500,
+      });
+    } else {
+      console.warn(`⚠️ Unknown AI type for ${this.enemyType}: ${aiConfig.type}`);
+    }
+  }
+
+  /**
+   * 애니메이션 생성 (EnemiesData.animations 기반)
+   */
+
+  createAnimations() {
+    if (!this.data || !this.data.animations) return;
+
+    Object.entries(this.data.animations).forEach(([key, anim]) => {
+      const animKey = `${this.enemyType}_${key}`;
+
+      if (!this.scene.anims.exists(animKey)) {
+        // EnemiesData에 해당 애니메이션 키(idle, hit 등)가 있는지 확인
+        if (this.scene.textures.exists(animKey)) {
+          this.scene.anims.create({
+            key: animKey,
+            frames: this.scene.anims.generateFrameNumbers(animKey, {
+              start: anim.start,
+              end: anim.end,
+            }),
+            frameRate: anim.frameRate,
+            repeat: anim.repeat,
+          });
+        } else {
+          // 에셋이 로드되지 않았을 경우 (preload 확인)
+          console.warn(`⚠️ Texture "${animKey}" not found for animation. Skipping.`);
+        }
+      }
+    });
+  }
+  /**
+   * 정적 메서드: 에셋 로드 (EnemiesData.assets 기반)
+   */
+
+  static preload(scene, enemyType) {
+    const data = EnemiesData[enemyType];
+    if (!data) {
+      console.error(`❌ Enemy data not found: ${enemyType}`);
+      return;
+    }
+
+    const { frameWidth, frameHeight } = data.sprite;
+    const assets = data.assets;
+
+    // 모든 assets 키(idle, hit, death, attack 등)를 순회하며 로드
+    Object.entries(assets).forEach(([key, path]) => {
+      scene.load.spritesheet(`${enemyType}_${key}`, path, { frameWidth, frameHeight });
+    });
+  }
+  /**
+   * 매 프레임 업데이트
+   */
+
+  update(time, delta) {
+    if (!this.sprite || this.isDead) return;
+
+    // 🔍 디버깅: controller 존재 확인
+    if (!this.controller) {
+      console.error(`❌ ${this.enemyType}: controller is NULL!`);
+      return;
+    }
+
+    // 🔍 디버깅: scene.player 확인
+    if (!this.scene.player) {
+      console.error(`❌ ${this.enemyType}: scene.player is NULL!`);
+      return;
+    }
+
+    // ✅ 공격 체크를 먼저 수행 (최우선순위)
+    const player = this.scene.player;
+    if (this.attackSystem && player && !player.isDead) {
+      if (this.attackSystem.canAttack(player)) {
+        this.attackSystem.attack(player);
+      }
+    }
+
+    // AI 컨트롤러 업데이트 (이동 등)
+    this.controller.update(time, delta);
+
+    // === 방향 flip ===
+    const baseFlip = this.data.sprite.flipX || false;
+    this.sprite.setFlipX(this.direction > 0 ? !baseFlip : baseFlip);
+
+    // === HP바 위치 ===
+    this.hpBar.x = this.sprite.x;
+    this.hpBar.y = this.sprite.y - this.sprite.height / 2 - 5;
+  }
+
+  /**
+   * 타겟을 향해 이동 (AI Controller가 호출)
+   */
+
+  moveToward(target) {
+    if (this.isDead || !this.sprite.body) return;
+
+    const angle = Phaser.Math.Angle.Between(this.sprite.x, this.sprite.y, target.x, target.y);
+
+    this.sprite.body.setVelocityX(Math.cos(angle) * this.speed); // this.sprite.body.setVelocityY(Math.sin(angle) * this.speed); // 방향 설정
+    // Y축 이동이 필요하다면 활성화 (Top-down 뷰), 플랫폼 게임이면 주석 처리
+    this.direction = Math.cos(angle) > 0 ? 1 : -1;
+  }
+  /**
+   * 공격 애니메이션 재생 후 콜백 (AI Controller가 호출)
+   */
+
+  playAttackAnimation(callback) {
+    const attackKey = `${this.enemyType}_attack`;
+
+    if (this.scene.anims.exists(attackKey)) {
+      this.sprite.play(attackKey, true);
+      this.sprite.once(`animationcomplete-${attackKey}`, () => {
+        if (callback) callback();
+        if (!this.isDead) this.sprite.play(`${this.enemyType}_idle`);
+      });
+    } else {
+      // 공격 애니메이션이 없으면 바로 실행
+      if (callback) callback();
+    }
+  }
+  /**
+   * 기본 공격 수행 (AI Controller가 호출)
+   */
+
+  performBasicAttack(target) {
+    if (this.attackSystem) {
+      this.attackSystem.attack(target);
+    }
+  }
+  /**
+   * 스킬 시전 (AI Controller가 호출)
+   */
+
+  castSkill(skillName) {
+    if (!this.skillSystem) return;
+
+    const player = this.scene.player;
+    if (!player) return; // skillName이 지정되면 해당 스킬 사용, 아니면 자동 선택
+
+    if (skillName) {
+      const skill = this.skillSystem.skills.find((s) => s.name === skillName);
+      if (skill && skill._canUse) {
+        this.skillSystem._activateSkill(skill, player);
+      }
+    } else {
+      this.skillSystem.useSkill(player);
+    }
+  }
+  /**
+   * 데미지 처리
+   */
+
+  takeDamage(amount = 1) {
+    if (this.isDead) return false;
+
+    const currentTime = this.scene.time.now;
+    if (currentTime - this.lastDamageTime < this.damageCooldown) return false;
+    this.lastDamageTime = currentTime;
+
+    this.hp -= amount; // HP바 업데이트
+
+    const hpPercent = Math.max(0, this.hp / this.maxHP);
+    this.hpBar.width = this.hpBarMaxWidth * hpPercent;
+
+    if (hpPercent > 0.6) {
+      this.hpBar.setFillStyle(0x00ff00);
+    } else if (hpPercent > 0.3) {
+      this.hpBar.setFillStyle(0xffff00);
+    } else {
+      this.hpBar.setFillStyle(0xff0000);
+    } // 죽음 여부 확인
+
+    if (this.hp <= 0) {
+      this.isDead = true;
+      if (this.sprite.body) this.sprite.body.setVelocity(0);
+      this.hpBar.visible = false;
+
+      this.playDeath();
+      return true;
+    } else {
+      this.playHit();
+      return false;
+    }
+  }
+
+  playHit() {
+    const hitKey = `${this.enemyType}_hit`;
+    const idleKey = `${this.enemyType}_idle`;
+
+    if (this.scene.anims.exists(hitKey)) {
+      this.sprite.play(hitKey);
+      this.sprite.once(`animationcomplete-${hitKey}`, () => {
+        if (!this.isDead) this.sprite.play(idleKey);
+      });
+    }
+  }
+
+  playDeath() {
+    const deathKey = `${this.enemyType}_death`;
+
+    if (this.scene.anims.exists(deathKey)) {
+      this.sprite.play(deathKey);
+      this.sprite.once(`animationcomplete-${deathKey}`, () => {
+        this.destroy();
+      });
+    } else {
+      // 죽음 애니메이션 없으면 바로 파괴
+      this.destroy();
+    }
+  }
+
+  destroy() {
+    if (this.sprite) this.sprite.destroy();
+    if (this.hpBar) this.hpBar.destroy();
+  } // === Getter 프로퍼티 ===
+
+  get x() {
+    return this.sprite ? this.sprite.x : 0;
+  }
+
+  get y() {
+    return this.sprite ? this.sprite.y : 0;
+  }
+
+  play(animKey, ignoreIfPlaying) {
+    if (this.sprite) {
+      this.sprite.play(animKey, ignoreIfPlaying);
+    }
+  }
+}

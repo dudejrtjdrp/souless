@@ -1,4 +1,4 @@
-import EnemyBase from './EnemyBase';
+import EnemyBase from '../base/EnemyBase';
 export default class Canine extends EnemyBase {
   constructor(scene, x, y) {
     super(scene, x, y, 'canine');

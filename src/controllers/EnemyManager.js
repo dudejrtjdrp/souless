@@ -1,9 +1,9 @@
 // controllers/EnemyManager.js
 import Phaser from 'phaser';
-import Canine from '../characters/enemies/Canine.js';
-import Slime from '../characters/enemies/Slime.js';
-import Bat from '../characters/enemies/Bat.js';
-import PurpleMonkey from '../characters/enemies/PurpleMonkey.js';
+import Canine from '../entities/enemies/useable/Canine.js';
+import Slime from '../entities/enemies/useable/Slime.js';
+import Bat from '../entities/enemies/useable/Bat.js';
+import PurpleMonkey from '../entities/enemies/useable/PurpleMonkey.js';
 
 const enemyClassMap = { Slime, Canine, Bat, PurpleMonkey };
 
@@ -39,49 +39,43 @@ export default class EnemyManager {
     const { types, maxCount, respawnInterval, patrolRangeX, minPlayerDistance } =
       this.mapConfig.enemies;
 
-    //  적 업데이트 (패트롤만)
+    // 적 업데이트 (AI 포함)
     this.enemies.forEach((enemy) => {
       if (enemy && enemy.sprite && !enemy.isDead) {
-        this.updatePatrol(enemy);
+        // EnemyBase의 update가 AI 로직을 처리함
         if (enemy.update) {
           enemy.update(time, delta);
         }
       }
     });
 
-    // ❌ 공격 체크 제거 - GameScene에서 처리함
-    // 이 부분 전체 삭제!
+    // 죽은 적 제거 및 경험치 지급
+    this.enemies = this.enemies.filter((enemy) => {
+      if (enemy.isDead) {
+        this.handleEnemyDeath(enemy);
+        return false;
+      }
+      return true;
+    });
 
-    //  제거된 적 필터링
-    this.enemies = this.enemies.filter((e) => e && !e.isDead);
-
-    //  리젠
-    if (this.enemies.length < maxCount && time - this.lastSaveTime > respawnInterval) {
+    // 리젠
+    if (this.enemies.length < maxCount && time - this.lastSpawnTime > respawnInterval) {
       this.spawnRandomEnemyNearPlayer(types, patrolRangeX, minPlayerDistance);
       this.lastSpawnTime = time;
     }
   }
 
-  // ❌ handleEnemyDeath 메서드 삭제 - 필요 없음!
-  // GameScene에서 처리하므로 여기서는 안 씀
+  /**
+   * 적 사망 처리 (경험치 지급)
+   */
+  handleEnemyDeath(enemy) {
+    if (!enemy || !enemy.expReward) return;
 
-  updatePatrol(enemy) {
-    if (!enemy || !enemy.sprite || !enemy.sprite.body) return;
-
-    const leftBound = enemy.startX - enemy.patrolRangeX;
-    const rightBound = enemy.startX + enemy.patrolRangeX;
-
-    if (enemy.sprite.x <= leftBound) {
-      enemy.direction = 1;
-      enemy.sprite.setFlipX(false);
-      enemy.sprite.x = leftBound;
-    } else if (enemy.sprite.x >= rightBound) {
-      enemy.direction = -1;
-      enemy.sprite.setFlipX(true);
-      enemy.sprite.x = rightBound;
+    // GameScene의 경험치 지급 함수 호출
+    if (this.scene.onExpGained) {
+      const currentCharacterType = this.scene.selectedCharacter || 'soul';
+      this.scene.onExpGained(enemy.expReward, currentCharacterType);
     }
-
-    enemy.sprite.body.setVelocityX(enemy.direction * enemy.speed);
   }
 
   spawnRandomEnemy(types, patrolRangeX) {
@@ -108,7 +102,14 @@ export default class EnemyManager {
       return;
     }
 
-    const enemy = new EnemyClass(this.scene, x, this.spawnY);
+    // 적 생성 시 AI 설정 추가
+    const enemy = new EnemyClass(this.scene, x, this.spawnY, {
+      patrolRangeX: patrolRangeX,
+      detectRange: this.mapConfig.enemies.detectRange || 200,
+      attackRange: this.mapConfig.enemies.attackRange || 70,
+      attackDamage: this.mapConfig.enemies.attackDamage || 10,
+      attackCooldown: this.mapConfig.enemies.attackCooldown || 1500,
+    });
 
     if (!enemy || !enemy.sprite) {
       console.error('Enemy creation failed');
@@ -116,7 +117,6 @@ export default class EnemyManager {
     }
 
     enemy.startX = x;
-    enemy.patrolRangeX = patrolRangeX;
     enemy.direction = Phaser.Math.Between(0, 1) === 0 ? -1 : 1;
 
     if (this.mapConfig.depths?.enemy !== undefined) {

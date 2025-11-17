@@ -61,7 +61,7 @@ export default class MapModel {
     this.setupWorldBounds();
     this.createFixedCollisionGround();
 
-    // ⭐ underSolidRectangle은 collision ground 생성 후에 만듦
+    // underSolidRectangle은 collision ground 생성 후에 만듦
     this.createUnderSolidRectangle();
 
     const spawn = this.calculateSpawn();
@@ -73,7 +73,7 @@ export default class MapModel {
       collisionGround: this.collisionGround,
       collisionLayer: this.collisionLayer,
       portals: this.portals,
-      underSolidRect: this.underSolidRect, // ⭐ 추가
+      underSolidRect: this.underSolidRect, // 추가
     };
   }
 
@@ -140,7 +140,7 @@ export default class MapModel {
       1, // 완전 불투명
     );
 
-    // ⭐ 배경보다 앞에, 하지만 collision/player보다는 뒤에
+    // 배경보다 앞에, 하지만 collision/player보다는 뒤에
     this.underSolidRect.setDepth(45); // tilemapStart(50) 바로 아래
     this.underSolidRect.setScrollFactor(1);
     this.underSolidRect.setOrigin(0.5, 0.5);
@@ -207,11 +207,11 @@ export default class MapModel {
     const { width, height } = this.getScaledMapSize();
     const groundHeight = this.AUTO_CONFIG.COLLISION_HEIGHT;
 
-    // ⭐ collision ground의 상단 위치
+    // collision ground의 상단 위치
     const groundTopY = height - groundHeight;
 
     if (!this.config.mapPath) {
-      // ⭐ collision ground 위 150px에 스폰 (캐릭터가 충분히 위에서 시작)
+      // collision ground 위 150px에 스폰 (캐릭터가 충분히 위에서 시작)
       const spawnY = groundTopY - 150;
 
       return {
@@ -235,7 +235,7 @@ export default class MapModel {
       spawnY = height - (offsetY || 0);
     }
 
-    // ⭐ spawnY가 collision ground 안에 있으면 위로 이동
+    // spawnY가 collision ground 안에 있으면 위로 이동
     if (spawnY > groundTopY - 100) {
       spawnY = groundTopY - 150;
     }
@@ -274,7 +274,7 @@ export default class MapModel {
       );
     }
 
-    // ⭐ Physics body 설정 강화
+    // Physics body 설정 강화
     this.scene.physics.add.existing(this.collisionGround, true);
 
     if (this.collisionGround.body) {
@@ -366,7 +366,7 @@ export default class MapModel {
     const groundY = this.getGroundY();
     return {
       x: x,
-      y: groundY - offsetY, // ⭐ collision 영역보다 150px 위
+      y: groundY - offsetY, // collision 영역보다 150px 위
     };
   }
 
@@ -389,11 +389,11 @@ export default class MapModel {
 
     playerSprite.setDepth(this.config.depths?.player || 100);
 
-    // ⭐ Physics 설정 강화
+    // Physics 설정 강화
     playerSprite.body.setAllowGravity(true);
     playerSprite.body.setCollideWorldBounds(true);
     playerSprite.body.setBounce(0);
-    playerSprite.body.setVelocityY(0); // ⭐ 초기 속도 0
+    playerSprite.body.setVelocityY(0); // 초기 속도 0
 
     return this.addEntityCollision(playerSprite, 'Player');
   }
@@ -416,11 +416,11 @@ export default class MapModel {
       return false;
     }
 
-    // ⭐ 적을 collision ground 위로 강제 이동
+    // 적을 collision ground 위로 강제 이동
     const safePos = this.getSafeSpawnPosition(enemySprite.x, 150);
     enemySprite.setPosition(safePos.x, safePos.y);
 
-    // ⭐ Physics 설정 강화
+    // Physics 설정 강화
     enemySprite.body.setAllowGravity(true);
     enemySprite.body.setCollideWorldBounds(true);
     enemySprite.body.setGravityY(800);

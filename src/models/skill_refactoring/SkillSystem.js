@@ -1,5 +1,5 @@
 import ChannelingManager from './ChannelingManager';
-import InputHandler from '../../characters/systems/InputHandler';
+import InputHandler from '../../entities/characters/systems/InputHandler';
 import SkillHandlerFactory from './SkillHandlers/SkillHandlerFactory';
 import { SkillHitbox } from './SkillHitbox';
 import { Skill } from './SkillCore/Skill';

@@ -1,4 +1,4 @@
-import EnemyBase from './EnemyBase.js';
+import EnemyBase from '../base/EnemyBase.js';
 
 export default class Slime extends EnemyBase {
   constructor(scene, x, y) {

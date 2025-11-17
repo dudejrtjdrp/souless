@@ -1,17 +1,17 @@
 import CharacterBase from '../base/CharacterBase.js';
-import { CharacterDataAdapter } from '../../utils/CharacterDataAdapter.js';
-import { SkillSystem } from '../../models/skill_refactoring/SkillSystem.js';
+import { CharacterDataAdapter } from '../../../utils/CharacterDataAdapter.js';
+import { SkillSystem } from '../../../models/skill_refactoring/SkillSystem.js';
 import MagicSystem from '../systems/MagicSystem.js';
 
-export default class Assassin extends CharacterBase {
+export default class Mauler extends CharacterBase {
   constructor(scene, x, y, options = {}) {
-    const config = CharacterDataAdapter.buildConfig('assassin', options);
+    const config = CharacterDataAdapter.buildConfig('mauler', options);
 
     //  수정: 전달받은 x, y를 그대로 사용 (포탈 위치 강제 제거)
     super(scene, x, y, config);
 
     // SkillSystem 초기화
-    const skillsData = CharacterDataAdapter.getSkillsData('assassin');
+    const skillsData = CharacterDataAdapter.getSkillsData('mauler');
     this.skillSystem = new SkillSystem(scene, this, skillsData);
     this.magicSystem = new MagicSystem(scene, this.sprite);
 
@@ -23,14 +23,14 @@ export default class Assassin extends CharacterBase {
   }
 
   static preload(scene) {
-    scene.load.spritesheet('assassin', '/assets/characters/assassin_spritesheet.png', {
+    scene.load.spritesheet('mauler', '/assets/characters/mauler_spritesheet.png', {
       frameWidth: 288,
       frameHeight: 128,
     });
   }
 
   getAnimationConfig() {
-    return CharacterDataAdapter.getAnimationConfig('assassin');
+    return CharacterDataAdapter.getAnimationConfig('mauler');
   }
 
   onUpdate(input) {

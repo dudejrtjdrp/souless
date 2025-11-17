@@ -1,6 +1,6 @@
 import CharacterBase from '../base/CharacterBase.js';
-import { CharacterDataAdapter } from '../../utils/CharacterDataAdapter.js';
-import { SkillSystem } from '../../models/skill_refactoring/SkillSystem.js';
+import { CharacterDataAdapter } from '../../../utils/CharacterDataAdapter.js';
+import { SkillSystem } from '../../../models/skill_refactoring/SkillSystem.js';
 import MagicSystem from '../systems/MagicSystem.js';
 
 export default class Princess extends CharacterBase {

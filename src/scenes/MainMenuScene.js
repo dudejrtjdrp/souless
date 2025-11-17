@@ -53,7 +53,7 @@ export default class MainMenuScene extends Phaser.Scene {
     }
   }
   /**
-   * 슬롯 요약 데이터가 실제로 비어있는지 (초기값인지) 확인합니다. (⭐⭐ 로직 강화)
+   * 슬롯 요약 데이터가 실제로 비어있는지 (초기값인지) 확인합니다. (⭐로직 강화)
    * SaveManager.load()가 데이터가 없어도 기본 객체를 반환하므로, '실제 플레이 이력'을 기준으로 체크합니다.
    * @param {object | null} slotSummary - SaveSlotManager에서 로드된 슬롯 요약 데이터
    * @returns {boolean}
@@ -78,8 +78,6 @@ export default class MainMenuScene extends Phaser.Scene {
       const loadedSlots = await SaveSlotManager.loadAllSlots(); // 로드된 데이터가 실제 사용된 데이터인지 isSlotEmpty를 통해 확인하여 this.saveSlots에 할당
 
       this.saveSlots = loadedSlots.map((summary) => (this.isSlotEmpty(summary) ? null : summary));
-
-      console.log('Processed Save Slots:', this.saveSlots);
     } catch (error) {
       console.error('Error loading save slots:', error);
       this.saveSlots = new Array(SaveSlotManager.MAX_SLOTS).fill(null);
@@ -473,7 +471,6 @@ export default class MainMenuScene extends Phaser.Scene {
     if (window.electron) {
       window.electron.exitApp();
     } else {
-      console.log('Exit Game: This only works in the Electron environment.');
     }
   }
 }

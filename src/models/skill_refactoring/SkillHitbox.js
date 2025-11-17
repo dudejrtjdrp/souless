@@ -200,12 +200,10 @@ export class SkillHitbox {
         this.hitboxes.push(tempHitboxData);
         activeHitboxes.push(tempHitboxData);
 
-        // ⭐ duration 우선순위 수정
+        // duration 우선순위 수정
         // 시퀀스에서는 명시적으로 지정된 duration만 사용 (defaultHitboxDuration 무시)
         const dur = step.duration || step.hitbox.duration || 200;
-        console.log(`[SkillHitbox] Hitbox duration: ${dur}ms for step:`, step);
-
-        // ⭐ 히트박스 제거 타이머
+        // 히트박스 제거 타이머
         const durationTimer = setTimeout(() => {
           // this.hitboxes 배열에서 제거
           const idx = this.hitboxes.indexOf(tempHitboxData);
@@ -228,8 +226,6 @@ export class SkillHitbox {
           if (temp) {
             temp.destroy();
           }
-
-          console.log(`[SkillHitbox] Hitbox destroyed after ${dur}ms`);
         }, dur);
 
         this.sequenceTimers.push(durationTimer);
@@ -238,7 +234,7 @@ export class SkillHitbox {
       this.sequenceTimers.push(delayTimer);
     });
 
-    // ⭐ 전체 시퀀스 종료 시간 계산 수정
+    // 전체 시퀀스 종료 시간 계산 수정
     // 각 step의 실제 duration만 사용 (defaultHitboxDuration 무시)
     const totalDuration =
       Math.max(
@@ -248,8 +244,6 @@ export class SkillHitbox {
           return delay + dur;
         }),
       ) + 100;
-
-    console.log(`[SkillHitbox] Total sequence duration: ${totalDuration}ms`);
 
     const finalTimer = setTimeout(() => {
       this.deactivate();
@@ -267,7 +261,7 @@ export class SkillHitbox {
       this.deactivateTimer = null;
     }
 
-    // ⭐ 모든 히트박스 정리 (시퀀스 히트박스 포함)
+    // 모든 히트박스 정리 (시퀀스 히트박스 포함)
     this.hitboxes.forEach((h) => {
       if (this.debug && h.rect) {
         h.rect.setFillStyle(0x00ff00, 0.15);
@@ -275,13 +269,13 @@ export class SkillHitbox {
       }
       h.isFixed = false;
 
-      // ⭐ 시퀀스 히트박스는 파괴
+      // 시퀀스 히트박스는 파괴
       if (h.isSequence && h.rect && h.rect.scene) {
         h.rect.destroy();
       }
     });
 
-    // ⭐ 시퀀스 히트박스 배열에서 제거
+    // 시퀀스 히트박스 배열에서 제거
     this.hitboxes = this.hitboxes.filter((h) => !h.isSequence);
   }
 
@@ -324,7 +318,7 @@ export class SkillHitbox {
     const targetBounds = targetSprite.getBounds();
 
     for (const hitbox of this.hitboxes) {
-      // ⭐ 히트박스가 유효한지 확인
+      // 히트박스가 유효한지 확인
       if (!hitbox.rect || !hitbox.rect.scene) {
         continue; // 이미 파괴된 히트박스는 스킵
       }

@@ -1,6 +1,6 @@
 // scenes/SoulScene.js
 import Phaser from 'phaser';
-import Soul from '../characters/playable/Soul.js';
+import Soul from '../entities/characters/playable/Soul.js';
 
 export default class SoulScene extends Phaser.Scene {
   constructor() {

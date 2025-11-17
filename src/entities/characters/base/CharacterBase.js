@@ -4,16 +4,15 @@ import StateMachine from '../systems/StateMachine.js';
 import AttackSystem from '../systems/AttackSystem.js';
 import MovementController from '../systems/MovementController.js';
 import InputHandler from '../systems/InputHandler.js';
-import CharacterNormalizer from '../../utils/CharacterNormalizer.js';
-// import SaveManager from '../../utils/SaveManager.js'; // ❌ 제거
-import SaveSlotManager from '../../utils/SaveSlotManager.js'; // ✅ SaveSlotManager로 대체
+import CharacterNormalizer from '../../../utils/CharacterNormalizer.js';
+import SaveSlotManager from '../../../utils/SaveSlotManager.js';
 
 export default class CharacterBase {
   constructor(scene, x, y, config) {
     this.scene = scene;
     this.config = this.getDefaultConfig();
     Object.assign(this.config, config || {});
-    this.characterType = config.spriteKey || 'warrior';
+    this.characterType = config.spriteKey || 'soul';
 
     this.maxHealth = 100;
     this.health = 100;
@@ -396,5 +395,14 @@ export default class CharacterBase {
     if (this.sprite) this.sprite.destroy();
     if (this.attackSystem) this.attackSystem.destroy();
     if (this.debugGraphics) this.debugGraphics.destroy();
+  }
+
+  // === Getter 프로퍼티 추가 ===
+  get x() {
+    return this.sprite ? this.sprite.x : 0;
+  }
+
+  get y() {
+    return this.sprite ? this.sprite.y : 0;
   }
 }

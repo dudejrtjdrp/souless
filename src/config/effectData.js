@@ -225,8 +225,8 @@ export const EffectData = {
     repeat: 0,
     scale: 1.9,
     offset: { x: 5, y: 70 },
-    angle: -45, // ✨ 각도 추가 (degrees)
-    flipX: true, // ✨ 기본값: 반전 안함
+    angle: -45, // 각도 추가 (degrees)
+    flipX: true, // 기본값: 반전 안함
   },
 
   fire_knight_r_skill: {

@@ -1,4 +1,4 @@
-import CharacterFactory from '../characters/base/CharacterFactory';
+import CharacterFactory from '../entities/characters/base/CharacterFactory';
 
 export default class CharacterSwitchManager {
   constructor(scene) {

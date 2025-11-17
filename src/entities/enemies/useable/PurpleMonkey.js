@@ -1,4 +1,4 @@
-import EnemyBase from './EnemyBase';
+import EnemyBase from '../base/EnemyBase';
 
 export default class PurpleMonkey extends EnemyBase {
   constructor(scene, x, y) {

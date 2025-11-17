@@ -22,10 +22,10 @@ export default class CharacterNormalizer {
   static getStandardizedConfig(spriteScale, customBodyOffset = null) {
     const standard = this.STANDARD_SPEC;
 
-    // ⭐ 오프셋: 커스텀 값이 있으면 사용, 없으면 기본값
+    // 오프셋: 커스텀 값이 있으면 사용, 없으면 기본값
     const bodyOffset = customBodyOffset || standard.bodyOffset;
 
-    // ⭐ 핵심: 충돌 박스는 스케일 역보정으로 항상 절대 크기 유지
+    // 핵심: 충돌 박스는 스케일 역보정으로 항상 절대 크기 유지
     return {
       // Soul과 동일한 충돌 박스 (절대값)
       bodySize: {

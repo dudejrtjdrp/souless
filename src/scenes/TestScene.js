@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
-import CharacterFactory from '../characters/base/CharacterFactory.js';
+import CharacterFactory from '../entities/characters/base/CharacterFactory.js';
 import { EffectLoader } from '../systems/Effects/EffectLoader.js';
 import { EffectManager } from '../systems/Effects/EffectManager.js';
 
@@ -380,7 +380,7 @@ export default class EffectTestScene extends Phaser.Scene {
   }
 
   updateStatus(message = '') {
-    this.statusText.setText(`⚡ ${message}`);
+    this.statusText.setText(`${message}`);
   }
 
   exitTestScene() {

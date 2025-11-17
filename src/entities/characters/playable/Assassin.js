@@ -1,17 +1,17 @@
 import CharacterBase from '../base/CharacterBase.js';
-import { CharacterDataAdapter } from '../../utils/CharacterDataAdapter.js';
-import { SkillSystem } from '../../models/skill_refactoring/SkillSystem.js';
+import { CharacterDataAdapter } from '../../../utils/CharacterDataAdapter.js';
+import { SkillSystem } from '../../../models/skill_refactoring/SkillSystem.js';
 import MagicSystem from '../systems/MagicSystem.js';
 
-export default class Fireknight extends CharacterBase {
+export default class Assassin extends CharacterBase {
   constructor(scene, x, y, options = {}) {
-    const config = CharacterDataAdapter.buildConfig('fireknight', options);
+    const config = CharacterDataAdapter.buildConfig('assassin', options);
 
     //  수정: 전달받은 x, y를 그대로 사용 (포탈 위치 강제 제거)
     super(scene, x, y, config);
 
     // SkillSystem 초기화
-    const skillsData = CharacterDataAdapter.getSkillsData('fireknight');
+    const skillsData = CharacterDataAdapter.getSkillsData('assassin');
     this.skillSystem = new SkillSystem(scene, this, skillsData);
     this.magicSystem = new MagicSystem(scene, this.sprite);
 
@@ -23,14 +23,14 @@ export default class Fireknight extends CharacterBase {
   }
 
   static preload(scene) {
-    scene.load.spritesheet('fireknight', '/assets/characters/fireknight_spritesheet.png', {
+    scene.load.spritesheet('assassin', '/assets/characters/assassin_spritesheet.png', {
       frameWidth: 288,
       frameHeight: 128,
     });
   }
 
   getAnimationConfig() {
-    return CharacterDataAdapter.getAnimationConfig('fireknight');
+    return CharacterDataAdapter.getAnimationConfig('assassin');
   }
 
   onUpdate(input) {
