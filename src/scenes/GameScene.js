@@ -6,7 +6,7 @@ import EnemyAssetLoader from '../utils/EnemyAssetLoader.js';
 import CharacterFactory from '../characters/base/CharacterFactory.js';
 import CharacterAssetLoader from '../utils/CharacterAssetLoader.js';
 import CharacterSwitchManager from '../systems/CharacterSwitchManager.js';
-import SaveManager from '../utils/SaveManager.js';
+// import SaveManager from '../utils/SaveManager.js'; // ❌ 제거
 import InputHandler from '../characters/systems/InputHandler.js';
 import CharacterSelectOverlay from '../systems/GameScene/CharacterSelectOverlay.js';
 import { EffectLoader } from '../systems/Effects/EffectLoader.js';
@@ -17,6 +17,8 @@ import PlayerSpawnManager from '../systems/GameScene/PlayerSpawnManager.js';
 import BackgroundLayerManager from '../systems/GameScene/BackgroundLayerManager.js';
 import CharacterSwitchHandler from '../systems/GameScene/CharacterSwitchHandler.js';
 import CombatCollisionHandler from '../systems/GameScene/CombatCollisionHandler.js';
+
+import SaveSlotManager from '../utils/SaveSlotManager.js'; // ✅ SaveSlotManager만 사용
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -48,15 +50,9 @@ export default class GameScene extends Phaser.Scene {
     CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
 
-    this.effectManager = new EffectManager(this);
+    this.effectManager = new EffectManager(this); // EffectLoader를 통해 모든 이펙트 로드
 
-    // EffectLoader를 통해 모든 이펙트 로드
-    EffectLoader.preloadAllEffects(this);
-
-    // 사용할 캐릭터의 이펙트만 로드
-    // const effectKeys = EffectLoader.extractAllEffectKeys(CharacterData);
-    // console.log('Loading effects:', Array.from(effectKeys));
-    // EffectLoader.preloadEffects(this, Array.from(effectKeys));
+    EffectLoader.preloadAllEffects(this); // 사용할 캐릭터의 이펙트만 로드 // const effectKeys = EffectLoader.extractAllEffectKeys(CharacterData); // console.log('Loading effects:', Array.from(effectKeys)); // EffectLoader.preloadEffects(this, Array.from(effectKeys));
   }
 
   loadPortalAssets() {
@@ -67,6 +63,8 @@ export default class GameScene extends Phaser.Scene {
 
   async create() {
     await this.initializeUI();
+    this.preventTabDefault();
+    this.setupInputHandler();
     EffectLoader.createAllAnimations(this);
 
     const shouldContinue = await this.loadSaveData();
@@ -77,7 +75,7 @@ export default class GameScene extends Phaser.Scene {
     this.setupScene();
     this.createBackground();
 
-    await this.setupPlayer(); //  async/await 추가
+    await this.setupPlayer(); //  async/await 추가
 
     this.setupCamera();
     this.setupEnemies();
@@ -95,7 +93,17 @@ export default class GameScene extends Phaser.Scene {
       });
     }
 
-    this.isPortalTransitioning = false;
+    this.isPortalTransitioning = false; // 씬 종료 시 즉시 백업 추가
+
+    this.events.once('shutdown', async () => {
+      await this.saveCurrentPosition();
+      await this.saveCurrentCharacterResources();
+      await SaveSlotManager.immediateBackup();
+    });
+
+    this.events.once('pause', async () => {
+      await SaveSlotManager.immediateBackup();
+    });
   }
 
   async initializeUI() {
@@ -105,21 +113,18 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async loadSaveData() {
-    this.setupInputHandler();
-    this.preventTabDefault();
-
-    // skipSaveCheck가 true면 저장 데이터 체크를 건너뜀
+    // skipSaveCheck가 true면 저장 데이터 체크를 건너뜜
     if (this.data.get('skipSaveCheck')) {
-      this.savedSpawnData = await SaveManager.getSavedPosition();
+      // SaveManager -> SaveSlotManager로 변경
+      this.savedSpawnData = await SaveSlotManager.getSavedPosition();
       if (this.savedSpawnData) {
-        this.selectedCharacter = this.savedSpawnData.characterType || 'assassin';
+        this.selectedCharacter = this.savedSpawnData.characterType || 'soul';
       }
       return true;
-    }
+    } // SaveManager -> SaveSlotManager로 변경
 
-    const savedPosition = await SaveManager.getSavedPosition();
+    const savedPosition = await SaveSlotManager.getSavedPosition(); // 저장된 위치가 있고, 현재 맵과 다른 경우에만 재시작
 
-    // 저장된 위치가 있고, 현재 맵과 다른 경우에만 재시작
     if (savedPosition && savedPosition.mapKey !== this.currentMapKey) {
       this.restartWithSavedMap(savedPosition);
       return false;
@@ -127,7 +132,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.savedSpawnData = savedPosition;
     if (savedPosition) {
-      this.selectedCharacter = savedPosition.characterType || 'assassin';
+      this.selectedCharacter = savedPosition.characterType || 'soul';
     }
 
     return true;
@@ -142,7 +147,7 @@ export default class GameScene extends Phaser.Scene {
   restartWithSavedMap(savedPosition) {
     this.scene.start('GameScene', {
       mapKey: savedPosition.mapKey,
-      characterType: savedPosition.characterType || 'assassin',
+      characterType: savedPosition.characterType || 'soul',
       skipSaveCheck: true,
     });
   }
@@ -171,9 +176,8 @@ export default class GameScene extends Phaser.Scene {
     this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
     this.characterSwitchManager.setCurrentMap(this.currentMapKey);
 
-    this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y);
+    this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y); //  생성 후 체력/마나 복원
 
-    //  생성 후 체력/마나 복원
     if (this.player && this.player.loadSavedResources) {
       await this.player.loadSavedResources();
     }
@@ -188,9 +192,8 @@ export default class GameScene extends Phaser.Scene {
   setupEnemies() {
     this.enemyManager = new EnemyManager(this, this.mapConfig, this.mapModel, this.player);
     this.enemyManager.createInitial();
-  }
+  } //  캐릭터 선택 UI 초기화
 
-  //  캐릭터 선택 UI 초기화
   setupCharacterSelectUI() {
     this.characterSelectOverlay = new CharacterSelectOverlay(this);
     this.isBackQuoteHeld = false;
@@ -205,7 +208,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createPlayer(characterType, x, y, restoreState = true) {
-    //  기본값을 true로
+    //  기본값을 true로
     const finalY = this.calculatePlayerSpawnY(y);
 
     this.player = CharacterFactory.create(this, characterType, x, finalY, {
@@ -243,10 +246,11 @@ export default class GameScene extends Phaser.Scene {
     await this.saveCurrentCharacterResources();
 
     const handler = new CharacterSwitchHandler(this);
-    await handler.switchCharacter(direction);
-  }
+    await handler.switchCharacter(direction); // SaveManager -> SaveSlotManager로 변경
 
-  //  캐릭터 선택 UI를 통한 직접 전환
+    await SaveSlotManager.updateCurrentCharacter(this.selectedCharacter);
+  } //  캐릭터 선택 UI를 통한 직접 전환
+
   async switchToSelectedCharacter(characterType) {
     if (this.isCharacterSwitchOnCooldown) return;
     if (characterType === this.selectedCharacter) return;
@@ -254,13 +258,15 @@ export default class GameScene extends Phaser.Scene {
     await this.saveCurrentCharacterResources();
 
     const handler = new CharacterSwitchHandler(this);
-    await handler.switchToCharacter(characterType);
+    await handler.switchToCharacter(characterType); // SaveManager -> SaveSlotManager로 변경
+
+    await SaveSlotManager.updateCurrentCharacter(this.selectedCharacter);
   }
 
   async saveCurrentPosition() {
-    if (!this.player?.sprite) return;
+    if (!this.player?.sprite) return; // SaveManager -> SaveSlotManager로 변경
 
-    await SaveManager.savePosition(
+    await SaveSlotManager.savePosition(
       this.currentMapKey,
       this.player.sprite.x,
       this.player.sprite.y,
@@ -273,10 +279,9 @@ export default class GameScene extends Phaser.Scene {
 
     this.isPortalTransitioning = true;
 
-    await this.saveCurrentCharacterResources();
+    await this.saveCurrentCharacterResources(); // SaveManager -> SaveSlotManager로 변경
 
-    // 포탈 위치 저장
-    await SaveManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
+    await SaveSlotManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
     this.cleanupBeforeTransition();
     this.scene.start('GameScene', {
@@ -350,17 +355,19 @@ export default class GameScene extends Phaser.Scene {
   }
 
   handleInput(time, delta) {
-    const input = this.inputHandler.getInputState();
+    const input = this.inputHandler.getInputState(); // ESC 키로 일시정지 메뉴 열기
 
-    //  ` 키 홀드 체크 (캐릭터 선택 UI)
-    this.handleCharacterSelectInput(input, time);
+    if (input.isEscHeld) {
+      this.openPauseMenu();
+      return; // 다른 입력 처리하지 않음
+    } //  ` 키 홀드 체크 (캐릭터 선택 UI)
 
-    //  Tab 키로 이전 캐릭터 (빠른 전환)
+    this.handleCharacterSelectInput(input, time); //  Tab 키로 이전 캐릭터 (빠른 전환)
+
     if (input.isTabPressed && !this.isCharacterSwitchOnCooldown) {
       this.switchCharacter('prev');
-    }
+    } //  L 키로 세이브 데이터 삭제
 
-    //  L 키로 세이브 데이터 삭제
     if (input.isLPressed) {
       this.clearAllSaveData();
     }
@@ -371,24 +378,32 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  //  캐릭터 선택 UI 입력 처리
+  async openPauseMenu() {
+    // 게임 일시정지
+    this.scene.pause(); // 현재 상태 저장
+
+    await this.saveCurrentPosition();
+    await this.saveCurrentCharacterResources(); // 일시정지 메뉴 씬 열기
+
+    this.scene.launch('PauseMenuScene', {
+      callingScene: 'GameScene',
+    });
+  } //  캐릭터 선택 UI 입력 처리
+
   handleCharacterSelectInput(input, time) {
     // ` 키를 누르기 시작
     if (input.isBackQuotePressed) {
       this.isBackQuoteHeld = true;
       this.backQuoteHoldStartTime = time;
-    }
+    } // ` 키를 홀드 중
 
-    // ` 키를 홀드 중
     if (input.isBackQuoteHeld && this.isBackQuoteHeld) {
-      const holdDuration = time - this.backQuoteHoldStartTime;
+      const holdDuration = time - this.backQuoteHoldStartTime; // 300ms 이상 누르면 UI 표시
 
-      // 300ms 이상 누르면 UI 표시
       if (holdDuration >= 300 && !this.characterSelectOverlay.isVisible) {
         this.characterSelectOverlay.show();
-      }
+      } // UI가 표시된 상태에서 방향키 입력 처리
 
-      // UI가 표시된 상태에서 방향키 입력 처리
       if (this.characterSelectOverlay.isVisible) {
         if (input.isLeftPressed) {
           this.characterSelectOverlay.moveSelection('left');
@@ -397,13 +412,11 @@ export default class GameScene extends Phaser.Scene {
           this.characterSelectOverlay.moveSelection('right');
         }
       }
-    }
+    } // ` 키를 뗌
 
-    // ` 키를 뗌
     if (input.isBackQuoteReleased && this.isBackQuoteHeld) {
-      this.isBackQuoteHeld = false;
+      this.isBackQuoteHeld = false; // UI가 표시되어 있으면 선택된 캐릭터로 전환
 
-      // UI가 표시되어 있으면 선택된 캐릭터로 전환
       if (this.characterSelectOverlay.isVisible) {
         const selectedChar = this.characterSelectOverlay.getSelectedCharacter();
         this.characterSelectOverlay.hide();
@@ -417,9 +430,9 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  clearAllSaveData() {
-    localStorage.clear();
-    SaveManager.clear();
+  async clearAllSaveData() {
+    localStorage.clear(); // SaveManager.clear() -> SaveSlotManager.clearAllSlots()로 변경
+    await SaveSlotManager.clearAllSlots();
 
     if (this.switchText) {
       this.switchText.setText('🗑 All save data cleared! Reload the page.');
@@ -435,7 +448,9 @@ export default class GameScene extends Phaser.Scene {
     if (!this.lastSaveTime || time - this.lastSaveTime > 5000) {
       this.lastSaveTime = time;
       this.saveCurrentPosition();
-      this.saveCurrentCharacterResources();
+      this.saveCurrentCharacterResources(); // 현재 슬롯에 백업 (추가)
+
+      SaveSlotManager.backupCurrentSlot();
     }
   }
 }

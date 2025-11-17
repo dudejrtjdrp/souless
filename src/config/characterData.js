@@ -845,7 +845,7 @@ export const CharacterData = {
           {
             delay: 1000,
             hitbox: {
-              width: 140,
+              width: 220,
               height: 150,
               offsetX: 100,
               offsetY: 50,
@@ -1614,13 +1614,23 @@ export const CharacterData = {
     },
     skills: {
       attack: {
-        type: 'melee',
-        damage: 15,
+        type: 'instant',
         icon: 'assets/skills/soul/attack.png',
-        hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0 },
         animation: 'attack',
-        knockback: { x: 100, y: 0 },
+        hitboxSequence: [
+          {
+            delay: 150,
+            hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0, duration: 100 },
+            damage: 5,
+          },
+        ],
+        knockback: { x: 250, y: -150 },
+        effects: ['burn'],
+        cooldown: 100,
+        cost: { mana: 0 },
         targetType: 'single',
+        hitstop: 'FIREKNIGHT',
+        impactEffect: [''],
       },
       air_attack: {
         type: 'melee',

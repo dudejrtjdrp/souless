@@ -44,7 +44,7 @@ export default class CharacterFactory {
       'monk',
       'bladekeeper',
       'fireknight',
-      'ranger',
+      // 'ranger',
       'mauler',
       'princess',
     ];

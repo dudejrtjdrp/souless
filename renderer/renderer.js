@@ -3,6 +3,8 @@ import GameScene from '../src/scenes/GameScene';
 import SoulScene from '../src/scenes/SoulScene';
 import UIScene from '../src/scenes/UIScene';
 import EffectTestScene from '../src/scenes/TestScene';
+import MainMenuScene from '../src/scenes/MainMenuScene';
+import PauseMenuScene from '../src/scenes/PauseMenuScene ';
 
 const config = {
   type: Phaser.AUTO,
@@ -14,7 +16,7 @@ const config = {
     default: 'arcade',
     arcade: { debug: true },
   },
-  scene: [GameScene, EffectTestScene, SoulScene, UIScene],
+  scene: [MainMenuScene, GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,

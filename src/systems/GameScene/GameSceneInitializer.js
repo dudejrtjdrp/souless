@@ -8,7 +8,7 @@ export default class GameSceneInitializer {
    */
   static async initializeScene(scene, data) {
     scene.currentMapKey = data.mapKey || 'forest'; // 'forest'를 기본값으로 설정
-    scene.selectedCharacter = data.characterType || 'assassin';
+    scene.selectedCharacter = data.characterType || 'soul';
 
     scene.mapConfig = GameSceneInitializer.loadMapConfig(scene);
   }

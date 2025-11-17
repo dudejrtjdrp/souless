@@ -5,7 +5,8 @@ import AttackSystem from '../systems/AttackSystem.js';
 import MovementController from '../systems/MovementController.js';
 import InputHandler from '../systems/InputHandler.js';
 import CharacterNormalizer from '../../utils/CharacterNormalizer.js';
-import SaveManager from '../../utils/SaveManager.js';
+// import SaveManager from '../../utils/SaveManager.js'; // ❌ 제거
+import SaveSlotManager from '../../utils/SaveSlotManager.js'; // ✅ SaveSlotManager로 대체
 
 export default class CharacterBase {
   constructor(scene, x, y, config) {
@@ -36,7 +37,8 @@ export default class CharacterBase {
 
   async loadSavedResources() {
     try {
-      const savedResources = await SaveManager.getCharacterResources(this.characterType);
+      // SaveManager -> SaveSlotManager로 변경
+      const savedResources = await SaveSlotManager.getCharacterResources(this.characterType);
 
       if (savedResources) {
         this.health = savedResources.hp;
@@ -54,7 +56,8 @@ export default class CharacterBase {
 
   async saveResources() {
     try {
-      await SaveManager.saveCharacterResources(this.characterType, this.health, this.mana);
+      // SaveManager -> SaveSlotManager로 변경
+      await SaveSlotManager.saveCharacterResources(this.characterType, this.health, this.mana);
 
       return true;
     } catch (error) {
@@ -105,10 +108,8 @@ export default class CharacterBase {
         x: collisionBox.offset.x / this.config.spriteScale,
         y: collisionBox.offset.y / this.config.spriteScale,
       };
-    }
+    } // 2. 공격 히트박스 설정 // 우선순위: skills.attack.hitbox > attackHitbox (레거시) > 기본값
 
-    // 2. 공격 히트박스 설정
-    // 우선순위: skills.attack.hitbox > attackHitbox (레거시) > 기본값
     if (this.config.skills?.attack?.hitbox) {
       const attackHitbox = this.config.skills.attack.hitbox;
       const hitboxData = Array.isArray(attackHitbox) ? attackHitbox[0] : attackHitbox;
@@ -123,14 +124,12 @@ export default class CharacterBase {
       };
       this.config.attackDuration =
         hitboxData.duration || this.config.skills.attack.hitboxDuration || 200;
-    }
-    // 레거시 지원
+    } // 레거시 지원
     else if (this.config.attackHitbox) {
       this.config.attackHitboxSize = this.config.attackHitbox.size;
       this.config.attackHitboxOffset = this.config.attackHitbox.offset;
       this.config.attackDuration = this.config.attackHitbox.duration || 200;
-    }
-    // 기본값
+    } // 기본값
     else {
       this.config.attackHitboxSize = { width: 40, height: 30 };
       this.config.attackHitboxOffset = { x: 30, y: 0 };
@@ -356,17 +355,14 @@ export default class CharacterBase {
   }
 
   async gainExp(amount) {
-    if (amount <= 0) return;
+    if (amount <= 0) return; // SaveManager -> SaveSlotManager로 변경
 
-    // SaveManager에 경험치 저장
-    await SaveManager.addExp(amount, this.characterType);
+    await SaveSlotManager.addExp(amount, this.characterType); // GameScene에 이벤트 발생 알림
 
-    // GameScene에 이벤트 발생 알림
     if (this.scene && this.scene.events) {
       this.scene.onExpGained(amount, this.characterType);
-    }
+    } // 경험치 획득 이펙트 표시 (선택사항)
 
-    // 경험치 획득 이펙트 표시 (선택사항)
     this.showExpGainEffect(amount);
   }
 
@@ -380,9 +376,8 @@ export default class CharacterBase {
         stroke: '#000000',
         strokeThickness: 3,
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5); // 위로 떠오르면서 페이드아웃
 
-    // 위로 떠오르면서 페이드아웃
     this.scene.tweens.add({
       targets: expText,
       y: expText.y - 30,
