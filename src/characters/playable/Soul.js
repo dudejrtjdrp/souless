@@ -44,7 +44,7 @@ export default class Soul extends CharacterBase {
       this.performAttack();
     }
 
-    if (input.isQPressed && !this.isDashing) {
+    if (input.isSPressed && !this.isDashing) {
       this.performDash();
     }
   }
@@ -54,14 +54,14 @@ export default class Soul extends CharacterBase {
   }
 
   performDash() {
-    const skill = this.skillSystem.getSkill('dash');
+    const skill = this.skillSystem.getSkill('s_skill');
     if (!skill) return;
 
     if (skill.isOnCooldown()) {
       return;
     }
 
-    if (this.skillSystem.useSkill('dash')) {
+    if (this.skillSystem.useSkill('s_skill')) {
       this.isDashing = true;
 
       const direction = this.sprite.flipX ? -1 : 1;
