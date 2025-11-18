@@ -16,8 +16,8 @@ const config = {
     default: 'arcade',
     arcade: { debug: true },
   },
-  // scene: [MainMenuScene, GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
-  scene: [GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
+  scene: [MainMenuScene, GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
+  // scene: [GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,

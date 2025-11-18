@@ -11,9 +11,9 @@ export default class MainMenuScene extends Phaser.Scene {
   }
 
   preload() {
-    // 필요한 에셋 로딩
-    // this.load.image('logo', 'assets/logo.png');
-    // this.load.audio('menu-bgm', 'assets/audio/menu-bgm.mp3');
+    // 배경 이미지 로드
+    this.load.image('background', 'assets/mainmenu_background.png'); // 경로는 실제 png 위치로 변경
+    this.load.image('title', 'assets/mainmenu_title.png'); // 실제 파일 경로로 변경
   }
 
   async create() {
@@ -29,20 +29,19 @@ export default class MainMenuScene extends Phaser.Scene {
   }
 
   createBackground(width, height) {
-    // ... (로직 변경 없음)
-    // 어두운 그라데이션 배경
-    const bg = this.add.graphics();
-    bg.fillGradientStyle(0x0d1117, 0x0d1117, 0x1a1f2e, 0x1a1f2e, 1);
-    bg.fillRect(0, 0, width, height); // 별 효과 추가 (판타지 분위기)
+    // PNG 배경 추가
+    const bg = this.add.image(width / 2, height / 2, 'background');
+    bg.setOrigin(0.5, 0.5);
+    bg.setDisplaySize(width * 1.2, height * 1.2); // 화면 크기에 맞게 늘림
 
+    // 원한다면 여전히 별 효과 추가 가능
     for (let i = 0; i < 50; i++) {
       const x = Phaser.Math.Between(0, width);
       const y = Phaser.Math.Between(0, height);
       const size = Phaser.Math.Between(1, 3);
       const alpha = Phaser.Math.FloatBetween(0.3, 0.8);
 
-      const star = this.add.circle(x, y, size, 0xffffff, alpha); // 반짝임 효과
-
+      const star = this.add.circle(x, y, size, 0xffffff, alpha);
       this.tweens.add({
         targets: star,
         alpha: alpha * 0.3,
@@ -139,32 +138,25 @@ export default class MainMenuScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     this.currentView = 'main'; // 게임 타이틀
 
-    const title = this.add
-      .text(width / 2, height / 3 - 20, 'FANTASY\nROGUELIKE', {
-        fontSize: '72px',
-        fontFamily: 'Arial Black, sans-serif',
-        fill: '#ffffff',
-        stroke: '#8b4513',
-        strokeThickness: 8,
-        align: 'center',
-        shadow: {
-          offsetX: 4,
-          offsetY: 4,
-          color: '#000000',
-          blur: 8,
-          fill: true,
-        },
-      })
+    const shadowOffset = 4; // 그림자 위치 이동량
+    const titleShadow = this.add
+      .image(width / 2 + shadowOffset, height / 3 + shadowOffset, 'title')
       .setOrigin(0.5)
-      .setAlpha(0); // 타이틀 애니메이션
+      .setTint(0x000000) // 검은색 그림자
+      .setAlpha(0.3); // 투명도 조절
 
+    const title = this.add
+      .image(width / 2, height / 3, 'title')
+      .setOrigin(0.5)
+      .setAlpha(0); // 초기 투명
+
+    // 이미지 페이드인 애니메이션
     this.tweens.add({
       targets: title,
       alpha: 1,
-      y: height / 3,
       duration: 800,
       ease: 'Back.easeOut',
-    }); // 메뉴 버튼들
+    });
 
     let startY = height / 2 + 40;
     const buttonSpacing = 70; // NEW GAME 버튼
@@ -228,7 +220,8 @@ export default class MainMenuScene extends Phaser.Scene {
     const title = this.add
       .text(width / 2, 80, titleText, {
         fontSize: '32px',
-        fontFamily: 'Arial Black, sans-serif',
+        fontStyle: 'bold',
+        fontFamily: 'RoundedFixedsys',
         fill: '#ffffff',
         stroke: '#000000',
         strokeThickness: 6,
@@ -277,7 +270,8 @@ export default class MainMenuScene extends Phaser.Scene {
     const slotNumber = this.add
       .text(-width / 2 + 15, -height / 2 + 15, `SLOT ${slotIndex + 1}`, {
         fontSize: '18px',
-        fontFamily: 'Arial Black',
+        fontStyle: 'bold',
+        fontFamily: 'RoundedFixedsys',
         fill: '#888888',
       })
       .setOrigin(0);
@@ -323,7 +317,8 @@ export default class MainMenuScene extends Phaser.Scene {
       const emptyText = this.add
         .text(0, 0, mode === 'new' ? 'EMPTY\n\nClick to Start' : 'NO SAVE DATA', {
           fontSize: '20px',
-          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          fontFamily: 'RoundedFixedsys',
           fill: '#666666',
           align: 'center',
         })
@@ -408,7 +403,8 @@ export default class MainMenuScene extends Phaser.Scene {
   createMenuButton(x, y, text, callback, disabled = false, delay = 0) {
     const buttonStyle = {
       fontSize: '28px',
-      fontFamily: 'Arial Black, sans-serif',
+      fontStyle: 'bold',
+      fontFamily: 'RoundedFixedsys',
       fill: disabled ? '#444444' : '#ffffff',
       stroke: '#000000',
       strokeThickness: 5,
