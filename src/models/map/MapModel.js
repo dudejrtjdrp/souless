@@ -85,27 +85,11 @@ export default class MapModel {
       scale = this.config.mapScale;
       scaledWidth = originalWidth * scale;
       scaledHeight = originalHeight * scale;
-
-      console.log('📏 Manual Scale Applied (mapScale):');
-      console.log('  - mapScale:', scale);
-      console.log('  - Original Size:', originalWidth, 'x', originalHeight);
-      console.log(
-        '  - Result Size (single):',
-        scaledWidth.toFixed(0),
-        'x',
-        scaledHeight.toFixed(0),
-      );
     } else {
       // mapScale이 없으면 화면 높이에 자동 맞춤
       scale = screenHeight / originalHeight;
       scaledWidth = originalWidth * scale;
       scaledHeight = screenHeight;
-
-      console.log('📏 Auto Scale Applied (fit to screen height):');
-      console.log('  - Screen Height:', screenHeight);
-      console.log('  - Original Size:', originalWidth, 'x', originalHeight);
-      console.log('  - Calculated Scale:', scale.toFixed(3));
-      console.log('  - Result Size (single):', scaledWidth.toFixed(0), 'x', screenHeight);
     }
 
     // 🔄 반복 횟수만큼 맵 너비 확장
@@ -116,13 +100,6 @@ export default class MapModel {
     this.mapHeight = scaledHeight;
     this.config.autoScale = scale;
     this.singleLayerWidth = scaledWidth; // 단일 레이어 너비 저장
-
-    if (this.repeatCount > 1) {
-      console.log('🔄 Map Repeat Enabled:');
-      console.log('  - Repeat Count:', this.repeatCount);
-      console.log('  - Single Layer Width:', scaledWidth.toFixed(0));
-      console.log('  - Total Map Width:', totalWidth.toFixed(0));
-    }
   }
 
   /**
@@ -148,12 +125,6 @@ export default class MapModel {
     this.underSolidRect.setDepth(45);
     this.underSolidRect.setScrollFactor(1);
     this.underSolidRect.setOrigin(0.5, 0.5);
-
-    console.log(
-      `📦 Under Solid Rectangle created at y: ${this.mapHeight - rectHeight}, width: ${
-        this.mapWidth
-      }`,
-    );
   }
 
   /**
@@ -171,17 +142,11 @@ export default class MapModel {
     if (underConfig) {
       const autoOffsetY = underConfig.y || 100;
       totalOffsetY -= autoOffsetY; // 위로 이동 (음수)
-      console.log(`📦 Auto offset by underSolidRectangle: -${autoOffsetY}px (up)`);
     }
 
     // 2. layersOffsetY에 의한 수동 오프셋
     if (this.config.layersOffsetY !== undefined) {
       totalOffsetY += this.config.layersOffsetY;
-      console.log(
-        `📦 Manual offset by layersOffsetY: ${this.config.layersOffsetY > 0 ? '+' : ''}${
-          this.config.layersOffsetY
-        }px (${this.config.layersOffsetY > 0 ? 'down' : 'up'})`,
-      );
     }
 
     // 3. 레이어들에 오프셋 적용
@@ -189,19 +154,12 @@ export default class MapModel {
       layers.forEach((layer) => {
         layer.y += totalOffsetY;
       });
-      console.log(
-        `📦 Total background layers offset: ${totalOffsetY > 0 ? '+' : ''}${totalOffsetY}px`,
-      );
-    } else {
-      console.log(`📦 No background layers offset applied`);
     }
   }
 
   setupWorldBounds() {
     this.scene.physics.world.setBounds(0, 0, this.mapWidth, this.mapHeight);
     this.scene.cameras.main.setBounds(0, 0, this.mapWidth, this.mapHeight);
-
-    console.log(`🌍 World Bounds: ${this.mapWidth} x ${this.mapHeight}`);
   }
 
   /**
@@ -226,11 +184,6 @@ export default class MapModel {
     }
 
     let spawnY = groundTopY - offsetY;
-
-    console.log(`📍 Spawn Position: (${Math.round(spawnX)}, ${Math.round(spawnY)})`);
-    console.log(`   - Ground Top Y: ${Math.round(groundTopY)}`);
-    console.log(`   - Offset Y: ${offsetY}`);
-
     return { x: spawnX, y: spawnY };
   }
 
@@ -262,12 +215,6 @@ export default class MapModel {
     }
 
     this.collisionGround.setDepth(this.config.depths?.collision || 10);
-
-    console.log(
-      `🧱 Collision Ground: y=${Math.round(groundY)}, width=${
-        this.mapWidth
-      }, height=${groundHeight}`,
-    );
   }
 
   /**
@@ -286,8 +233,6 @@ export default class MapModel {
       const portal = new Portal(this.scene, adjustedData);
       this.portals.push(portal);
     });
-
-    console.log(`🚪 Created ${this.portals.length} portals`);
   }
 
   getCollisionTopY() {

@@ -300,16 +300,11 @@ export default class MapTestScene extends Phaser.Scene {
   showMapSelectMenu() {
     // 사용 가능한 모든 맵 키 가져오기
     const mapKeys = Object.keys(MAPS);
-
-    console.log('Available maps:', mapKeys);
-    console.log('Current map:', this.currentMapKey);
-
     // 현재 맵의 다음 맵으로 변경 (순환)
     const currentIndex = mapKeys.indexOf(this.currentMapKey);
     const nextIndex = (currentIndex + 1) % mapKeys.length;
     const nextMapKey = mapKeys[nextIndex];
 
-    console.log('Switching to:', nextMapKey);
     this.changeMap(nextMapKey);
   }
 }

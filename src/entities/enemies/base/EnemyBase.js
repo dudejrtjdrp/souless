@@ -59,21 +59,13 @@ export default class EnemyBase {
     if (physics.offsetX !== undefined && physics.offsetY !== undefined) {
       offsetX = physics.offsetX;
       offsetY = physics.offsetY;
-      console.log(`📌 ${enemyType}: Using custom offset`);
     } else {
       // 자동 계산: 중앙 정렬
       offsetX = (spriteConfig.frameWidth - physics.width) / 2;
       offsetY = (spriteConfig.frameHeight - physics.height) / 2;
-      console.log(`📌 ${enemyType}: Using centered offset`);
     }
 
     this.sprite.body.setOffset(offsetX, offsetY);
-
-    console.log(`📦 ${enemyType} hitbox:`, {
-      frameSize: `${spriteConfig.frameWidth}x${spriteConfig.frameHeight}`,
-      bodySize: `${physics.width}x${physics.height}`,
-      offset: `(${Math.floor(offsetX)}, ${Math.floor(offsetY)})`,
-    });
 
     // === HP바 ===
     const hpBarWidth = physics.width;
@@ -102,13 +94,6 @@ export default class EnemyBase {
 
     // 공격 범위 통일
     const attackRange = aiConfig.attack?.range || 70;
-
-    console.log(`🎯 ${this.enemyType} AI initialized:`, {
-      attackRange: attackRange,
-      detectRange: aiConfig.detectRange || 200,
-      attackDamage: aiConfig.attack?.damage || 10,
-      attackCooldown: aiConfig.attack?.cooldown || 1500,
-    });
 
     // 공격 시스템 설정
     if (aiConfig.attack) {

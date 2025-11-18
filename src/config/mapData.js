@@ -424,6 +424,26 @@ export const MAPS = {
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
+    boss: {
+      enabled: true, // 이 맵에서 보스 등장 가능 여부
+      spawnCondition: 'jobChange', // 스폰 조건 타입
+
+      // 스폰 위치 (맵 중앙 추천)
+      spawnPosition: {
+        x: 'center', // 'center', 'left', 'right', 또는 숫자
+        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        offsetX: 0,
+        offsetY: -100, // 살짝 위쪽에 스폰
+      },
+
+      // 전직별 보스 매핑
+      jobBossMapping: {
+        warrior: 'fireBoss',
+        mage: 'iceBoss',
+        archer: 'windBoss',
+        assassin: 'shadowBoss',
+      },
+    },
     portals: generateMapPortals('temple_1'),
   },
 
@@ -461,6 +481,26 @@ export const MAPS = {
       respawnInterval: 5000,
       patrolRangeX: 100,
       minPlayerDistance: 100,
+    },
+    boss: {
+      enabled: true, // 이 맵에서 보스 등장 가능 여부
+      spawnCondition: 'jobChange', // 스폰 조건 타입
+
+      // 스폰 위치 (맵 중앙 추천)
+      spawnPosition: {
+        x: 'center', // 'center', 'left', 'right', 또는 숫자
+        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        offsetX: 0,
+        offsetY: -100, // 살짝 위쪽에 스폰
+      },
+
+      // 전직별 보스 매핑
+      jobBossMapping: {
+        warrior: 'fireBoss',
+        mage: 'iceBoss',
+        archer: 'windBoss',
+        assassin: 'shadowBoss',
+      },
     },
     portals: generateMapPortals('temple_2'),
   },
@@ -500,6 +540,26 @@ export const MAPS = {
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
+    boss: {
+      enabled: true, // 이 맵에서 보스 등장 가능 여부
+      spawnCondition: 'jobChange', // 스폰 조건 타입
+
+      // 스폰 위치 (맵 중앙 추천)
+      spawnPosition: {
+        x: 'center', // 'center', 'left', 'right', 또는 숫자
+        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        offsetX: 0,
+        offsetY: -100, // 살짝 위쪽에 스폰
+      },
+
+      // 전직별 보스 매핑
+      jobBossMapping: {
+        warrior: 'fireBoss',
+        mage: 'iceBoss',
+        archer: 'windBoss',
+        assassin: 'shadowBoss',
+      },
+    },
     portals: generateMapPortals('temple_3'),
   },
 
@@ -537,6 +597,26 @@ export const MAPS = {
       respawnInterval: 5000,
       patrolRangeX: 100,
       minPlayerDistance: 100,
+    },
+    boss: {
+      enabled: true, // 이 맵에서 보스 등장 가능 여부
+      spawnCondition: 'jobChange', // 스폰 조건 타입
+
+      // 스폰 위치 (맵 중앙 추천)
+      spawnPosition: {
+        x: 'center', // 'center', 'left', 'right', 또는 숫자
+        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        offsetX: 0,
+        offsetY: -100, // 살짝 위쪽에 스폰
+      },
+
+      // 전직별 보스 매핑
+      jobBossMapping: {
+        warrior: 'fireBoss',
+        mage: 'iceBoss',
+        archer: 'windBoss',
+        assassin: 'shadowBoss',
+      },
     },
     portals: generateMapPortals('temple_4'),
   },

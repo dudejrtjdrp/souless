@@ -5,21 +5,21 @@ export default class EnemyAttackSystem {
 
     this.range = config.range;
     this.damage = config.damage;
-    this.cooldown = config.cooldown; // 참고용 (실제 쿨다운은 Controller에서 관리)
+    this.cooldown = config.cooldown;
     this.hitDelay = config.hitDelay || 200;
     this.animationKey = config.animationKey || 'attack';
 
-    this._isExecuting = false; // 공격 실행 중 플래그
+    this._isExecuting = false;
   }
 
-  attack(player) {
-    // 이미 공격 실행 중이면 스킵
+  attack(player, onComplete) {
+    // ✅ 콜백 파라미터 추가
     if (this._isExecuting) {
+      console.log('asd');
       return;
     }
 
     if (!player || player.isDead) {
-      console.warn(`⚠️ ${this.enemy.enemyType}: Invalid or dead player`);
       return;
     }
 
@@ -35,14 +35,19 @@ export default class EnemyAttackSystem {
       this.applyDamage(player);
     });
 
-    // 전체 공격 시퀀스 종료 (애니메이션 시간 고려)
-    const totalAttackTime = this.hitDelay + 100; // hitDelay + 약간의 여유
+    // 전체 공격 시퀀스 종료
+    const totalAttackTime = this.hitDelay + 300;
     this.scene.time.delayedCall(totalAttackTime, () => {
       this._isExecuting = false;
 
       // idle 애니메이션 복귀
       if (!this.enemy.isDead && this.enemy.sprite) {
         this.enemy.sprite.play(`${this.enemy.enemyType}_idle`);
+      }
+
+      // ✅ 콜백 호출
+      if (onComplete) {
+        onComplete();
       }
     });
   }
@@ -53,30 +58,18 @@ export default class EnemyAttackSystem {
       return;
     }
 
-    // 거리 재확인
-    const playerX = player.sprite ? player.sprite.x : player.x;
-    const playerY = player.sprite ? player.sprite.y : player.y;
+    const healthBefore = player.health;
+    player.takeDamage(this.damage);
+    const healthAfter = player.health;
 
-    const distance = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
+    const actualDamage = healthBefore - healthAfter;
+    console.log(
+      `🩸 ${this.enemy.enemyType}: Dealt ${actualDamage} damage (${healthAfter}/${player.maxHealth} HP)`,
+    );
 
-    if (distance > this.range * 1.5) {
-      return;
-    }
-
-    // 데미지 적용
-    if (typeof player.takeDamage === 'function') {
-      const healthBefore = player.health;
-      player.takeDamage(this.damage);
-      const healthAfter = player.health;
-
-      const actualDamage = healthBefore - healthAfter;
-
-      // UI 업데이트
-      if (this.scene.events) {
-        this.scene.events.emit('player-stats-updated', player);
-      }
-    } else {
-      console.error(`❌ Player has no takeDamage method!`);
+    // UI 업데이트
+    if (this.scene.events) {
+      this.scene.events.emit('player-stats-updated', player);
     }
   }
 }

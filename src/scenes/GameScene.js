@@ -18,11 +18,13 @@ import CharacterSwitchHandler from '../systems/GameScene/CharacterSwitchHandler.
 import CombatCollisionHandler from '../systems/GameScene/CombatCollisionHandler.js';
 
 import SaveSlotManager from '../utils/SaveSlotManager.js';
+import EnemyBase from '../entities/enemies/base/EnemyBase.js'; // 보스 생성용
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
-    this.lastSaveTime = 0; // 자동 저장을 위한 변수 초기화
+    this.lastSaveTime = 0;
+    this.currentBoss = null; // 🎯 보스 인스턴스
   }
 
   async init(data = {}) {
@@ -35,6 +37,7 @@ export default class GameScene extends Phaser.Scene {
     this.loadMapAssets();
     this.loadCharacterAssets();
     this.loadPortalAssets();
+    this.loadBossAssets(); // 🎯 보스 에셋 로드
   }
 
   loadMapAssets() {
@@ -50,7 +53,7 @@ export default class GameScene extends Phaser.Scene {
     CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
 
-    this.effectManager = new EffectManager(this); // EffectLoader를 통해 모든 이펙트 로드
+    this.effectManager = new EffectManager(this);
     EffectLoader.preloadAllEffects(this);
   }
 
@@ -58,6 +61,17 @@ export default class GameScene extends Phaser.Scene {
     for (let i = 1; i <= 16; i++) {
       this.load.image(`holy_vfx_02_${i}`, `assets/portal/Holy VFX 02 ${i}.png`);
     }
+  }
+
+  // 🎯 보스 에셋 로드
+  loadBossAssets() {
+    if (!this.mapConfig.boss?.enabled) return;
+
+    const jobBossMapping = this.mapConfig.boss.jobBossMapping;
+    Object.values(jobBossMapping).forEach((bossType) => {
+      console.log(`📦 Preloading boss: ${bossType}`);
+      EnemyBase.preload(this, bossType);
+    });
   }
 
   async create() {
@@ -74,13 +88,13 @@ export default class GameScene extends Phaser.Scene {
     this.setupScene();
     this.createBackground();
 
-    await this.setupPlayer(); // 플레이어 먼저 생성
+    await this.setupPlayer();
 
     this.setupCamera();
-    this.setupEnemies(); // 적 생성 (player가 이미 존재하는 상태)
+    this.setupEnemies();
 
-    // 🔍 디버깅: 적 생성 확인
     this.setupCharacterSelectUI();
+    this.setupBossEvents(); // 🎯 보스 이벤트 설정
     this.emitInitialEvents();
 
     if (!this.savedSpawnData) {
@@ -162,16 +176,13 @@ export default class GameScene extends Phaser.Scene {
     const spawnManager = new PlayerSpawnManager(this);
     return spawnManager.determineSpawnPosition(defaultSpawn, portals);
   }
-  /**
-   * 플레이어 설정 및 쿨다운 데이터 로드 (핵심 수정)
-   */
 
   async setupPlayer() {
     this.characterSwitchManager = new CharacterSwitchManager(this);
     this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
     this.characterSwitchManager.setCurrentMap(this.currentMapKey);
 
-    this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y); // 2. 저장된 리소스 및 쿨다운 데이터 로드 및 적용
+    this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y);
 
     if (this.player && this.player.loadSavedResources) {
       await this.player.loadSavedResources();
@@ -185,7 +196,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupEnemies() {
-    // 🔍 디버깅: player 참조 확인
     if (!this.player) {
       console.error('❌ Player not found when creating enemies!');
       return;
@@ -200,17 +210,214 @@ export default class GameScene extends Phaser.Scene {
     this.isBackQuoteHeld = false;
     this.backQuoteHoldStartTime = 0;
   }
-  /**
-   * 초기 이벤트 발생 (UIScene 갱신)
-   * **참고:** 이 함수는 쿨다운/리소스 로드가 완료된 후에 호출됩니다.
-   */
+
+  // 🎯 보스 이벤트 설정
+  setupBossEvents() {
+    this.events.on('bossDefeated', (bossType) => {
+      console.log(`🎉 ${bossType} defeated!`);
+
+      // 전직 처리 로직
+      if (this.player.nextJob) {
+        this.player.changeJob(this.player.nextJob);
+        this.showJobChangeEffect();
+      }
+
+      // 일반 몬스터 스폰 재개
+      if (this.enemyManager) {
+        this.enemyManager.resumeSpawning();
+      }
+
+      this.currentBoss = null;
+    });
+  }
+
+  // 🎯 보스 스폰 가능 여부 확인
+  canSpawnBoss() {
+    const bossConfig = this.mapConfig.boss;
+
+    if (!bossConfig?.enabled) return false;
+    if (this.currentBoss && !this.currentBoss.isDead) return false;
+
+    if (bossConfig.spawnCondition === 'jobChange') {
+      return this.player.isReadyForJobChange && this.player.nextJob;
+    }
+
+    return false;
+  }
+
+  // 🎯 보스 스폰
+  spawnBoss(targetJob) {
+    const bossConfig = this.mapConfig.boss;
+
+    if (!bossConfig?.enabled) {
+      console.warn('⚠️ Boss spawning is not enabled for this map');
+      return null;
+    }
+
+    const bossType = bossConfig.jobBossMapping[targetJob];
+
+    if (!bossType) {
+      console.error(`❌ No boss mapped for job: ${targetJob}`);
+      return null;
+    }
+
+    console.log(`🎭 Spawning boss: ${bossType} for job: ${targetJob}`);
+
+    const spawnPos = this.calculateBossSpawnPosition();
+
+    this.currentBoss = new EnemyBase(this, spawnPos.x, spawnPos.y, bossType, 1);
+
+    if (this.currentBoss.sprite) {
+      const bossDepth = this.mapConfig.depths?.boss || 95;
+      this.currentBoss.sprite.setDepth(bossDepth);
+
+      if (this.currentBoss.hpBar) {
+        this.currentBoss.hpBar.setScale(2, 1.5);
+        this.currentBoss.hpBar.setDepth(bossDepth + 1);
+      }
+    }
+
+    this.setupBossDeathHandler();
+    this.playBossEntrance(bossType);
+
+    // 일반 몬스터 스폰 일시 중지
+    if (this.enemyManager) {
+      this.enemyManager.pauseSpawning();
+    }
+
+    return this.currentBoss;
+  }
+
+  // 🎯 보스 스폰 위치 계산
+  calculateBossSpawnPosition() {
+    const spawnConfig = this.mapConfig.boss.spawnPosition;
+    const worldBounds = this.physics.world.bounds;
+
+    let x, y;
+
+    if (spawnConfig.x === 'center') {
+      x = worldBounds.width / 2;
+    } else if (spawnConfig.x === 'left') {
+      x = worldBounds.width * 0.2;
+    } else if (spawnConfig.x === 'right') {
+      x = worldBounds.width * 0.8;
+    } else {
+      x = spawnConfig.x;
+    }
+
+    if (spawnConfig.y === 'center') {
+      y = worldBounds.height / 2;
+    } else if (spawnConfig.y === 'top') {
+      y = worldBounds.height * 0.3;
+    } else if (spawnConfig.y === 'bottom') {
+      y = worldBounds.height * 0.7;
+    } else {
+      y = spawnConfig.y;
+    }
+
+    x += spawnConfig.offsetX || 0;
+    y += spawnConfig.offsetY || 0;
+
+    return { x, y };
+  }
+
+  // 🎯 보스 사망 처리
+  setupBossDeathHandler() {
+    if (!this.currentBoss) return;
+
+    const originalDestroy = this.currentBoss.destroy.bind(this.currentBoss);
+
+    this.currentBoss.destroy = () => {
+      const bossType = this.currentBoss.enemyType;
+      this.events.emit('bossDefeated', bossType);
+      originalDestroy();
+    };
+  }
+
+  // 🎯 보스 등장 연출
+  playBossEntrance(bossType) {
+    this.cameras.main.shake(500, 0.01);
+
+    const centerX = this.cameras.main.centerX;
+    const centerY = this.cameras.main.centerY;
+
+    const warningText = this.add
+      .text(centerX, centerY - 100, '⚠️ BOSS APPEARED ⚠️', {
+        fontSize: '48px',
+        fontFamily: 'Arial Black',
+        color: '#ff0000',
+        stroke: '#000000',
+        strokeThickness: 8,
+      })
+      .setOrigin(0.5)
+      .setDepth(10000)
+      .setScrollFactor(0);
+
+    this.tweens.add({
+      targets: warningText,
+      alpha: 0,
+      y: centerY - 150,
+      duration: 2000,
+      ease: 'Power2',
+      onComplete: () => warningText.destroy(),
+    });
+
+    const bossNameText = this.add
+      .text(centerX, centerY, bossType.toUpperCase(), {
+        fontSize: '32px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(10000)
+      .setScrollFactor(0);
+
+    this.tweens.add({
+      targets: bossNameText,
+      alpha: 0,
+      y: centerY + 50,
+      duration: 2500,
+      delay: 500,
+      ease: 'Power2',
+      onComplete: () => bossNameText.destroy(),
+    });
+  }
+
+  // 🎯 전직 완료 연출
+  showJobChangeEffect() {
+    const centerX = this.cameras.main.centerX;
+    const centerY = this.cameras.main.centerY;
+
+    const jobText = this.add
+      .text(centerX, centerY, `${this.player.nextJob.toUpperCase()} CLASS UNLOCKED!`, {
+        fontSize: '36px',
+        fontFamily: 'Arial Black',
+        color: '#ffff00',
+        stroke: '#000000',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5)
+      .setDepth(10000)
+      .setScrollFactor(0);
+
+    this.tweens.add({
+      targets: jobText,
+      alpha: 0,
+      scale: 1.5,
+      duration: 3000,
+      ease: 'Power2',
+      onComplete: () => jobText.destroy(),
+    });
+  }
 
   emitInitialEvents() {
-    // 쿨다운 데이터가 player.skillSystem에 로드된 상태라고 가정
     this.events.emit('character-changed', {
       characterType: this.selectedCharacter,
       player: this.player,
-    }); // UIScene에도 직접적으로 갱신 이벤트 호출 (UIScene.create에서 대기하는 경우)
+    });
+
     if (this.uiScene) {
       this.uiScene.handleCharacterChanged({
         characterType: this.selectedCharacter,
@@ -254,23 +461,22 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async switchCharacter(direction = 'next') {
-    // 1. 이전 캐릭터 리소스 및 쿨다운 저장
-    await this.saveCurrentCharacterResources(); // 2. 캐릭터 전환 및 새 캐릭터 리소스/쿨다운 로드
+    await this.saveCurrentCharacterResources();
 
     const handler = new CharacterSwitchHandler(this);
-    await handler.switchCharacter(direction); // 3. 저장된 현재 캐릭터 업데이트
+    await handler.switchCharacter(direction);
 
     await SaveSlotManager.updateCurrentCharacter(this.selectedCharacter);
   }
 
   async switchToSelectedCharacter(characterType) {
     if (this.isCharacterSwitchOnCooldown) return;
-    if (characterType === this.selectedCharacter) return; // 1. 이전 캐릭터 리소스 및 쿨다운 저장
+    if (characterType === this.selectedCharacter) return;
 
-    await this.saveCurrentCharacterResources(); // 2. 캐릭터 전환 및 새 캐릭터 리소스/쿨다운 로드
+    await this.saveCurrentCharacterResources();
 
     const handler = new CharacterSwitchHandler(this);
-    await handler.switchToCharacter(characterType); // 3. 저장된 현재 캐릭터 업데이트
+    await handler.switchToCharacter(characterType);
 
     await SaveSlotManager.updateCurrentCharacter(this.selectedCharacter);
   }
@@ -304,7 +510,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async saveCurrentCharacterResources() {
-    // 쿨다운 데이터 저장을 포함한 리소스 저장 (Player 클래스 내부 함수)
     if (this.player && this.player.saveResources) {
       await this.player.saveResources();
     }
@@ -321,6 +526,12 @@ export default class GameScene extends Phaser.Scene {
 
     this.enemyManager?.destroy();
     this.enemyManager = null;
+
+    // 🎯 보스 정리
+    if (this.currentBoss) {
+      this.currentBoss.destroy();
+      this.currentBoss = null;
+    }
   }
 
   onExpGained(amount, characterType) {
@@ -358,6 +569,11 @@ export default class GameScene extends Phaser.Scene {
     this.mapModel.update(this.player.sprite);
     this.enemyManager?.update(time, delta);
 
+    // 🎯 보스 업데이트
+    if (this.currentBoss && !this.currentBoss.isDead) {
+      this.currentBoss.update(time, delta);
+    }
+
     const handler = new CombatCollisionHandler(this);
     this.uiScene.update(time, delta);
     handler.checkAttackCollisions();
@@ -381,12 +597,20 @@ export default class GameScene extends Phaser.Scene {
       this.switchCharacter('prev');
     }
 
+    // 🎯 B키로 보스 스폰 (테스트 또는 실제 로직)
+    if (input.isBPressed) {
+      if (this.canSpawnBoss()) {
+        this.spawnBoss(this.player.nextJob || 'warrior');
+      } else {
+        console.log('⚠️ Cannot spawn boss: conditions not met');
+      }
+    }
+
     if (input.isLPressed) {
       this.clearAllSaveData();
     }
 
     if (input.isDownPressed) {
-      // T키로 테스트 씬 열기
       this.scene.start('EffectTestScene');
     }
   }
@@ -442,7 +666,7 @@ export default class GameScene extends Phaser.Scene {
 
   async clearAllSaveData() {
     localStorage.clear();
-    await SaveSlotManager.clearAllSlots(); // 'GameScene'에 switchText가 없으므로 로그 처리 (필요시)
+    await SaveSlotManager.clearAllSlots();
   }
 
   emitPlayerEvents() {

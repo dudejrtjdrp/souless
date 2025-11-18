@@ -85,9 +85,6 @@ export default class SaveSlotManager {
       } else {
         if (targetSlotIndex >= 0 && targetSlotIndex < this.MAX_SLOTS) {
           localStorage.setItem(`${this.SLOT_PREFIX}${targetSlotIndex}`, JSON.stringify(dataToSave));
-          console.log(
-            `💾 Saved to slot ${targetSlotIndex} (character: ${dataToSave.currentCharacter})`,
-          );
         } else {
           console.error(
             `❌ Save error: Attempted save with invalid slot index: ${targetSlotIndex}`,
