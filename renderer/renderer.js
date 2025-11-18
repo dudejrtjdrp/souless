@@ -5,6 +5,7 @@ import UIScene from '../src/scenes/UIScene';
 import EffectTestScene from '../src/scenes/TestScene';
 import MainMenuScene from '../src/scenes/MainMenuScene';
 import PauseMenuScene from '../src/scenes/PauseMenuScene ';
+import MapTestScene from '../src/scenes/MapTestScene';
 
 const config = {
   type: Phaser.AUTO,
@@ -16,7 +17,15 @@ const config = {
     default: 'arcade',
     arcade: { debug: true },
   },
-  scene: [MainMenuScene, GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
+  scene: [
+    GameScene,
+    // MapTestScene,
+    MainMenuScene,
+    PauseMenuScene,
+    EffectTestScene,
+    SoulScene,
+    UIScene,
+  ],
   // scene: [GameScene, PauseMenuScene, EffectTestScene, SoulScene, UIScene],
   scale: {
     mode: Phaser.Scale.RESIZE,

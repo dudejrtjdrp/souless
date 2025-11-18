@@ -169,7 +169,7 @@ export default class GameScene extends Phaser.Scene {
   async setupPlayer() {
     this.characterSwitchManager = new CharacterSwitchManager(this);
     this.characterSwitchManager.setCurrentCharacterType(this.selectedCharacter);
-    this.characterSwitchManager.setCurrentMap(this.currentMapKey); // 1. 플레이어 생성 (객체 생성)
+    this.characterSwitchManager.setCurrentMap(this.currentMapKey);
 
     this.createPlayer(this.selectedCharacter, this.spawnPosition.x, this.spawnPosition.y); // 2. 저장된 리소스 및 쿨다운 데이터 로드 및 적용
 

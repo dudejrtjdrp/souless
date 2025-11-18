@@ -7,7 +7,7 @@ export const MAPS = {
     camera: {
       offsetY: 150,
     },
-    layerNames: ['Background1', 'Background2', 'Midground', 'Collision', 'Foreground'],
+    mapScale: 1.5,
     layers: [
       { key: 'cave_layer1', path: '/assets/map/parallax_cave/1.png' },
       { key: 'cave_layer2', path: '/assets/map/parallax_cave/2.png' },
@@ -19,14 +19,13 @@ export const MAPS = {
       { key: 'cave_layer8', path: '/assets/map/parallax_cave/8fx.png' },
       { key: 'cave_layer9', path: '/assets/map/parallax_cave/9.png' },
     ],
-    // 하단 solid rectangle 설정
     underSolidRectangle: {
-      y: 150, // 높이 (px)
-      color: '#1a1a2e', // 어두운 남색
+      y: 150,
+      color: '#1a1a2e',
     },
     spawn: {
       x: 'left',
-      y: 2170,
+      y: 'bottom',
       offsetY: 200,
     },
     gravity: 800,
@@ -51,20 +50,11 @@ export const MAPS = {
 
   forest: {
     key: 'forest',
-    name: 'Dark Forest',
+    name: 'Forest',
     mapScale: 3,
-    mapPath: '/assets/map/forest/forest_map.tmj',
     camera: {
-      offsetY: -100, // 카메라를 위로 올려서 캐릭터가 화면 중앙에 오도록
+      offsetY: -100,
     },
-    tilesets: [
-      {
-        key: 'forest_tileset',
-        nameInTiled: 'forest_map',
-        imagePath: '/assets/map/forest/forest_tileset.png',
-      },
-    ],
-    layerNames: ['Background', 'Ground', 'Collision'],
     layers: [
       { key: 'forest_layer1', path: '/assets/map/forest/0.png' },
       { key: 'forest_layer2', path: '/assets/map/forest/1.png' },
@@ -79,15 +69,10 @@ export const MAPS = {
       { key: 'forest_layer11', path: '/assets/map/forest/10.png' },
       { key: 'forest_layer12', path: '/assets/map/forest/11.png' },
     ],
-    collision: {
-      key: 'forest_tileset',
-      path: '/assets/map/forest/forest_tileset.png',
-      groundHeight: 200,
-    },
     spawn: {
       x: 'left',
-      y: 'bottom', // 'bottom'으로 변경해서 자동 계산
-      offsetY: 350, // 바닥에서 350px 위
+      y: 'bottom',
+      offsetY: 200,
     },
     gravity: 800,
     playerScale: 2,
@@ -103,7 +88,6 @@ export const MAPS = {
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
-      yFixed: 2169,
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
@@ -113,19 +97,9 @@ export const MAPS = {
   dark_cave: {
     key: 'dark_cave',
     name: 'Dark cave',
-    mapScale: 4,
-    mapPath: '/assets/map/dark_cave/dark_cave_map.tmj',
     camera: {
-      offsetY: -50, // 카메라 위치 조정
+      offsetY: -50,
     },
-    tilesets: [
-      {
-        key: 'dark_cave_tileset',
-        nameInTiled: 'dark_cave_tileset',
-        imagePath: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
-      },
-    ],
-    layerNames: ['Background', 'Ground', 'Collision'],
     layers: [
       { key: 'dark_cave_layer1', path: '/assets/map/dark_cave/parallax-demon-woods-bg.png' },
       { key: 'dark_cave_layer2', path: '/assets/map/dark_cave/parallax-demon-woods-far-trees.png' },
@@ -135,20 +109,14 @@ export const MAPS = {
         path: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
       },
     ],
-    // 어두운 동굴용 하단 배경
     underSolidRectangle: {
       y: 200,
-      color: '#000000', // 완전한 검정
-    },
-    collision: {
-      key: 'dark_cave_tileset',
-      path: '/assets/map/dark_cave/parallax-demon-woods-close-trees.png',
-      groundHeight: 200,
+      color: '#000000',
     },
     spawn: {
       x: 'left',
-      y: 'bottom', // 'bottom'으로 변경
-      offsetY: 350, // 바닥에서 350px 위
+      y: 'bottom',
+      offsetY: 200,
     },
     gravity: 800,
     playerScale: 2,
@@ -164,14 +132,452 @@ export const MAPS = {
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
-      yFixed: 895,
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
     portals: generateMapPortals('dark_cave'),
   },
-};
 
-//  디버그: 포탈 정보 출력 (개발 중)
-if (import.meta.env.DEV) {
-}
+  scary_cave: {
+    key: 'scary_cave',
+    name: 'Scary Cave',
+    mapScale: 3, // 수동으로 스케일 조정 (원본의 50% 크기)
+    layersOffsetY: 450,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [
+      { key: 'scary_cave_layer1', path: '/assets/map/scary_cave/background1.png' },
+      { key: 'scary_cave_layer2', path: '/assets/map/scary_cave/background2.png' },
+      { key: 'scary_cave_layer3', path: '/assets/map/scary_cave/background3.png' },
+    ],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('scary_cave'),
+  },
+
+  other_cave: {
+    key: 'other_cave',
+    name: 'Other Cave',
+    mapScale: 2, // 수동으로 스케일 조정 (원본의 50% 크기)
+    layersOffsetY: 0,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [
+      { key: 'other_cave_layer3', path: '/assets/map/other_cave/ParallaxCave4.png' },
+      { key: 'other_cave_layer3', path: '/assets/map/other_cave/ParallaxCave3.png' },
+      { key: 'other_cave_layer2', path: '/assets/map/other_cave/ParallaxCave2.png' },
+      { key: 'other_cave_layer1', path: '/assets/map/other_cave/ParallaxCave1.png' },
+    ],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('other_cave'),
+  },
+
+  oakwood: {
+    key: 'oakwood',
+    name: 'Oakwood',
+    mapScale: 6, // 수동으로 스케일 조정 (원본의 50% 크기)
+    layersOffsetY: 100,
+    repeatCount: 2, // 🔄 맵을 3번 반복!
+    camera: {
+      offsetY: -50,
+    },
+    layers: [
+      { key: 'oakwood_layer3', path: '/assets/map/oakwood/background_layer_1.png' },
+      { key: 'oakwood_layer3', path: '/assets/map/oakwood/background_layer_2.png' },
+      { key: 'oakwood_layer2', path: '/assets/map/oakwood/background_layer_3.png' },
+    ],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('oakwood'),
+  },
+
+  dark: {
+    key: 'dark',
+    name: 'Dark',
+    layersOffsetY: 0,
+    repeatCount: 2, // 🔄 맵을 3번 반복!
+    camera: {
+      offsetY: -50,
+    },
+    layers: [
+      { key: 'dark_layer3', path: '/assets/map/dark/background1.png' },
+      { key: 'dark_layer3', path: '/assets/map/dark/background2.png' },
+      { key: 'dark_layer3', path: '/assets/map/dark/background3.png' },
+      { key: 'dark_layer3', path: '/assets/map/dark/background4.png' },
+      { key: 'dark_layer2', path: '/assets/map/dark/background5.png' },
+    ],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('dark'),
+  },
+  snow: {
+    key: 'snow',
+    name: 'Snow',
+    layersOffsetY: 100,
+    repeatCount: 2, // 🔄 맵을 3번 반복!
+    camera: {
+      offsetY: -50,
+    },
+    layers: [
+      { key: 'snow_layer3', path: '/assets/map/snow/background1.png' },
+      { key: 'snow_layer3', path: '/assets/map/snow/background2.png' },
+      { key: 'snow_layer3', path: '/assets/map/snow/background3.png' },
+    ],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('snow'),
+  },
+
+  temple_way: {
+    key: 'temple_way',
+    name: 'Temple Way',
+    mapScale: 1.5,
+    layersOffsetY: 150,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [{ key: 'temple_way', path: '/assets/map/temple/background1.png' }],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('temple_way'),
+  },
+
+  temple_1: {
+    key: 'temple_1',
+    name: 'Temple1',
+    mapScale: 0.45,
+    layersOffsetY: 150,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [{ key: 'temple1', path: '/assets/map/temple/background 4/Preview 4.png' }],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('temple_1'),
+  },
+
+  temple_2: {
+    key: 'temple_2',
+    name: 'Temple2',
+    mapScale: 0.45,
+    layersOffsetY: 0,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [{ key: 'temple2', path: '/assets/map/temple/background 3/Preview 3.png' }],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('temple_2'),
+  },
+
+  temple_3: {
+    key: 'temple_3',
+    name: 'Temple3',
+    mapScale: 0.45,
+    layersOffsetY: 0,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [{ key: 'temple3', path: '/assets/map/temple/background 2/Preview 2.png' }],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('temple_3'),
+  },
+
+  temple_4: {
+    key: 'temple_4',
+    name: 'Temple4',
+    mapScale: 0.45,
+    layersOffsetY: 0,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [{ key: 'temple4', path: '/assets/map/temple/background 1/Preview 1.png' }],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('temple_4'),
+  },
+
+  final_map: {
+    key: 'final_map',
+    name: 'Final Map',
+    mapScale: 5.2,
+    layersOffsetY: 250,
+    camera: {
+      offsetY: -50,
+    },
+    layers: [{ key: 'final_map_layer2', path: '/assets/map/final_map/background2.png' }],
+    layers: [{ key: 'final_map_layer3', path: '/assets/map/final_map/background3.png' }],
+    layers: [{ key: 'final_map_layer1', path: '/assets/map/final_map/background1.png' }],
+    underSolidRectangle: {
+      y: 200,
+      color: '#000000',
+    },
+    spawn: {
+      x: 'left',
+      y: 'bottom',
+      offsetY: 200,
+    },
+    gravity: 800,
+    playerScale: 2,
+    depths: {
+      backgroundStart: 0,
+      tilemapStart: 50,
+      player: 100,
+      enemy: 90,
+      ui: 1000,
+    },
+    enemies: {
+      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      initialCount: 20,
+      maxCount: 35,
+      respawnInterval: 5000,
+      patrolRangeX: 100,
+      minPlayerDistance: 100,
+    },
+    portals: generateMapPortals('final_map'),
+  },
+};
