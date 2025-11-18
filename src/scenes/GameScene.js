@@ -214,8 +214,6 @@ export default class GameScene extends Phaser.Scene {
   // 🎯 보스 이벤트 설정
   setupBossEvents() {
     this.events.on('bossDefeated', (bossType) => {
-      console.log(`🎉 ${bossType} defeated!`);
-
       // 전직 처리 로직
       if (this.player.nextJob) {
         this.player.changeJob(this.player.nextJob);
@@ -238,11 +236,11 @@ export default class GameScene extends Phaser.Scene {
     if (!bossConfig?.enabled) return false;
     if (this.currentBoss && !this.currentBoss.isDead) return false;
 
-    if (bossConfig.spawnCondition === 'jobChange') {
-      return this.player.isReadyForJobChange && this.player.nextJob;
-    }
+    // if (bossConfig.spawnCondition === 'jobChange') {
+    //   return this.player.isReadyForJobChange && this.player.nextJob;
+    // }
 
-    return false;
+    return true;
   }
 
   // 🎯 보스 스폰
@@ -265,7 +263,9 @@ export default class GameScene extends Phaser.Scene {
 
     const spawnPos = this.calculateBossSpawnPosition();
 
-    this.currentBoss = new EnemyBase(this, spawnPos.x, spawnPos.y, bossType, 1);
+    // ✅ collider의 Y 좌표를 전달 (일반 몬스터와 동일하게)
+    const colliderTop = this.physics.world.bounds.height - 200;
+    this.currentBoss = new EnemyBase(this, spawnPos.x, colliderTop, bossType, 1);
 
     if (this.currentBoss.sprite) {
       const bossDepth = this.mapConfig.depths?.boss || 95;
@@ -274,6 +274,14 @@ export default class GameScene extends Phaser.Scene {
       if (this.currentBoss.hpBar) {
         this.currentBoss.hpBar.setScale(2, 1.5);
         this.currentBoss.hpBar.setDepth(bossDepth + 1);
+      }
+
+      // ✅ 보스도 collider와 충돌 처리 추가
+      if (this.mapModel && this.mapModel.addEnemy) {
+        this.mapModel.addEnemy(this.currentBoss.sprite);
+        console.log('✅ Boss added to collision system');
+      } else {
+        console.warn('⚠️ MapModel not available or addEnemy method missing');
       }
     }
 
@@ -291,6 +299,7 @@ export default class GameScene extends Phaser.Scene {
   // 🎯 보스 스폰 위치 계산
   calculateBossSpawnPosition() {
     const spawnConfig = this.mapConfig.boss.spawnPosition;
+    console.log(this.mapConfig.boss.spawnPosition);
     const worldBounds = this.physics.world.bounds;
 
     let x, y;
@@ -329,11 +338,19 @@ export default class GameScene extends Phaser.Scene {
 
     this.currentBoss.destroy = () => {
       const bossType = this.currentBoss.enemyType;
+
+      // ✅ enemyManager 배열에서 제거
+      if (this.enemyManager) {
+        const index = this.enemyManager.enemies.indexOf(this.currentBoss);
+        if (index > -1) {
+          this.enemyManager.enemies.splice(index, 1);
+        }
+      }
+
       this.events.emit('bossDefeated', bossType);
       originalDestroy();
     };
   }
-
   // 🎯 보스 등장 연출
   playBossEntrance(bossType) {
     this.cameras.main.shake(500, 0.01);
@@ -600,9 +617,11 @@ export default class GameScene extends Phaser.Scene {
     // 🎯 B키로 보스 스폰 (테스트 또는 실제 로직)
     if (input.isBPressed) {
       if (this.canSpawnBoss()) {
-        this.spawnBoss(this.player.nextJob || 'warrior');
+        // ✅ 임시로 기본 보스 타입 지정 (원하는 보스로 변경 가능)
+        const targetJob = 'assassin'; // 또는 'warrior', 'mage' 등
+        this.spawnBoss(targetJob);
       } else {
-        console.log('⚠️ Cannot spawn boss: conditions not met');
+        console.log('⚠️ Cannot spawn boss: boss already exists or config disabled');
       }
     }
 

@@ -407,7 +407,7 @@ export const MAPS = {
       y: 'bottom',
       offsetY: 200,
     },
-    gravity: 800,
+    gravity: 1000,
     playerScale: 2,
     depths: {
       backgroundStart: 0,
@@ -417,7 +417,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: [],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -431,17 +431,14 @@ export const MAPS = {
       // 스폰 위치 (맵 중앙 추천)
       spawnPosition: {
         x: 'center', // 'center', 'left', 'right', 또는 숫자
-        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        y: '700', // 'center', 'top', 'bottom', 또는 숫자
         offsetX: 0,
         offsetY: -100, // 살짝 위쪽에 스폰
       },
 
       // 전직별 보스 매핑
       jobBossMapping: {
-        warrior: 'fireBoss',
-        mage: 'iceBoss',
-        archer: 'windBoss',
-        assassin: 'shadowBoss',
+        assassin: 'assassin_boss',
       },
     },
     portals: generateMapPortals('temple_1'),

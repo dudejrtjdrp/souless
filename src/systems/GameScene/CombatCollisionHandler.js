@@ -8,9 +8,15 @@ export default class CombatCollisionHandler {
       return;
     }
 
+    // ✅ 일반 몬스터 체크
     this.scene.enemyManager.enemies.forEach((enemy) => {
       this.checkEnemyCollision(enemy);
     });
+
+    // ✅ 보스 체크 추가
+    if (this.scene.currentBoss && !this.scene.currentBoss.isDead) {
+      this.checkEnemyCollision(this.scene.currentBoss);
+    }
   }
 
   canCheckCollisions() {

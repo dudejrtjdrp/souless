@@ -15,7 +15,6 @@ export default class EnemyAttackSystem {
   attack(player, onComplete) {
     // ✅ 콜백 파라미터 추가
     if (this._isExecuting) {
-      console.log('asd');
       return;
     }
 
@@ -63,9 +62,6 @@ export default class EnemyAttackSystem {
     const healthAfter = player.health;
 
     const actualDamage = healthBefore - healthAfter;
-    console.log(
-      `🩸 ${this.enemy.enemyType}: Dealt ${actualDamage} damage (${healthAfter}/${player.maxHealth} HP)`,
-    );
 
     // UI 업데이트
     if (this.scene.events) {

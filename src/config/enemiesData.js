@@ -204,60 +204,67 @@ export const EnemiesData = {
       },
     },
   },
-  fireBoss: {
+  assassin_boss: {
     type: 'boss',
 
     sprite: {
-      frameWidth: 128,
-      frameHeight: 128,
-      scale: 2,
-      flipX: false,
+      frameWidth: 48,
+      frameHeight: 48,
+      scale: 4,
+      flipX: true,
     },
 
     physics: {
-      width: 100,
-      height: 80,
+      width: 20,
+      height: 32,
       collideWorldBounds: true,
       offsetX: 14,
-      offsetY: 40,
+      offsetY: 16,
     },
 
     stats: {
       maxHP: 500,
       speed: { min: 50, max: 50 },
+      runSpeed: 120,
       patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
       expReward: 100,
       damageCooldown: 300,
     },
 
     assets: {
-      idle: '/assets/enemy/boss/fire/Fire_Boss_Idle.png',
-      hit: '/assets/enemy/boss/fire/Fire_Boss_Hit.png',
-      death: '/assets/enemy/boss/fire/Fire_Boss_Death.png',
-      attack: '/assets/enemy/boss/fire/Fire_Boss_Attack.png',
-      skill1: '/assets/enemy/boss/fire/Fire_Boss_Skill1.png',
-      skill2: '/assets/enemy/boss/fire/Fire_Boss_Skill2.png',
+      idle: '/assets/boss/assassin_boss/assassin_boss.png',
+      walk: '/assets/boss/assassin_boss/assassin_boss.png',
+      run: '/assets/boss/assassin_boss/assassin_boss.png',
+      hit: '/assets/boss/assassin_boss/assassin_boss.png',
+      death: '/assets/boss/assassin_boss/assassin_boss.png',
+      attack: '/assets/boss/assassin_boss/assassin_boss.png',
+      skill1: '/assets/boss/assassin_boss/assassin_boss.png',
+      skill2: '/assets/boss/assassin_boss/assassin_boss.png',
     },
 
     animations: {
-      idle: { start: 0, end: 5, frameRate: 8, repeat: -1 },
-      hit: { start: 0, end: 2, frameRate: 10, repeat: 0 },
-      death: { start: 0, end: 9, frameRate: 10, repeat: 0 },
-      attack: { start: 0, end: 7, frameRate: 10, repeat: 0 },
+      idle: { start: 0, end: 8, frameRate: 9, repeat: -1 },
+      walk: { start: 9, end: 16, frameRate: 8, repeat: -1 },
+      run: { start: 9, end: 16, frameRate: 14, repeat: -1 },
+      hit: { start: 18, end: 20, frameRate: 2, repeat: 0 },
+      death: { start: 72, end: 78, frameRate: 10, repeat: 0 },
+      attack: { start: 63, end: 70, frameRate: 10, repeat: 0 },
       skill1: { start: 0, end: 9, frameRate: 10, repeat: 0 },
       skill2: { start: 0, end: 11, frameRate: 10, repeat: 0 },
     },
 
     ai: {
       type: 'boss',
-      detectRange: 500,
+      detectRange: 1200,
       attack: {
         range: 100,
         damage: 15,
+        walkRange: 1200, // 이 거리 이상이면 걷기
+        runRange: 500, // 이 거리 미만이면 달리기
         cooldown: 2000,
         hitDelay: 300,
       },
-      skillCooldown: 3000, // BossController에서 사용
+      skillCooldown: 1000, // BossController에서 사용
       skillNames: ['fireSlash', 'meteorStrike'], // BossController에서 랜덤 선택
       skills: [
         {

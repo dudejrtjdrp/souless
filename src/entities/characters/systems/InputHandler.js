@@ -15,6 +15,7 @@ export default class InputHandler {
       e: scene.input.keyboard.addKey('E'), // 명상
       r: scene.input.keyboard.addKey('R'), // 특수
       s: scene.input.keyboard.addKey('S'), // 보조
+      b: scene.input.keyboard.addKey('B'),
       backQuote: scene.input.keyboard.addKey('BACKTICK'), // ` 키
       tab: scene.input.keyboard.addKey('TAB'), // Tab 키
       l: scene.input.keyboard.addKey('L'), // L 키
@@ -78,6 +79,7 @@ export default class InputHandler {
       'e',
       'r',
       's',
+      'b',
       'backQuote',
       'tab',
       'l',
@@ -110,6 +112,7 @@ export default class InputHandler {
       isEPressed: keysPressed.e,
       isRPressed: keysPressed.r,
       isSPressed: keysPressed.s,
+      isBPressed: keysPressed.b,
       isBackQuotePressed: keysPressed.backQuote,
       isTabPressed: keysPressed.tab,
       isLPressed: keysPressed.l,
@@ -127,6 +130,7 @@ export default class InputHandler {
       isEReleased: keysReleased.e,
       isRReleased: keysReleased.r,
       isSReleased: keysReleased.s,
+      isBReleased: keysReleased.b,
       isBackQuoteReleased: keysReleased.backQuote,
       isTabReleased: keysReleased.tab,
       isLReleased: keysReleased.l,
@@ -144,6 +148,7 @@ export default class InputHandler {
       isEHeld: keysHeld.e,
       isRHeld: keysHeld.r,
       isSHeld: keysHeld.s,
+      isBHeld: keysHeld.b,
       isBackQuoteHeld: keysHeld.backQuote,
       isTabHeld: keysHeld.tab,
       isLHeld: keysHeld.l,
@@ -172,6 +177,7 @@ export default class InputHandler {
       isEPressed: false,
       isRPressed: false,
       isSPressed: false,
+      isBPressed: false,
       isBackQuotePressed: false,
       isTabPressed: false,
       isLPressed: false,
@@ -189,6 +195,7 @@ export default class InputHandler {
       isEReleased: false,
       isRReleased: false,
       isSReleased: false,
+      isBReleased: false,
       isBackQuoteReleased: false,
       isTabReleased: false,
       isLReleased: false,
@@ -206,6 +213,7 @@ export default class InputHandler {
       isEHeld: state.e,
       isRHeld: state.r,
       isSHeld: state.s,
+      isBHeld: state.s,
       isBackQuoteHeld: state.backQuote,
       isTabHeld: state.tab,
       isLHeld: state.l,

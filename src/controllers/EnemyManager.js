@@ -15,6 +15,7 @@ export default class EnemyManager {
     this.player = player;
     this.enemies = [];
     this.lastSpawnTime = 0;
+    this.isSpawningPaused = false; // ✅ 추가
 
     const worldBounds = scene.physics.world.bounds;
     this.spawnMinX = 50;
@@ -26,6 +27,18 @@ export default class EnemyManager {
     } else {
       this.spawnY = mapConfig.enemies.yFixed;
     }
+  }
+
+  // ✅ 스폰 일시 중지
+  pauseSpawning() {
+    this.isSpawningPaused = true;
+    console.log('🛑 Enemy spawning paused');
+  }
+
+  // ✅ 스폰 재개
+  resumeSpawning() {
+    this.isSpawningPaused = false;
+    console.log('▶️ Enemy spawning resumed');
   }
 
   createInitial() {
@@ -57,6 +70,9 @@ export default class EnemyManager {
       }
       return true;
     });
+
+    // ✅ 스폰이 일시 중지되었으면 리젠 스킵
+    if (this.isSpawningPaused) return;
 
     // 리젠
     if (this.enemies.length < maxCount && time - this.lastSpawnTime > respawnInterval) {

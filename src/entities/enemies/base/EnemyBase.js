@@ -23,6 +23,7 @@ export default class EnemyBase {
     this.maxHP = stats.maxHP;
     this.hp = this.maxHP;
     this.speed = Phaser.Math.Between(stats.speed.min, stats.speed.max);
+    this.runSpeed = stats.runSpeed || this.speed * 2; // ✅ 추가
     this.patrolRangeX = Phaser.Math.Between(stats.patrolRange.min, stats.patrolRange.max);
     this.expReward = stats.expReward;
     this.damageCooldown = stats.damageCooldown || 300;
@@ -31,7 +32,6 @@ export default class EnemyBase {
     this.isDead = false;
     this.lastDamageTime = 0;
     this.direction = direction;
-
     // === 스프라이트 생성 ===
     const spriteKey = `${enemyType}_idle`;
     if (!scene.textures.exists(spriteKey)) {
@@ -67,6 +67,13 @@ export default class EnemyBase {
 
     this.sprite.body.setOffset(offsetX, offsetY);
 
+    this.sprite.body.setVelocityX(this.speed * this.direction);
+    console.log(this.data.sprite.scale);
+
+    const colliderTop = scene.physics.world.bounds.height - 200;
+    const spriteY = colliderTop - physics.height * this.data.sprite.scale;
+
+    this.sprite.y = spriteY;
     // === HP바 ===
     const hpBarWidth = physics.width;
     this.hpBar = scene.add.rectangle(x, y - physics.height / 2 - 10, hpBarWidth, 5, 0x00ff00);
@@ -112,6 +119,7 @@ export default class EnemyBase {
     }
 
     // 컨트롤러 설정 (AI 타입별)
+
     if (aiConfig.type === 'boss') {
       this.controller = new BossController(this, {
         attackRange: attackRange,
@@ -119,6 +127,8 @@ export default class EnemyBase {
         attackCooldown: aiConfig.attack?.cooldown || 1500,
         skillCooldown: aiConfig.skillCooldown || 3000,
         skills: aiConfig.skillNames || [],
+        walkRange: aiConfig.walkRange || 200, // ✅ 추가
+        runRange: aiConfig.runRange || 200, // ✅ 추가
       });
     } else if (aiConfig.type === 'aggressive' || aiConfig.type === 'patrol') {
       this.controller = new EnemyController(this, {
@@ -174,6 +184,30 @@ export default class EnemyBase {
     // 모든 assets 키(idle, hit, death, attack 등)를 순회하며 로드
     Object.entries(assets).forEach(([key, path]) => {
       scene.load.spritesheet(`${enemyType}_${key}`, path, { frameWidth, frameHeight });
+    });
+
+    scene.load.once('complete', () => {
+      console.log(`✅ All assets loaded for ${enemyType}`);
+
+      // 실제로 텍스처가 존재하는지 확인
+      Object.keys(assets).forEach((key) => {
+        const textureKey = `${enemyType}_${key}`;
+        if (scene.textures.exists(textureKey)) {
+          console.log(`✅ Texture exists: ${textureKey}`);
+        } else {
+          console.error(`❌ Texture missing: ${textureKey}`);
+        }
+      });
+    });
+
+    // 개별 파일 로드 완료
+    scene.load.on('filecomplete', (key, type, data) => {
+      console.log(`✅ File loaded: ${key}`);
+    });
+
+    // 로드 에러
+    scene.load.on('loaderror', (file) => {
+      console.error(`❌ Load error: ${file.key} from ${file.url}`);
     });
   }
 

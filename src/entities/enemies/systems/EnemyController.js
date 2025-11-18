@@ -128,10 +128,6 @@ export default class EnemyController {
       return;
     }
 
-    console.log(
-      `🔥 ${this.enemy.enemyType} initiating attack! Cooldown: ${timeSinceLastAttack.toFixed(0)}ms`,
-    );
-
     this.lastAttackTime = time;
     this.isInAttackState = true;
 
