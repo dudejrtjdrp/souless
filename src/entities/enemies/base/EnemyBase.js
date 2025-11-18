@@ -99,27 +99,25 @@ export default class EnemyBase {
       return;
     }
 
-    // 공격 범위 통일
     const attackRange = aiConfig.attack?.range || 70;
 
-    // 공격 시스템 설정
+    // 공격 시스템
     if (aiConfig.attack) {
       this.attackSystem = new EnemyAttackSystem(this, this.scene, {
         range: attackRange,
         damage: aiConfig.attack.damage || 10,
         cooldown: aiConfig.attack.cooldown || 1500,
         hitDelay: aiConfig.attack.hitDelay || 200,
-        animationKey: aiConfig.attack.animationKey || `${this.enemyType}_attack`,
+        animationKey: `${this.enemyType}_attack`,
       });
     }
 
-    // 스킬 시스템 설정 (있는 경우)
+    // ✅ 플레이어와 동일한 스킬 시스템
     if (aiConfig.skills && aiConfig.skills.length > 0) {
       this.skillSystem = new EnemySkillSystem(this, this.scene, aiConfig.skills);
     }
 
-    // 컨트롤러 설정 (AI 타입별)
-
+    // 컨트롤러
     if (aiConfig.type === 'boss') {
       this.controller = new BossController(this, {
         attackRange: attackRange,
@@ -127,8 +125,8 @@ export default class EnemyBase {
         attackCooldown: aiConfig.attack?.cooldown || 1500,
         skillCooldown: aiConfig.skillCooldown || 3000,
         skills: aiConfig.skillNames || [],
-        walkRange: aiConfig.walkRange || 200, // ✅ 추가
-        runRange: aiConfig.runRange || 200, // ✅ 추가
+        walkRange: aiConfig.attack?.walkRange || 1200,
+        runRange: aiConfig.attack?.runRange || 500,
       });
     } else if (aiConfig.type === 'aggressive' || aiConfig.type === 'patrol') {
       this.controller = new EnemyController(this, {
@@ -136,8 +134,6 @@ export default class EnemyBase {
         detectRange: aiConfig.detectRange || 200,
         attackCooldown: aiConfig.attack?.cooldown || 1500,
       });
-    } else {
-      console.warn(`⚠️ Unknown AI type for ${this.enemyType}: ${aiConfig.type}`);
     }
   }
 
@@ -232,6 +228,11 @@ export default class EnemyBase {
         }
         this.sprite.body.setVelocityX(this.speed * this.direction);
       }
+    }
+
+    // ✅ 스킬 시스템 업데이트
+    if (this.skillSystem) {
+      this.skillSystem.update(delta);
     }
 
     // === 방향 flip ===
@@ -370,6 +371,10 @@ export default class EnemyBase {
   destroy() {
     if (this.sprite) this.sprite.destroy();
     if (this.hpBar) this.hpBar.destroy();
+
+    if (this.skillSystem) {
+      this.skillSystem.destroy();
+    }
   }
 
   // === Getter 프로퍼티 ===

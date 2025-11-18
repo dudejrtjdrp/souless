@@ -256,65 +256,195 @@ export const EnemiesData = {
     ai: {
       type: 'boss',
       detectRange: 1200,
+
       attack: {
         range: 100,
         damage: 15,
-        walkRange: 1200, // 이 거리 이상이면 걷기
-        runRange: 500, // 이 거리 미만이면 달리기
+        walkRange: 1200,
+        runRange: 500,
         cooldown: 2000,
         hitDelay: 300,
       },
-      skillCooldown: 1000, // BossController에서 사용
-      skillNames: ['fireSlash', 'meteorStrike'], // BossController에서 랜덤 선택
-      skills: [
-        {
-          name: 'fireSlash',
+
+      skillCooldown: 4000,
+      skillNames: ['fireSlash', 'meteorStrike', 'shadowDash'],
+
+      // ✅ 객체 형태 (플레이어와 동일)
+      skills: {
+        fireSlash: {
           type: 'melee',
-          animationKey: 'fireBoss_skill1',
+          animation: 'skill1',
           damage: 25,
           range: 150,
-          cooldown: 4000,
+          cooldown: 5000,
           hitDelay: 400,
+          duration: 800,
           priority: 2,
+
+          hitbox: {
+            width: 150,
+            height: 80,
+            offsetX: 75,
+            offsetY: 0,
+            duration: 300,
+          },
+
+          impactEffect: 'slash_impact',
+          hitstop: 'medium',
+          knockback: { x: 200, y: -100 },
+          targetType: 'single',
         },
-        {
-          name: 'meteorStrike',
+
+        meteorStrike: {
           type: 'aoe',
-          animationKey: 'fireBoss_skill2',
+          animation: 'skill2',
           damage: 30,
           range: 300,
-          cooldown: 6000,
-          hitDelay: 600,
+          cooldown: 8000,
+          hitDelay: 800,
+          duration: 1500,
           priority: 3,
-          createAoE: (enemy, player, scene) => {
-            // AOE 이펙트 생성 로직
-            const aoeRadius = 150;
-            const aoeGraphics = scene.add.circle(
-              player.sprite.x,
-              player.sprite.y,
-              aoeRadius,
-              0xff0000,
-              0.3,
-            );
+          hpThreshold: 0.5, // 체력 50% 이하
 
-            scene.time.delayedCall(500, () => {
-              const dist = Phaser.Math.Distance.Between(
-                player.sprite.x,
-                player.sprite.y,
-                aoeGraphics.x,
-                aoeGraphics.y,
-              );
-              if (dist <= aoeRadius) {
-                player.takeDamage(30);
-              }
-              aoeGraphics.destroy();
-            });
+          hitbox: {
+            width: 300,
+            height: 300,
+            offsetX: 0,
+            offsetY: 0,
+            duration: 500,
+            shape: 'circle',
+          },
+
+          aoeRadius: 150,
+          impactEffect: 'meteor_explosion',
+          hitstop: 'heavy',
+          targetType: 'multi',
+
+          // ✅ 함수 대신 설정값으로 처리
+          visualEffect: {
+            type: 'warning_then_explosion',
+            warningDuration: 800,
+            warningColor: 0xff0000,
+            explosionColor: 0xff4500,
+            shake: { duration: 200, intensity: 0.005 },
           },
         },
-      ],
+
+        shadowDash: {
+          type: 'movement',
+          animation: 'attack',
+          damage: 20,
+          range: 250,
+          cooldown: 6000,
+          hitDelay: 100,
+          duration: 600,
+          priority: 1,
+
+          hitbox: {
+            width: 120,
+            height: 60,
+            offsetX: 60,
+            offsetY: 0,
+            duration: 500,
+          },
+
+          impactEffect: 'dash_trail',
+          hitstop: 'light',
+          knockback: { x: 300, y: 0 },
+          targetType: 'multi',
+
+          // ✅ 대시 설정
+          movement: {
+            type: 'dash',
+            speed: 500,
+            duration: 500,
+            afterimage: true,
+            afterimageCount: 3,
+          },
+        },
+
+        // 콤보 스킬 예시
+        tripleSlash: {
+          type: 'instant',
+          animation: 'attack',
+          cooldown: 7000,
+          hitDelay: 300,
+          duration: 1200,
+          priority: 2,
+          range: 150,
+
+          // ✅ 히트박스 시퀀스 (플레이어와 동일)
+          hitboxSequence: [
+            {
+              delay: 0,
+              hitbox: {
+                width: 100,
+                height: 70,
+                offsetX: 50,
+                offsetY: 0,
+                duration: 200,
+              },
+              damage: 15,
+            },
+            {
+              delay: 300,
+              hitbox: {
+                width: 120,
+                height: 80,
+                offsetX: 60,
+                offsetY: 0,
+                duration: 200,
+              },
+              damage: 15,
+            },
+            {
+              delay: 600,
+              hitbox: {
+                width: 150,
+                height: 90,
+                offsetX: 75,
+                offsetY: 0,
+                duration: 300,
+              },
+              damage: 20,
+            },
+          ],
+
+          impactEffect: 'slash_combo',
+          hitstop: 'combo',
+          knockback: { x: 400, y: -150 },
+          targetType: 'multi',
+        },
+
+        // 버프 스킬 예시
+        berserkerMode: {
+          type: 'buff',
+          animation: 'idle',
+          range: Infinity,
+          cooldown: 20000,
+          duration: 5000,
+          priority: 4,
+          hpThreshold: 0.3, // 체력 30% 이하
+
+          // ✅ 버프 효과
+          buffs: {
+            speed: 1.5, // 속도 1.5배
+            defense: 0.5, // 받는 데미지 50%
+            attackSpeed: 1.3, // 공격속도 1.3배
+          },
+
+          // 버프 시각 효과
+          visualEffect: {
+            type: 'aura',
+            color: 0xff0000,
+            alpha: 0.3,
+            scale: 1.2,
+            pulse: true,
+          },
+        },
+      },
     },
   },
-
   // 예시: 얼음 보스 (마법사 전직용)
   iceBoss: {
     type: 'boss',

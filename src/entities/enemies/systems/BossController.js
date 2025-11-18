@@ -6,27 +6,25 @@ export default class BossController extends EnemyController {
 
     this.skillCooldown = config.skillCooldown || 3000;
     this.lastSkillTime = 0;
-    this.skills = config.skills || [];
+    this.skillNames = config.skills || [];
 
-    // ✅ 추가: 이동 관련 설정
-    this.walkSpeed = enemy.speed; // 기본 속도 (걷기)
+    // 이동 설정
+    this.walkSpeed = enemy.speed;
     this.runSpeed = enemy.data.stats.runSpeed || enemy.speed * 2;
-    this.walkRange = config.walkRange || 200; // 걷기 범위
-    this.runRange = config.runRange || 200; // 달리기 범위
+    this.walkRange = config.walkRange || 200;
+    this.runRange = config.runRange || 200;
 
-    this.currentMoveState = 'walk'; // 현재 이동 상태
+    this.currentMoveState = 'walk';
+    this.isUsingSkill = false;
   }
 
   update(time, delta) {
-    // 타겟 찾기
     this.findTarget();
 
     if (!this.target) {
-      // ✅ 타겟 없으면 idle
       if (this.currentMoveState !== 'idle') {
         this.setMoveState('idle');
       }
-      // ✅ 속도도 0으로
       if (this.enemy.sprite.body) {
         this.enemy.sprite.body.setVelocityX(0);
         this.enemy.sprite.body.setVelocityY(0);
@@ -34,7 +32,6 @@ export default class BossController extends EnemyController {
       return;
     }
 
-    // 타겟과의 거리 계산
     const targetX = this.target.sprite ? this.target.sprite.x : this.target.x;
     const targetY = this.target.sprite ? this.target.sprite.y : this.target.y;
     const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
@@ -44,6 +41,11 @@ export default class BossController extends EnemyController {
     const sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
     const realDist = dist - sizeOffset;
 
+    // 스킬 사용 중이면 이동 제한
+    if (this.isUsingSkill) {
+      return;
+    }
+
     // 공격 범위 내
     if (realDist <= this.attackRange) {
       if (this.enemy.sprite.body) {
@@ -51,21 +53,20 @@ export default class BossController extends EnemyController {
         this.enemy.sprite.body.setVelocityY(0);
       }
 
-      // ✅ 공격 중이 아니면 idle
       if (this.currentMoveState !== 'idle' && !this.isInAttackState) {
         this.setMoveState('idle');
       }
 
       this.tryAttack(time);
     }
-    // 달리기 범위 (가까움)
+    // 달리기 범위
     else if (realDist <= this.runRange) {
       if (!this.isInAttackState) {
         this.setMoveState('run');
         this.moveTowardTarget(targetX, targetY, this.runSpeed);
       }
     }
-    // 걷기 범위 (보통)
+    // 걷기 범위
     else if (dist <= this.detectRange) {
       if (!this.isInAttackState) {
         this.setMoveState('walk');
@@ -84,16 +85,13 @@ export default class BossController extends EnemyController {
       this.target = null;
     }
 
-    // 스킬 사용
+    // 스킬 사용 시도
     const timeSinceLastSkill = time - this.lastSkillTime;
     if (this.target && timeSinceLastSkill >= this.skillCooldown) {
-      this.castRandomSkill(time);
+      this.tryUseSkill(time);
     }
   }
 
-  /**
-   * ✅ 새 메서드: 이동 상태 변경 및 애니메이션 재생
-   */
   setMoveState(state) {
     if (this.currentMoveState === state) return;
 
@@ -105,9 +103,6 @@ export default class BossController extends EnemyController {
     }
   }
 
-  /**
-   * ✅ 새 메서드: 타겟을 향해 이동 (속도 지정 가능)
-   */
   moveTowardTarget(targetX, targetY, speed) {
     if (this.enemy.isDead || !this.enemy.sprite.body) return;
 
@@ -119,19 +114,75 @@ export default class BossController extends EnemyController {
     );
 
     this.enemy.sprite.body.setVelocityX(Math.cos(angle) * speed);
-
-    // ✅ 방향 설정 (중요!)
     this.enemy.direction = Math.cos(angle) > 0 ? 1 : -1;
   }
 
-  castRandomSkill(time) {
-    if (!this.skills || this.skills.length === 0) {
-      console.warn('⚠️ No skills available for', this.enemy.enemyType);
+  /**
+   * 스킬 사용 시도
+   */
+  tryUseSkill(time) {
+    if (!this.enemy.skillSystem) {
+      console.warn('⚠️ No skill system for', this.enemy.enemyType);
       return;
     }
 
-    const skillName = Phaser.Utils.Array.GetRandom(this.skills);
-    this.enemy.castSkill(skillName);
-    this.lastSkillTime = time;
+    // ✅ getUsableSkills가 Skill 객체 배열을 반환함
+    const usableSkills = this.enemy.skillSystem.getUsableSkills(this.target);
+
+    if (usableSkills.length === 0) {
+      return;
+    }
+
+    // skillNames 필터링
+    let availableSkills = usableSkills;
+    if (this.skillNames.length > 0) {
+      availableSkills = usableSkills.filter((skill) => {
+        // ✅ Skill 객체에서 이름 가져오기
+        const skillName = skill.name || skill.config?.name;
+        return this.skillNames.includes(skillName);
+      });
+    }
+
+    if (availableSkills.length === 0) {
+      return;
+    }
+
+    // 우선순위 정렬
+    availableSkills.sort((a, b) => {
+      const priorityA = a.config?.priority || 0;
+      const priorityB = b.config?.priority || 0;
+      return priorityB - priorityA;
+    });
+
+    // 상위 2개 중 랜덤 선택
+    const topSkills = availableSkills.slice(0, Math.min(2, availableSkills.length));
+    const selectedSkill = Phaser.Utils.Array.GetRandom(topSkills);
+
+    // ✅ Skill 객체에서 이름 추출
+    const skillName = selectedSkill.name || selectedSkill.config?.name;
+
+    // 스킬 실행
+    this.isUsingSkill = true;
+
+    // ✅ useSkill 메서드 호출 (올바른 메서드)
+    const success = this.enemy.skillSystem.useSkill(skillName, this.target);
+
+    if (success) {
+      this.lastSkillTime = time;
+      console.log(`🔥 Boss used skill: ${skillName}`);
+
+      // 스킬 지속 시간 계산
+      const config = selectedSkill.config;
+      const hitDelay = config?.hitDelay || 300;
+      const duration = config?.duration || 1000;
+      const totalTime = hitDelay + duration;
+
+      // 스킬 종료 후 플래그 해제
+      this.enemy.scene.time.delayedCall(totalTime, () => {
+        this.isUsingSkill = false;
+      });
+    } else {
+      this.isUsingSkill = false;
+    }
   }
 }
