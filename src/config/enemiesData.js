@@ -5,14 +5,16 @@ export const EnemiesData = {
     sprite: {
       frameWidth: 64,
       frameHeight: 64,
-      scale: 1.2,
+      scale: 1.5,
       flipX: false,
     },
 
     physics: {
-      width: 32,
-      height: 24,
+      width: 20,
+      height: 20,
       collideWorldBounds: true,
+      offsetX: 22, // 직접 조정
+      offsetY: 30, // 직접 조정
     },
 
     stats: {
@@ -42,7 +44,7 @@ export const EnemiesData = {
       detectRange: 180,
       attack: {
         range: 60,
-        damage: 8,
+        damage: 1,
         cooldown: 1800,
         hitDelay: 200,
       },
@@ -60,9 +62,11 @@ export const EnemiesData = {
     },
 
     physics: {
-      width: 40,
-      height: 40,
+      width: 60,
+      height: 30,
       collideWorldBounds: true,
+      offsetX: 0, // 직접 조정
+      offsetY: 30, // 직접 조정
     },
 
     stats: {
@@ -77,14 +81,14 @@ export const EnemiesData = {
       idle: '/assets/enemy/canine/Canine_White_Run.png',
       hit: '/assets/enemy/canine/Canine_White_Hit.png',
       death: '/assets/enemy/canine/Canine_White_Death.png',
-      attack: '/assets/enemy/canine/Canine_White_Hit.png',
+      attack: '/assets/enemy/canine/Canine_White_Attack.png',
     },
 
     animations: {
       idle: { start: 0, end: 5, frameRate: 8, repeat: -1 },
       hit: { start: 0, end: 2, frameRate: 10, repeat: 0 },
       death: { start: 0, end: 7, frameRate: 10, repeat: 0 },
-      attack: { start: 0, end: 4, frameRate: 10, repeat: 0 },
+      attack: { start: 0, end: 7, frameRate: 10, repeat: 0 },
     },
 
     ai: {
@@ -92,7 +96,7 @@ export const EnemiesData = {
       detectRange: 200,
       attack: {
         range: 70,
-        damage: 12,
+        damage: 1,
         cooldown: 1500,
         hitDelay: 200,
       },
@@ -105,13 +109,13 @@ export const EnemiesData = {
     sprite: {
       frameWidth: 64,
       frameHeight: 64,
-      scale: 1.5,
+      scale: 1.8,
       flipX: false,
     },
 
     physics: {
-      width: 30,
-      height: 25,
+      width: 25,
+      height: 20,
       collideWorldBounds: true,
     },
 
@@ -127,7 +131,7 @@ export const EnemiesData = {
       idle: '/assets/enemy/bat/Bat_Spiked_Idle.png',
       hit: '/assets/enemy/bat/Bat_Spiked_Hit.png',
       death: '/assets/enemy/bat/Bat_Spiked_Death.png',
-      attack: '/assets/enemy/bat/Bat_Spiked_Hit.png',
+      attack: '/assets/enemy/bat/Bat_Spiked_Attack.png',
     },
 
     animations: {
@@ -142,7 +146,7 @@ export const EnemiesData = {
       detectRange: 250,
       attack: {
         range: 50,
-        damage: 10,
+        damage: 1,
         cooldown: 1200,
         hitDelay: 150,
       },
@@ -155,14 +159,16 @@ export const EnemiesData = {
     sprite: {
       frameWidth: 32,
       frameHeight: 32,
-      scale: 1.5,
+      scale: 2,
       flipX: true,
     },
 
     physics: {
-      width: 30,
-      height: 30,
+      width: 26,
+      height: 15,
       collideWorldBounds: true,
+      offsetX: 5, // 직접 조정
+      offsetY: 18, // 직접 조정
     },
 
     stats: {
@@ -177,7 +183,7 @@ export const EnemiesData = {
       idle: '/assets/enemy/purple_monkey/Purple_Monkey_Idle.png',
       hit: '/assets/enemy/purple_monkey/Purple_Monkey_Hit.png',
       death: '/assets/enemy/purple_monkey/Purple_Monkey_Death.png',
-      attack: '/assets/enemy/purple_monkey/Purple_Monkey_Hit.png',
+      attack: '/assets/enemy/purple_monkey/Purple_Monkey_Attack.png',
     },
 
     animations: {
@@ -192,7 +198,7 @@ export const EnemiesData = {
       detectRange: 200,
       attack: {
         range: 70,
-        damage: 15,
+        damage: 1,
         cooldown: 1500,
         hitDelay: 200,
       },

@@ -5,104 +5,78 @@ export default class EnemyAttackSystem {
 
     this.range = config.range;
     this.damage = config.damage;
-    this.cooldown = config.cooldown;
+    this.cooldown = config.cooldown; // 참고용 (실제 쿨다운은 Controller에서 관리)
     this.hitDelay = config.hitDelay || 200;
-    this.animationKey = config.animationKey || 'attack'; // 'attack' 또는 'hit' 등 접미사만 포함
+    this.animationKey = config.animationKey || 'attack';
 
-    this._canAttack = true;
-
-    console.log(`✅ EnemyAttackSystem created for ${enemy.enemyType}:`, {
-      range: this.range,
-      damage: this.damage,
-      cooldown: this.cooldown,
-    });
-  }
-
-  canAttack(player) {
-    // 1️⃣ 쿨다운 체크
-    if (!this._canAttack) {
-      return false; // 로그 제거 (너무 많음)
-    }
-
-    // 2️⃣ 플레이어 유효성 체크
-    if (!player || player.isDead) {
-      return false;
-    }
-
-    // 3️⃣ 플레이어 위치 안전하게 가져오기
-    const playerX = player.sprite ? player.sprite.x : player.x;
-    const playerY = player.sprite ? player.sprite.y : player.y;
-
-    // 4️⃣ 거리 계산
-    const distance = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
-
-    // ✅ 범위를 약간 넓게: range * 1.2
-    const canAtk = distance <= this.range * 1.2;
-
-    // 5️⃣ 디버깅 로그 (공격 가능할 때만)
-    if (canAtk) {
-      console.log(`🎯 ${this.enemy.enemyType} CAN ATTACK:`, {
-        distance: distance.toFixed(2),
-        range: this.range,
-        effectiveRange: (this.range * 1.2).toFixed(2),
-      });
-    }
-
-    return canAtk;
+    this._isExecuting = false; // 공격 실행 중 플래그
   }
 
   attack(player) {
-    console.log(`⚔️ ${this.enemy.enemyType}: ATTACK EXECUTED!`);
-
-    // 1️⃣ 쿨다운 체크
-    if (!this._canAttack) {
+    // 이미 공격 실행 중이면 스킵
+    if (this._isExecuting) {
       return;
     }
 
-    // 2️⃣ 플레이어 유효성 체크
     if (!player || player.isDead) {
+      console.warn(`⚠️ ${this.enemy.enemyType}: Invalid or dead player`);
       return;
     }
 
-    // 3️⃣ 쿨다운 설정
-    this._canAttack = false;
+    this._isExecuting = true;
 
-    // 4️⃣ 애니메이션 재생
+    // 애니메이션 재생
     if (this.scene.anims.exists(this.animationKey)) {
-      this.enemy.play(this.animationKey, true);
+      this.enemy.sprite.play(this.animationKey, true);
     }
 
-    // 5️⃣ 실제 데미지 타이밍
+    // hitDelay 후 데미지 적용
     this.scene.time.delayedCall(this.hitDelay, () => {
-      if (!player || player.isDead) {
-        return;
-      }
-
-      const playerX = player.sprite ? player.sprite.x : player.x;
-      const playerY = player.sprite ? player.sprite.y : player.y;
-      const distance = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
-
-      // ✅ hitDelay 동안 플레이어가 움직일 수 있으므로 범위를 더 넓게
-      if (distance <= this.range * 1.5) {
-        if (typeof player.takeDamage === 'function') {
-          console.log(`💥 ${this.enemy.enemyType}: Dealing ${this.damage} damage!`);
-          player.takeDamage(this.damage);
-
-          if (this.scene.events) {
-            this.scene.events.emit('player-stats-updated', player);
-          }
-        }
-      } else {
-        console.warn(
-          `⚠️ ${this.enemy.enemyType}: Player escaped (distance: ${distance.toFixed(2)})`,
-        );
-      }
+      this.applyDamage(player);
     });
 
-    // 6️⃣ 쿨다운 리셋
-    this.scene.time.delayedCall(this.cooldown, () => {
-      this._canAttack = true;
-      console.log(`🔓 ${this.enemy.enemyType}: Ready to attack again!`);
+    // 전체 공격 시퀀스 종료 (애니메이션 시간 고려)
+    const totalAttackTime = this.hitDelay + 100; // hitDelay + 약간의 여유
+    this.scene.time.delayedCall(totalAttackTime, () => {
+      this._isExecuting = false;
+
+      // idle 애니메이션 복귀
+      if (!this.enemy.isDead && this.enemy.sprite) {
+        this.enemy.sprite.play(`${this.enemy.enemyType}_idle`);
+      }
     });
+  }
+
+  applyDamage(player) {
+    if (!player || player.isDead) {
+      console.warn(`⚠️ Player invalid during damage application`);
+      return;
+    }
+
+    // 거리 재확인
+    const playerX = player.sprite ? player.sprite.x : player.x;
+    const playerY = player.sprite ? player.sprite.y : player.y;
+
+    const distance = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
+
+    if (distance > this.range * 1.5) {
+      return;
+    }
+
+    // 데미지 적용
+    if (typeof player.takeDamage === 'function') {
+      const healthBefore = player.health;
+      player.takeDamage(this.damage);
+      const healthAfter = player.health;
+
+      const actualDamage = healthBefore - healthAfter;
+
+      // UI 업데이트
+      if (this.scene.events) {
+        this.scene.events.emit('player-stats-updated', player);
+      }
+    } else {
+      console.error(`❌ Player has no takeDamage method!`);
+    }
   }
 }

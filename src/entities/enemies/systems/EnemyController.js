@@ -4,58 +4,62 @@ export default class EnemyController {
 
     this.attackRange = config.attackRange || 70;
     this.detectRange = config.detectRange || 200;
+    this.attackCooldown = config.attackCooldown || 1500;
 
+    this.lastAttackTime = 0; // ⚠️ 변수명 명확하게
     this.target = null;
+    this.isInAttackState = false; // 공격 중 플래그
   }
 
   update(time, delta) {
+    // 1. 매 프레임 타겟을 찾거나 갱신
     this.findTarget();
 
     if (this.target) {
+      // 2. 타겟이 있는 경우: 추적 및 공격
       const targetX = this.target.sprite ? this.target.sprite.x : this.target.x;
       const targetY = this.target.sprite ? this.target.sprite.y : this.target.y;
+
       const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, targetX, targetY);
 
-      // ✅ AttackSystem의 실제 range 사용
-      const effectiveAttackRange = this.enemy.attackSystem
-        ? this.enemy.attackSystem.range
-        : this.attackRange;
-
-      // ✅ 공격 범위를 더 좁게: range * 0.9 (안전 마진)
-      // 이렇게 하면 AttackSystem의 범위 안에 확실히 들어감
-      if (dist <= effectiveAttackRange * 0.9) {
+      // 공격 범위 내인 경우
+      if (dist <= this.attackRange) {
         // 공격 시 완전히 멈춤
         if (this.enemy.sprite.body) {
           this.enemy.sprite.body.setVelocityX(0);
           this.enemy.sprite.body.setVelocityY(0);
         }
-        this.tryAttack();
+
+        // ⚠️ 쿨다운 체크 후 공격
+        this.tryAttack(time);
         return;
       }
 
-      // ✅ 감지 범위 내: 추적 (공격 범위보다 넓게)
-      if (dist <= this.detectRange) {
+      // 추적 범위 내인 경우 (공격 중이 아닐 때만 추적)
+      if (dist <= this.detectRange && !this.isInAttackState) {
         this.enemy.moveToward({ x: targetX, y: targetY });
         return;
       }
     }
 
-    // 타겟이 없는 경우: 패트롤
-    this.patrol();
+    // 3. 타겟이 없는 경우: 패트롤 (공격 중이 아닐 때만)
+    if (!this.isInAttackState) {
+      this.patrol();
+    }
   }
 
   findTarget() {
     const player = this.enemy.scene.player;
 
-    if (!player || player.isDead || !player.sprite) {
+    if (!player || !player.sprite) {
       this.target = null;
       return;
-    } // 플레이어 위치 안전하게 가져오기
+    }
 
     const playerX = player.sprite.x;
     const playerY = player.sprite.y;
 
-    const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY); // 감지 범위 내에 있으면 타겟 설정
+    const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
 
     if (dist <= this.detectRange) {
       this.target = player;
@@ -69,41 +73,71 @@ export default class EnemyController {
     if (!enemy.sprite.body) return;
 
     const leftBound = enemy.startX - enemy.patrolRangeX;
-    const rightBound = enemy.startX + enemy.patrolRangeX; // 1. 현재 속도를 기준으로 방향을 판단하여 유지 (추적 후 복귀 시 자연스러움)
+    const rightBound = enemy.startX + enemy.patrolRangeX;
 
     const currentVelocityX = enemy.sprite.body.velocity.x;
     if (Math.abs(currentVelocityX) > 0) {
       if (Math.abs(currentVelocityX) <= enemy.speed * 1.1) {
         enemy.direction = currentVelocityX > 0 ? 1 : -1;
       }
-    } // 2. 경계에 닿으면 방향 전환
+    }
 
     if (enemy.sprite.x <= leftBound) {
-      enemy.direction = 1; // 오른쪽으로
-      enemy.sprite.x = leftBound + 1; // 겹침 방지
+      enemy.direction = 1;
+      enemy.sprite.x = leftBound + 1;
     } else if (enemy.sprite.x >= rightBound) {
-      enemy.direction = -1; // 왼쪽으로
-      enemy.sprite.x = rightBound - 1; // 겹침 방지
-    } // 3. 설정된 방향으로 속도 적용
+      enemy.direction = -1;
+      enemy.sprite.x = rightBound - 1;
+    }
 
     enemy.sprite.body.setVelocityX(enemy.speed * enemy.direction);
   }
 
-  tryAttack() {
-    // AttackSystem 확인
+  tryAttack(time) {
+    // 🔍 쿨다운 체크 (가장 먼저!)
+    const timeSinceLastAttack = time - this.lastAttackTime;
+    if (timeSinceLastAttack < this.attackCooldown) {
+      // 쿨다운 중일 때는 로그 줄이기 (1초마다만)
+      return;
+    }
+
+    // 🔍 이미 공격 중이면 스킵
+    if (this.isInAttackState) {
+      return;
+    }
+
+    // 🔍 attackSystem 존재 확인
     if (!this.enemy.attackSystem) {
-      console.warn(`⚠️ ${this.enemy.enemyType}: attackSystem not found`);
+      console.warn('⚠️ attackSystem not found on enemy:', this.enemy.enemyType);
       return;
     }
 
-    // Target 확인
-    if (!this.target || this.target.isDead) {
+    // 🔍 target 유효성 확인
+    if (!this.target || !this.target.sprite) {
+      console.warn('⚠️ Invalid target');
       return;
     }
 
-    // AttackSystem의 canAttack()이 내부적으로 범위와 쿨다운을 모두 체크
-    if (this.enemy.attackSystem.canAttack(this.target)) {
-      this.enemy.attackSystem.attack(this.target);
+    // 🔍 거리 재확인
+    const targetX = this.target.sprite.x;
+    const targetY = this.target.sprite.y;
+    const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, targetX, targetY);
+
+    if (dist > this.attackRange * 1.2) {
+      return;
     }
+
+    // ⚠️ 쿨다운 시간 기록 (먼저!)
+    this.lastAttackTime = time;
+    this.isInAttackState = true;
+
+    // 🎯 실제 공격 실행
+    this.enemy.attackSystem.attack(this.target);
+
+    // ⚠️ 공격 애니메이션 시간 + 약간의 여유 후 공격 상태 해제
+    const attackDuration = this.attackCooldown * 0.3; // 쿨다운의 30% 정도
+    this.enemy.scene.time.delayedCall(attackDuration, () => {
+      this.isInAttackState = false;
+    });
   }
 }
