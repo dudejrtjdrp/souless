@@ -1,0 +1,64 @@
+{
+  "name": "souless",
+  "version": "0.1.0",
+  "description": "Souless - Phaser3 + Electron starter",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .",
+    "dev": "concurrently \"yarn dev:vite\" \"yarn dev:electron\"",
+    "build": "vite build",
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.1.0",
+    "electron-builder": "26.0.12",
+    "electron-reload": "^2.0.0-alpha.1",
+    "vite": "^5.3.0",
+    "wait-on": "^9.0.1"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "build": {
+    "appId": "com.mycompany.mygame",
+    "productName": "MyElectronGame",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "main.js",
+      "preload.js"
+    ],
+    "win": {
+      "forceCodeSigning": false,
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png"
+    }
+  }
+}
