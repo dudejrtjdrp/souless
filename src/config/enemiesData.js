@@ -235,6 +235,7 @@ export const EnemiesData = {
       idle: '/assets/boss/assassin_boss/assassin_boss.png',
       walk: '/assets/boss/assassin_boss/assassin_boss.png',
       run: '/assets/boss/assassin_boss/assassin_boss.png',
+      dash: '/assets/boss/assassin_boss/assassin_boss.png',
       hit: '/assets/boss/assassin_boss/assassin_boss.png',
       death: '/assets/boss/assassin_boss/assassin_boss.png',
       attack: '/assets/boss/assassin_boss/assassin_boss.png',
@@ -246,7 +247,8 @@ export const EnemiesData = {
       idle: { start: 0, end: 8, frameRate: 9, repeat: -1 },
       walk: { start: 9, end: 16, frameRate: 8, repeat: -1 },
       run: { start: 9, end: 16, frameRate: 14, repeat: -1 },
-      hit: { start: 18, end: 20, frameRate: 2, repeat: 0 },
+      dash: { start: 9, end: 16, frameRate: 14, repeat: 0 },
+      hit: { start: 18, end: 20, frameRate: 6, repeat: 0 },
       death: { start: 72, end: 78, frameRate: 10, repeat: 0 },
       attack: { start: 63, end: 70, frameRate: 10, repeat: 0 },
       skill1: { start: 0, end: 9, frameRate: 10, repeat: 0 },
@@ -258,102 +260,87 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        range: 100,
-        damage: 15,
-        walkRange: 1200,
-        runRange: 500,
-        cooldown: 2000,
-        hitDelay: 300,
+        attackRange: 80, // 멈추고 공격하는 거리
+        walkRange: 1200, // 걷기 거리 (detectRange보다 작게)
+        runRange: 250, // 달리기 거리
       },
 
-      skillCooldown: 4000,
-      skillNames: ['fireSlash', 'meteorStrike', 'shadowDash'],
+      skillNames: ['attack', 'shadowDash'],
 
-      // ✅ 객체 형태 (플레이어와 동일)
       skills: {
-        fireSlash: {
+        // 단일 히트박스 → hitboxSequence로 변환
+        attack: {
           type: 'melee',
-          animation: 'skill1',
-          damage: 25,
-          range: 150,
-          cooldown: 5000,
-          hitDelay: 400,
-          duration: 800,
+          animation: 'attack',
+          range: 100,
+          cooldown: 1000,
+          hitDelay: 100,
+          duration: 500,
           priority: 2,
+          turnDelay: 200,
 
-          hitbox: {
-            width: 150,
-            height: 80,
-            offsetX: 75,
-            offsetY: 0,
-            duration: 300,
-          },
+          hitboxSequence: [
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 45,
+                offsetY: 40,
+                duration: 200,
+              },
+              damage: 5,
+              knockback: { x: 30, y: 150 },
+            },
+            {
+              delay: 200,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 45,
+                offsetY: 40,
+                duration: 200,
+              },
+              damage: 5,
+              knockback: { x: 30, y: 150 },
+            },
+          ],
 
-          impactEffect: 'slash_impact',
-          hitstop: 'medium',
-          knockback: { x: 200, y: -100 },
+          impactEffect: '',
+          hitstop: 'BOSS_HEAVY',
           targetType: 'single',
         },
 
-        meteorStrike: {
-          type: 'aoe',
-          animation: 'skill2',
-          damage: 30,
-          range: 300,
-          cooldown: 8000,
-          hitDelay: 800,
-          duration: 1500,
-          priority: 3,
-          hpThreshold: 0.5, // 체력 50% 이하
-
-          hitbox: {
-            width: 300,
-            height: 300,
-            offsetX: 0,
-            offsetY: 0,
-            duration: 500,
-            shape: 'circle',
-          },
-
-          aoeRadius: 150,
-          impactEffect: 'meteor_explosion',
-          hitstop: 'heavy',
-          targetType: 'multi',
-
-          // ✅ 함수 대신 설정값으로 처리
-          visualEffect: {
-            type: 'warning_then_explosion',
-            warningDuration: 800,
-            warningColor: 0xff0000,
-            explosionColor: 0xff4500,
-            shake: { duration: 200, intensity: 0.005 },
-          },
-        },
-
+        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
-          animation: 'attack',
-          damage: 20,
-          range: 250,
+          animation: 'dash',
+          range: 350,
           cooldown: 6000,
           hitDelay: 100,
-          duration: 600,
+          duration: 300,
           priority: 1,
+          turnDelay: 200,
 
-          hitbox: {
-            width: 120,
-            height: 60,
-            offsetX: 60,
-            offsetY: 0,
-            duration: 500,
-          },
+          hitboxSequence: [
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 45,
+                offsetY: 40,
+                duration: 100,
+              },
+              damage: 0.2,
+              knockback: { x: 50, y: 0 },
+            },
+          ],
 
-          impactEffect: 'dash_trail',
+          impactEffect: 'fire_knight_w_skill',
           hitstop: 'light',
-          knockback: { x: 300, y: 0 },
           targetType: 'multi',
 
-          // ✅ 대시 설정
           movement: {
             type: 'dash',
             speed: 500,
@@ -362,212 +349,7 @@ export const EnemiesData = {
             afterimageCount: 3,
           },
         },
-
-        // 콤보 스킬 예시
-        tripleSlash: {
-          type: 'instant',
-          animation: 'attack',
-          cooldown: 7000,
-          hitDelay: 300,
-          duration: 1200,
-          priority: 2,
-          range: 150,
-
-          // ✅ 히트박스 시퀀스 (플레이어와 동일)
-          hitboxSequence: [
-            {
-              delay: 0,
-              hitbox: {
-                width: 100,
-                height: 70,
-                offsetX: 50,
-                offsetY: 0,
-                duration: 200,
-              },
-              damage: 15,
-            },
-            {
-              delay: 300,
-              hitbox: {
-                width: 120,
-                height: 80,
-                offsetX: 60,
-                offsetY: 0,
-                duration: 200,
-              },
-              damage: 15,
-            },
-            {
-              delay: 600,
-              hitbox: {
-                width: 150,
-                height: 90,
-                offsetX: 75,
-                offsetY: 0,
-                duration: 300,
-              },
-              damage: 20,
-            },
-          ],
-
-          impactEffect: 'slash_combo',
-          hitstop: 'combo',
-          knockback: { x: 400, y: -150 },
-          targetType: 'multi',
-        },
-
-        // 버프 스킬 예시
-        berserkerMode: {
-          type: 'buff',
-          animation: 'idle',
-          range: Infinity,
-          cooldown: 20000,
-          duration: 5000,
-          priority: 4,
-          hpThreshold: 0.3, // 체력 30% 이하
-
-          // ✅ 버프 효과
-          buffs: {
-            speed: 1.5, // 속도 1.5배
-            defense: 0.5, // 받는 데미지 50%
-            attackSpeed: 1.3, // 공격속도 1.3배
-          },
-
-          // 버프 시각 효과
-          visualEffect: {
-            type: 'aura',
-            color: 0xff0000,
-            alpha: 0.3,
-            scale: 1.2,
-            pulse: true,
-          },
-        },
       },
-    },
-  },
-  // 예시: 얼음 보스 (마법사 전직용)
-  iceBoss: {
-    type: 'boss',
-
-    sprite: {
-      frameWidth: 128,
-      frameHeight: 128,
-      scale: 2,
-      flipX: false,
-    },
-
-    physics: {
-      width: 100,
-      height: 80,
-      collideWorldBounds: true,
-      offsetX: 14,
-      offsetY: 40,
-    },
-
-    stats: {
-      maxHP: 450,
-      speed: { min: 40, max: 40 },
-      patrolRange: { min: 0, max: 0 },
-      expReward: 100,
-      damageCooldown: 300,
-    },
-
-    assets: {
-      idle: '/assets/enemy/boss/ice/Ice_Boss_Idle.png',
-      hit: '/assets/enemy/boss/ice/Ice_Boss_Hit.png',
-      death: '/assets/enemy/boss/ice/Ice_Boss_Death.png',
-      attack: '/assets/enemy/boss/ice/Ice_Boss_Attack.png',
-      skill1: '/assets/enemy/boss/ice/Ice_Boss_Skill1.png',
-      skill2: '/assets/enemy/boss/ice/Ice_Boss_Skill2.png',
-    },
-
-    animations: {
-      idle: { start: 0, end: 5, frameRate: 8, repeat: -1 },
-      hit: { start: 0, end: 2, frameRate: 10, repeat: 0 },
-      death: { start: 0, end: 9, frameRate: 10, repeat: 0 },
-      attack: { start: 0, end: 7, frameRate: 10, repeat: 0 },
-      skill1: { start: 0, end: 9, frameRate: 10, repeat: 0 },
-      skill2: { start: 0, end: 11, frameRate: 10, repeat: 0 },
-    },
-
-    ai: {
-      type: 'boss',
-      detectRange: 500,
-      attack: {
-        range: 80,
-        damage: 12,
-        cooldown: 2000,
-        hitDelay: 300,
-      },
-      skillCooldown: 3500,
-      skillNames: ['iceSpike', 'blizzard'],
-      skills: [
-        {
-          name: 'iceSpike',
-          type: 'projectile',
-          animationKey: 'iceBoss_skill1',
-          damage: 20,
-          range: 400,
-          cooldown: 4000,
-          hitDelay: 400,
-          priority: 2,
-          createProjectile: (enemy, player, scene) => {
-            const projectile = scene.physics.add.sprite(enemy.x, enemy.y, 'iceSpike');
-
-            const angle = Phaser.Math.Angle.Between(
-              enemy.x,
-              enemy.y,
-              player.sprite.x,
-              player.sprite.y,
-            );
-
-            scene.physics.velocityFromRotation(angle, 300, projectile.body.velocity);
-
-            scene.physics.add.overlap(projectile, player.sprite, () => {
-              player.takeDamage(20);
-              projectile.destroy();
-            });
-
-            scene.time.delayedCall(3000, () => {
-              if (projectile) projectile.destroy();
-            });
-          },
-        },
-        {
-          name: 'blizzard',
-          type: 'aoe',
-          animationKey: 'iceBoss_skill2',
-          damage: 15,
-          range: 500,
-          cooldown: 7000,
-          hitDelay: 600,
-          priority: 3,
-          createAoE: (enemy, player, scene) => {
-            // 전체 화면 블리자드
-            for (let i = 0; i < 5; i++) {
-              scene.time.delayedCall(i * 300, () => {
-                const randomX = player.sprite.x + Phaser.Math.Between(-200, 200);
-                const randomY = player.sprite.y + Phaser.Math.Between(-150, 150);
-
-                const ice = scene.add.circle(randomX, randomY, 30, 0x00ffff, 0.5);
-
-                scene.time.delayedCall(200, () => {
-                  const dist = Phaser.Math.Distance.Between(
-                    player.sprite.x,
-                    player.sprite.y,
-                    ice.x,
-                    ice.y,
-                  );
-                  if (dist <= 30) {
-                    player.takeDamage(15);
-                  }
-                  ice.destroy();
-                });
-              });
-            }
-          },
-        },
-      ],
     },
   },
 };

@@ -21,6 +21,9 @@ export default class CharacterBase {
     this.isInvincible = false;
     this.invincibleTimer = null;
 
+    // 넉백 상태 추가
+    this.isKnockedBack = false;
+
     this.activeSkillHitbox = null;
 
     this.initSprite(x, y);
@@ -36,7 +39,6 @@ export default class CharacterBase {
 
   async loadSavedResources() {
     try {
-      // SaveManager -> SaveSlotManager로 변경
       const savedResources = await SaveSlotManager.getCharacterResources(this.characterType);
 
       if (savedResources) {
@@ -55,7 +57,6 @@ export default class CharacterBase {
 
   async saveResources() {
     try {
-      // SaveManager -> SaveSlotManager로 변경
       await SaveSlotManager.saveCharacterResources(this.characterType, this.health, this.mana);
 
       return true;
@@ -107,7 +108,7 @@ export default class CharacterBase {
         x: collisionBox.offset.x / this.config.spriteScale,
         y: collisionBox.offset.y / this.config.spriteScale,
       };
-    } // 2. 공격 히트박스 설정 // 우선순위: skills.attack.hitbox > attackHitbox (레거시) > 기본값
+    }
 
     if (this.config.skills?.attack?.hitbox) {
       const attackHitbox = this.config.skills.attack.hitbox;
@@ -123,13 +124,11 @@ export default class CharacterBase {
       };
       this.config.attackDuration =
         hitboxData.duration || this.config.skills.attack.hitboxDuration || 200;
-    } // 레거시 지원
-    else if (this.config.attackHitbox) {
+    } else if (this.config.attackHitbox) {
       this.config.attackHitboxSize = this.config.attackHitbox.size;
       this.config.attackHitboxOffset = this.config.attackHitbox.offset;
       this.config.attackDuration = this.config.attackHitbox.duration || 200;
-    } // 기본값
-    else {
+    } else {
       this.config.attackHitboxSize = { width: 40, height: 30 };
       this.config.attackHitboxOffset = { x: 30, y: 0 };
       this.config.attackDuration = 200;
@@ -259,6 +258,16 @@ export default class CharacterBase {
 
     this.movement.update();
 
+    // 넉백 중이면 입력 처리 스킵
+    if (this.isKnockedBack) {
+      // 넉백 중에도 애니메이션은 업데이트
+      if (typeof this.onUpdate === 'function') {
+        this.onUpdate(input);
+      }
+      this.renderDebug();
+      return;
+    }
+
     if (!this.stateMachine.isStateLocked()) {
       this.handleInput(input);
       this.updateMovement(input);
@@ -354,19 +363,18 @@ export default class CharacterBase {
   }
 
   async gainExp(amount) {
-    if (amount <= 0) return; // SaveManager -> SaveSlotManager로 변경
+    if (amount <= 0) return;
 
-    await SaveSlotManager.addExp(amount, this.characterType); // GameScene에 이벤트 발생 알림
+    await SaveSlotManager.addExp(amount, this.characterType);
 
     if (this.scene && this.scene.events) {
       this.scene.onExpGained(amount, this.characterType);
-    } // 경험치 획득 이펙트 표시 (선택사항)
+    }
 
     this.showExpGainEffect(amount);
   }
 
   showExpGainEffect(amount) {
-    // 캐릭터 위에 +EXP 텍스트 표시
     const expText = this.scene.add
       .text(this.sprite.x, this.sprite.y - 50, `+${amount} EXP`, {
         fontSize: '16px',
@@ -375,7 +383,7 @@ export default class CharacterBase {
         stroke: '#000000',
         strokeThickness: 3,
       })
-      .setOrigin(0.5); // 위로 떠오르면서 페이드아웃
+      .setOrigin(0.5);
 
     this.scene.tweens.add({
       targets: expText,
@@ -397,7 +405,6 @@ export default class CharacterBase {
     if (this.debugGraphics) this.debugGraphics.destroy();
   }
 
-  // === Getter 프로퍼티 추가 ===
   get x() {
     return this.sprite ? this.sprite.x : 0;
   }

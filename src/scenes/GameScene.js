@@ -263,7 +263,7 @@ export default class GameScene extends Phaser.Scene {
 
     const spawnPos = this.calculateBossSpawnPosition();
 
-    // ✅ collider의 Y 좌표를 전달 (일반 몬스터와 동일하게)
+    // collider의 Y 좌표를 전달 (일반 몬스터와 동일하게)
     const colliderTop = this.physics.world.bounds.height - 200;
     this.currentBoss = new EnemyBase(this, spawnPos.x, colliderTop, bossType, 1);
 
@@ -276,10 +276,10 @@ export default class GameScene extends Phaser.Scene {
         this.currentBoss.hpBar.setDepth(bossDepth + 1);
       }
 
-      // ✅ 보스도 collider와 충돌 처리 추가
+      // 보스도 collider와 충돌 처리 추가
       if (this.mapModel && this.mapModel.addEnemy) {
         this.mapModel.addEnemy(this.currentBoss.sprite);
-        console.log('✅ Boss added to collision system');
+        console.log('Boss added to collision system');
       } else {
         console.warn('⚠️ MapModel not available or addEnemy method missing');
       }
@@ -339,7 +339,7 @@ export default class GameScene extends Phaser.Scene {
     this.currentBoss.destroy = () => {
       const bossType = this.currentBoss.enemyType;
 
-      // ✅ enemyManager 배열에서 제거
+      // enemyManager 배열에서 제거
       if (this.enemyManager) {
         const index = this.enemyManager.enemies.indexOf(this.currentBoss);
         if (index > -1) {
@@ -617,7 +617,7 @@ export default class GameScene extends Phaser.Scene {
     // 🎯 B키로 보스 스폰 (테스트 또는 실제 로직)
     if (input.isBPressed) {
       if (this.canSpawnBoss()) {
-        // ✅ 임시로 기본 보스 타입 지정 (원하는 보스로 변경 가능)
+        // 임시로 기본 보스 타입 지정 (원하는 보스로 변경 가능)
         const targetJob = 'assassin'; // 또는 'warrior', 'mage' 등
         this.spawnBoss(targetJob);
       } else {

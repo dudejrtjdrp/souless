@@ -23,7 +23,7 @@ export default class EnemyBase {
     this.maxHP = stats.maxHP;
     this.hp = this.maxHP;
     this.speed = Phaser.Math.Between(stats.speed.min, stats.speed.max);
-    this.runSpeed = stats.runSpeed || this.speed * 2; // ✅ 추가
+    this.runSpeed = stats.runSpeed || this.speed * 2;
     this.patrolRangeX = Phaser.Math.Between(stats.patrolRange.min, stats.patrolRange.max);
     this.expReward = stats.expReward;
     this.damageCooldown = stats.damageCooldown || 300;
@@ -31,11 +31,12 @@ export default class EnemyBase {
     this.startX = x;
     this.isDead = false;
     this.lastDamageTime = 0;
+    this.isBeingHit = false;
     this.direction = direction;
-    // === 스프라이트 생성 ===
+
     const spriteKey = `${enemyType}_idle`;
     if (!scene.textures.exists(spriteKey)) {
-      console.error(`❌ Texture "${spriteKey}" not found. Did you preload it?`);
+      console.error(`Texture "${spriteKey}" not found. Did you preload it?`);
       this.sprite = scene.add.sprite(x, y, '__MISSING');
       return;
     }
@@ -112,9 +113,18 @@ export default class EnemyBase {
       });
     }
 
-    // ✅ 플레이어와 동일한 스킬 시스템
-    if (aiConfig.skills && aiConfig.skills.length > 0) {
-      this.skillSystem = new EnemySkillSystem(this, this.scene, aiConfig.skills);
+    // 스킬 시스템 (배열 또는 객체 모두 지원)
+    if (aiConfig.skills) {
+      // 배열인지 객체인지 확인
+      const hasSkills = Array.isArray(aiConfig.skills)
+        ? aiConfig.skills.length > 0
+        : Object.keys(aiConfig.skills).length > 0;
+
+      if (hasSkills) {
+        console.log(`🔧 Initializing skill system for ${this.enemyType}`);
+        this.skillSystem = new EnemySkillSystem(this, this.scene, aiConfig.skills);
+        console.log(`Skill system created with ${this.skillSystem.skills.size} skills`);
+      }
     }
 
     // 컨트롤러
@@ -128,12 +138,16 @@ export default class EnemyBase {
         walkRange: aiConfig.attack?.walkRange || 1200,
         runRange: aiConfig.attack?.runRange || 500,
       });
+
+      console.log(`Boss controller created for ${this.enemyType}`);
     } else if (aiConfig.type === 'aggressive' || aiConfig.type === 'patrol') {
       this.controller = new EnemyController(this, {
         attackRange: attackRange,
         detectRange: aiConfig.detectRange || 200,
         attackCooldown: aiConfig.attack?.cooldown || 1500,
       });
+    } else {
+      console.warn(`⚠️ Unknown AI type: ${aiConfig.type}`);
     }
   }
 
@@ -183,13 +197,13 @@ export default class EnemyBase {
     });
 
     scene.load.once('complete', () => {
-      console.log(`✅ All assets loaded for ${enemyType}`);
+      console.log(`All assets loaded for ${enemyType}`);
 
       // 실제로 텍스처가 존재하는지 확인
       Object.keys(assets).forEach((key) => {
         const textureKey = `${enemyType}_${key}`;
         if (scene.textures.exists(textureKey)) {
-          console.log(`✅ Texture exists: ${textureKey}`);
+          console.log(`Texture exists: ${textureKey}`);
         } else {
           console.error(`❌ Texture missing: ${textureKey}`);
         }
@@ -198,7 +212,7 @@ export default class EnemyBase {
 
     // 개별 파일 로드 완료
     scene.load.on('filecomplete', (key, type, data) => {
-      console.log(`✅ File loaded: ${key}`);
+      console.log(`File loaded: ${key}`);
     });
 
     // 로드 에러
@@ -230,14 +244,16 @@ export default class EnemyBase {
       }
     }
 
-    // ✅ 스킬 시스템 업데이트
+    // 스킬 시스템 업데이트
     if (this.skillSystem) {
       this.skillSystem.update(delta);
     }
 
-    // === 방향 flip ===
-    const baseFlip = this.data.sprite.flipX || false;
-    this.sprite.setFlipX(this.direction > 0 ? !baseFlip : baseFlip);
+    // === 방향 flip (🔒 스킬 사용 중이 아닐 때만) ===
+    if (!this.isLockingDirection) {
+      const baseFlip = this.data.sprite.flipX || false;
+      this.sprite.setFlipX(this.direction > 0 ? !baseFlip : baseFlip);
+    }
 
     // === HP바 위치 ===
     this.hpBar.x = this.sprite.x;
@@ -289,6 +305,11 @@ export default class EnemyBase {
    * 스킬 시전 (AI Controller가 호출)
    */
   castSkill(skillName) {
+    // 피격 중이면 스킬 사용 불가
+    if (this.isBeingHit) {
+      return;
+    }
+
     if (!this.skillSystem) return;
 
     const player = this.scene.player;
@@ -346,10 +367,26 @@ export default class EnemyBase {
     const hitKey = `${this.enemyType}_hit`;
     const idleKey = `${this.enemyType}_idle`;
 
+    // 피격 상태 시작
+    this.isBeingHit = true;
+
+    // 이동 정지
+    if (this.sprite.body) {
+      this.sprite.body.setVelocity(0);
+    }
+
     if (this.scene.anims.exists(hitKey)) {
       this.sprite.play(hitKey);
       this.sprite.once(`animationcomplete-${hitKey}`, () => {
+        // 피격 상태 종료
+        this.isBeingHit = false;
+
         if (!this.isDead) this.sprite.play(idleKey);
+      });
+    } else {
+      // 피격 애니메이션이 없으면 짧은 딜레이 후 해제
+      this.scene.time.delayedCall(200, () => {
+        this.isBeingHit = false;
       });
     }
   }

@@ -13,7 +13,7 @@ export default class EnemyAttackSystem {
   }
 
   attack(player, onComplete) {
-    // ✅ 콜백 파라미터 추가
+    // 콜백 파라미터 추가
     if (this._isExecuting) {
       return;
     }
@@ -44,7 +44,7 @@ export default class EnemyAttackSystem {
         this.enemy.sprite.play(`${this.enemy.enemyType}_idle`);
       }
 
-      // ✅ 콜백 호출
+      // 콜백 호출
       if (onComplete) {
         onComplete();
       }

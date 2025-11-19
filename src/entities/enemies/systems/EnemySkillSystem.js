@@ -6,54 +6,38 @@ import HitstopManager from '../../../systems/HitStopManager';
 
 /**
  * 적 전용 스킬 시스템
- * 객체 형태 스킬 지원
+ * 객체 형태 스킬 지원 + hitboxSequence 지원
  */
 export default class EnemySkillSystem {
   constructor(enemy, scene, skillConfigs) {
     this.enemy = enemy;
     this.scene = scene;
 
-    // Core components
+    this.initializeComponents();
+    this.initializeSkills(skillConfigs);
+    this.setupAnimationCompleteListener();
+  }
+
+  initializeComponents() {
     this.skills = new Map();
     this.skillHitboxes = new Map();
+    this.tempSequenceHitboxes = new Map();
 
-    // Managers
-    this.stateLockManager = enemy.stateMachine ? new StateLockManager(enemy.stateMachine) : null;
+    this.stateLockManager = this.enemy.stateMachine
+      ? new StateLockManager(this.enemy.stateMachine)
+      : null;
+    this.animationController = new AnimationController(this.enemy.sprite, this.stateLockManager);
 
-    this.animationController = new AnimationController(enemy.sprite, this.stateLockManager);
-
-    // EffectManager 연동
-    this.effectManager = scene.effectManager;
+    this.effectManager = this.scene.effectManager;
     if (!this.effectManager) {
       console.warn('⚠️ EffectManager not found! Enemy effects disabled.');
     }
 
-    // Hitstop
-    this.hitstopManager = new HitstopManager(scene);
-
-    // ✅ 스킬 초기화 (배열 또는 객체 모두 지원)
-    this.initializeSkills(skillConfigs);
-    this.setupAnimationCompleteListener();
-
-    console.log(`✅ Enemy SkillSystem: ${this.skills.size} skills loaded`);
+    this.hitstopManager = new HitstopManager(this.scene);
   }
 
-  /**
-   * 스킬 초기화 (객체 또는 배열 지원)
-   */
   initializeSkills(skillConfigs) {
-    // ✅ 객체 형태면 배열로 변환
-    let skillArray = [];
-
-    if (Array.isArray(skillConfigs)) {
-      skillArray = skillConfigs;
-    } else if (typeof skillConfigs === 'object') {
-      // 객체를 배열로 변환 { fireSlash: {...} } → [{ name: 'fireSlash', ... }]
-      skillArray = Object.entries(skillConfigs).map(([name, config]) => ({
-        name,
-        ...config,
-      }));
-    }
+    const skillArray = this.convertToSkillArray(skillConfigs);
 
     for (const config of skillArray) {
       if (!config.name) {
@@ -61,36 +45,47 @@ export default class EnemySkillSystem {
         continue;
       }
 
-      // Skill 객체 생성
-      const skill = new Skill(config.name, config);
-      this.skills.set(config.name, skill);
-
-      // 히트박스가 필요한 스킬
-      if (this.needsHitbox(config)) {
-        const hitbox = new SkillHitbox(
-          this.scene,
-          this.enemy.sprite,
-          config.name,
-          config,
-          this.effectManager,
-        );
-        this.skillHitboxes.set(config.name, hitbox);
-      }
+      this.registerSkill(config);
     }
   }
 
-  /**
-   * 히트박스 필요 여부 판단
-   */
+  convertToSkillArray(skillConfigs) {
+    if (Array.isArray(skillConfigs)) {
+      return skillConfigs;
+    }
+
+    if (typeof skillConfigs === 'object') {
+      return Object.entries(skillConfigs).map(([name, config]) => ({
+        name,
+        ...config,
+      }));
+    }
+
+    return [];
+  }
+
+  registerSkill(config) {
+    const skill = new Skill(config.name, config);
+    this.skills.set(config.name, skill);
+
+    if (this.needsHitbox(config)) {
+      const hitbox = new SkillHitbox(
+        this.scene,
+        this.enemy.sprite,
+        config.name,
+        config,
+        this.effectManager,
+      );
+      this.skillHitboxes.set(config.name, hitbox);
+    }
+  }
+
   needsHitbox(config) {
-    const hasHitboxType = ['melee', 'instant', 'aoe'].includes(config.type);
+    const hasHitboxType = ['melee', 'instant', 'aoe', 'movement'].includes(config.type);
     const hasHitboxData = config.hitbox || config.hitboxSequence;
     return hasHitboxType && hasHitboxData;
   }
 
-  /**
-   * 애니메이션 완료 리스너
-   */
   setupAnimationCompleteListener() {
     this.enemy.sprite.on('animationcomplete', (animation) => {
       this.completeSkillByAnimation(animation.key);
@@ -101,52 +96,56 @@ export default class EnemySkillSystem {
     });
   }
 
-  /**
-   * 애니메이션 완료 시 스킬 종료
-   */
   completeSkillByAnimation(animKey) {
     for (const [skillName, skill] of this.skills.entries()) {
-      if (skill.isActive && !skill.isChanneling) {
-        const skillAnimKey = skill.config.animation || skill.config.animationKey;
-        if (!skillAnimKey) continue;
+      if (!this.shouldCompleteSkill(skill, animKey)) continue;
 
-        const enemyType = this.enemy.enemyType;
-        const prefixedKey = `${enemyType}_${skillAnimKey}`;
+      skill.complete();
 
-        if (animKey === skillAnimKey || animKey === prefixedKey) {
-          skill.complete();
-          console.log(`✅ Skill completed: ${skillName}`);
-
-          // idle로 복귀
-          if (!this.enemy.isDead) {
-            this.enemy.sprite.play(`${enemyType}_idle`, true);
-          }
-          break;
-        }
+      this.resetEnemyState();
+      if (this.enemy.controller) {
+        this.enemy.controller.isInAttackState = false;
       }
+      break;
     }
   }
 
-  /**
-   * 애니메이션 프레임레이트 가져오기
-   */
+  shouldCompleteSkill(skill, animKey) {
+    if (!skill.isActive || skill.isChanneling) return false;
+
+    const skillAnimKey = skill.config.animation || skill.config.animationKey;
+    if (!skillAnimKey) return false;
+
+    const prefixedKey = `${this.enemy.enemyType}_${skillAnimKey}`;
+    return animKey === skillAnimKey || animKey === prefixedKey;
+  }
+
+  resetEnemyState() {
+    this.enemy.isLockingDirection = false;
+    this.stopEnemyMovement();
+    if (this.enemy.controller) {
+      this.enemy.controller.isInAttackState = false;
+    }
+  }
+
+  stopEnemyMovement() {
+    if (this.enemy.sprite.body) {
+      this.enemy.sprite.body.setVelocity(0, 0);
+    }
+  }
+
   getAnimationFrameRate(animationKey) {
     const sprite = this.enemy.sprite;
     const animManager = sprite.anims.animationManager;
-    const enemyType = this.enemy.enemyType;
-    const prefixedKey = `${enemyType}_${animationKey}`;
-
+    const prefixedKey = `${this.enemy.enemyType}_${animationKey}`;
     const finalAnimKey = animManager.anims.has(prefixedKey) ? prefixedKey : animationKey;
     const anim = animManager.get(finalAnimKey);
 
     return anim ? anim.frameRate : 10;
   }
 
-  /**
-   * 타겟과의 거리 계산
-   */
   getDistanceToTarget(target) {
-    if (!target || !target.sprite) return Infinity;
+    if (!target?.sprite) return Infinity;
 
     return Phaser.Math.Distance.Between(
       this.enemy.sprite.x,
@@ -156,33 +155,26 @@ export default class EnemySkillSystem {
     );
   }
 
-  /**
-   * 사용 가능한 스킬 목록 반환
-   */
   getUsableSkills(target) {
     if (!target) return [];
 
     const distance = this.getDistanceToTarget(target);
 
-    return Array.from(this.skills.values()).filter((skill) => {
-      if (!skill.canUse(this.enemy)) return false;
-
-      if (skill.config.range && distance > skill.config.range) {
-        return false;
-      }
-
-      if (skill.config.hpThreshold) {
-        const hpPercent = this.enemy.hp / this.enemy.maxHP;
-        if (hpPercent > skill.config.hpThreshold) return false;
-      }
-
-      return true;
-    });
+    return Array.from(this.skills.values()).filter((skill) => this.isSkillUsable(skill, distance));
   }
 
-  /**
-   * 특정 스킬 사용
-   */
+  isSkillUsable(skill, distance) {
+    if (!skill.canUse(this.enemy)) return false;
+    if (skill.config.range && distance > skill.config.range) return false;
+
+    if (skill.config.hpThreshold) {
+      const hpPercent = this.enemy.hp / this.enemy.maxHP;
+      if (hpPercent > skill.config.hpThreshold) return false;
+    }
+
+    return true;
+  }
+
   useSkill(skillName, target) {
     const skill = this.skills.get(skillName);
     if (!skill) {
@@ -190,51 +182,85 @@ export default class EnemySkillSystem {
       return false;
     }
 
-    if (!skill.canUse(this.enemy)) {
+    if (!skill.canUse(this.enemy) || !skill.use(this.enemy)) {
       return false;
     }
 
-    if (!skill.use(this.enemy)) {
-      return false;
-    }
-
-    console.log(`🔥 ${this.enemy.enemyType} uses ${skillName}`);
-
-    // 스킬 실행
     this.executeSkill(skillName, skill.config, target);
     return true;
   }
 
-  /**
-   * 스킬 실행 핵심 로직
-   */
   executeSkill(skillName, config, target) {
-    // 이동 정지
     if (config.type !== 'movement') {
       this.stopEnemyMovement();
     }
 
-    // 프레임레이트 설정
-    if (config.animation || config.animationKey) {
-      const animKey = config.animation || config.animationKey;
-      config.frameRate = this.getAnimationFrameRate(animKey);
+    const turnInfo = this.calculateTurnInfo(target);
+
+    if (turnInfo.needsTurn) {
+      this.executeTurnThenAttack(skillName, config, target, turnInfo);
+    } else {
+      this.executeAttack(skillName, config, target);
+    }
+  }
+
+  calculateTurnInfo(target) {
+    if (!target?.sprite) {
+      return { needsTurn: false, newDirection: this.enemy.direction };
     }
 
-    // 애니메이션 재생
+    const newDirection = target.sprite.x > this.enemy.sprite.x ? 1 : -1;
+    const needsTurn = this.enemy.direction !== newDirection;
+
+    return { needsTurn, newDirection };
+  }
+
+  executeTurnThenAttack(skillName, config, target, turnInfo) {
+    const turnDelay = config.turnDelay || 200;
+
+    this.lockAndTurn(turnInfo.newDirection);
+
+    this.scene.time.delayedCall(turnDelay, () => {
+      this.startSkillAnimation(skillName, config, target);
+    });
+  }
+
+  lockAndTurn(newDirection) {
+    this.enemy.isLockingDirection = true;
+    this.enemy.direction = newDirection;
+
+    const baseFlip = this.enemy.data.sprite.flipX || false;
+    this.enemy.sprite.setFlipX(newDirection > 0 ? !baseFlip : baseFlip);
+  }
+
+  executeAttack(skillName, config, target) {
+    this.enemy.isLockingDirection = true;
+    this.startSkillAnimation(skillName, config, target);
+  }
+
+  startSkillAnimation(skillName, config, target) {
+    this.setAnimationFrameRate(config);
     this.playSkillAnimation(config);
 
-    // hitDelay 후 효과 적용
     const hitDelay = config.hitDelay || 300;
     const skillHitbox = this.skillHitboxes.get(skillName);
 
     this.scene.time.delayedCall(hitDelay, () => {
       this.applySkillEffect(skillName, config, target, skillHitbox);
     });
+
+    if (config.duration && config.type === 'movement') {
+      this.scheduleAutoComplete(skillName, hitDelay + config.duration);
+    }
   }
 
-  /**
-   * 스킬 애니메이션 재생
-   */
+  setAnimationFrameRate(config) {
+    const animKey = config.animation || config.animationKey;
+    if (animKey) {
+      config.frameRate = this.getAnimationFrameRate(animKey);
+    }
+  }
+
   playSkillAnimation(config) {
     const animKey = config.animation || config.animationKey;
     if (!animKey) return;
@@ -248,73 +274,175 @@ export default class EnemySkillSystem {
     }
   }
 
-  /**
-   * 이동 정지
-   */
-  stopEnemyMovement() {
-    if (this.enemy.sprite.body) {
-      this.enemy.sprite.body.setVelocityX(0);
-      this.enemy.sprite.body.setVelocityY(0);
-    }
+  scheduleAutoComplete(skillName, totalDuration) {
+    this.scene.time.delayedCall(totalDuration, () => {
+      const skill = this.skills.get(skillName);
+      if (skill?.isActive) {
+        skill.complete();
+        if (!this.enemy.isDead) {
+          this.enemy.sprite.play(`${this.enemy.enemyType}_idle`, true);
+        }
+        this.resetEnemyState();
+      }
+    });
   }
 
-  /**
-   * 스킬 효과 적용
-   */
   applySkillEffect(skillName, config, target, skillHitbox) {
-    switch (config.type) {
-      case 'melee':
-      case 'instant':
-        if (skillHitbox) {
-          skillHitbox.activate();
-        } else {
-          this.handleDirectMelee(config, target);
-        }
-        break;
+    const handlers = {
+      melee: () => this.handleMeleeSkill(skillName, config, target, skillHitbox),
+      instant: () => this.handleMeleeSkill(skillName, config, target, skillHitbox),
+      projectile: () => config.createProjectile?.(this.enemy, target, this.scene),
+      aoe: () => this.handleAoeSkill(skillName, config, target, skillHitbox),
+      buff: () => this.handleBuffSkill(config),
+      movement: () => this.handleMovementSkill(skillName, config, target, skillHitbox),
+    };
 
-      case 'projectile':
-        if (config.createProjectile) {
-          config.createProjectile(this.enemy, target, this.scene);
-        }
-        break;
-
-      case 'aoe':
-        if (skillHitbox) {
-          skillHitbox.activate();
-        }
-        // ✅ visualEffect 설정 처리
-        if (config.visualEffect) {
-          this.handleVisualEffect(config.visualEffect, target);
-        }
-        break;
-
-      case 'buff':
-        this.handleBuffSkill(config);
-        break;
-
-      case 'movement':
-        this.handleMovementSkill(config, target);
-        break;
-
-      default:
-        console.warn(`⚠️ Unknown skill type: ${config.type}`);
+    const handler = handlers[config.type];
+    if (handler) {
+      handler();
+    } else {
+      console.warn(`⚠️ Unknown skill type: ${config.type}`);
     }
 
-    // Hitstop 효과
     if (config.hitstop) {
       this.hitstopManager.triggerPreset(config.hitstop);
     }
   }
 
-  /**
-   * 직접 근접 공격 처리
-   */
+  handleMeleeSkill(skillName, config, target, skillHitbox) {
+    if (skillHitbox) {
+      this.activateSkillHitbox(skillHitbox, config);
+    } else {
+      console.warn(`⚠️ No hitbox found for ${skillName}, using direct melee`);
+      this.handleDirectMelee(config, target);
+    }
+  }
+
+  handleAoeSkill(skillName, config, target, skillHitbox) {
+    if (skillHitbox) {
+      this.activateSkillHitbox(skillHitbox, config);
+    }
+
+    if (config.visualEffect) {
+      this.handleVisualEffect(config.visualEffect, target);
+    }
+  }
+
+  handleMovementSkill(skillName, config, target, skillHitbox) {
+    if (skillHitbox) {
+      this.activateSkillHitbox(skillHitbox, config);
+    }
+
+    if (config.movement) {
+      this.executeMovement(config, target);
+    }
+  }
+
+  activateSkillHitbox(skillHitbox, config) {
+    if (!skillHitbox) return;
+
+    if (config.hitboxSequence) {
+      this.activateSequenceHitboxes(skillHitbox, config);
+    } else {
+      this.activateSingleHitbox(skillHitbox, config);
+    }
+  }
+
+  activateSequenceHitboxes(skillHitbox, config) {
+    config.hitboxSequence.forEach((step, index) => {
+      const stepDelay = step.delay || 0;
+
+      this.scene.time.delayedCall(stepDelay, () => {
+        this.activateSequenceStep(skillHitbox, config, step, index);
+      });
+    });
+  }
+
+  activateSequenceStep(skillHitbox, config, step, index) {
+    const tempConfig = this.createTempStepConfig(config, step);
+    const tempHitbox = this.createTempHitbox(skillHitbox, index, tempConfig);
+    const stepDuration = this.calculateStepDuration(step, config);
+
+    tempHitbox.activate(stepDuration);
+    tempHitbox.hitEnemies = skillHitbox.hitEnemies;
+
+    const sequenceKey = `${skillHitbox.name}_${Date.now()}_${index}`;
+    this.tempSequenceHitboxes.set(sequenceKey, tempHitbox);
+
+    this.scheduleHitboxCleanup(tempHitbox, sequenceKey, stepDuration);
+  }
+
+  createTempStepConfig(config, step) {
+    return {
+      ...config,
+      hitbox: step.hitbox,
+      damage: step.damage || config.damage, // fallback 추가
+      knockback: step.knockback || config.knockback, // fallback 추가
+      effects: step.effects || config.effects,
+      impactEffect: config.impactEffect, // 원본 config에서 가져오기
+      targetType: config.targetType, // 원본 config에서 가져오기
+      hitstop: config.hitstop, // hitstop도 전달
+      hitboxSequence: undefined,
+    };
+  }
+
+  createTempHitbox(skillHitbox, index, tempConfig) {
+    return new SkillHitbox(
+      this.scene,
+      this.enemy.sprite,
+      `${skillHitbox.name}_step${index}`,
+      tempConfig,
+      this.effectManager,
+    );
+  }
+
+  scheduleHitboxCleanup(tempHitbox, sequenceKey, duration) {
+    this.scene.time.delayedCall(duration + 100, () => {
+      tempHitbox.destroy();
+      this.tempSequenceHitboxes.delete(sequenceKey);
+    });
+  }
+
+  activateSingleHitbox(skillHitbox, config) {
+    const delay = config.hitboxDelay || 0;
+    const animationDuration = this.calculateAnimationDuration(config);
+
+    if (delay > 0) {
+      this.scene.time.delayedCall(delay, () => skillHitbox.activate(animationDuration));
+    } else {
+      skillHitbox.activate(animationDuration);
+    }
+  }
+
+  calculateAnimationDuration(config) {
+    if (config.duration) return config.duration;
+
+    const animKey = config.animation || config.animationKey;
+    if (!animKey) return 1000;
+
+    const anim = this.getAnimation(animKey);
+    if (!anim) return 1000;
+
+    return (anim.frames.length / anim.frameRate) * 1000;
+  }
+
+  getAnimation(animKey) {
+    const sprite = this.enemy.sprite;
+    const animManager = sprite.anims.animationManager;
+    const prefixedKey = `${this.enemy.enemyType}_${animKey}`;
+    const finalAnimKey = animManager.anims.has(prefixedKey) ? prefixedKey : animKey;
+    return animManager.get(finalAnimKey);
+  }
+
+  calculateStepDuration(step, config) {
+    return step.duration || step.hitbox?.duration || this.calculateAnimationDuration(config);
+  }
+
   handleDirectMelee(config, target) {
     const distance = this.getDistanceToTarget(target);
 
     if (distance <= (config.range || 100)) {
       target.takeDamage(config.damage || 10);
-      console.log(`⚔️ Direct melee: ${config.damage} damage`);
 
       if (config.impactEffect && this.effectManager) {
         this.effectManager.playEffect(config.impactEffect, target.sprite.x, target.sprite.y);
@@ -322,117 +450,136 @@ export default class EnemySkillSystem {
     }
   }
 
-  /**
-   * 버프 스킬 처리
-   */
   handleBuffSkill(config) {
-    console.log(`✨ Buff applied: ${config.name}`);
-
-    if (config.buffs) {
-      if (config.buffs.speed) {
-        const originalSpeed = this.enemy.speed;
-        this.enemy.speed *= config.buffs.speed;
-
-        this.scene.time.delayedCall(config.duration || 3000, () => {
-          this.enemy.speed = originalSpeed;
-        });
-      }
+    if (config.buffs?.speed) {
+      this.applySpeedBuff(config);
     }
 
-    // ✅ visualEffect 처리
-    if (config.visualEffect && config.visualEffect.type === 'aura') {
+    if (config.visualEffect?.type === 'aura') {
       this.handleAuraEffect(config.visualEffect, config.duration);
     }
   }
 
-  /**
-   * 이동 스킬 처리
-   */
-  handleMovementSkill(config, target) {
-    if (config.movement) {
-      const movement = config.movement;
+  applySpeedBuff(config) {
+    const originalSpeed = this.enemy.speed;
+    this.enemy.speed *= config.buffs.speed;
 
-      if (movement.type === 'dash') {
-        const angle = Phaser.Math.Angle.Between(
-          this.enemy.sprite.x,
-          this.enemy.sprite.y,
-          target.sprite.x,
-          target.sprite.y,
-        );
-
-        // 대시
-        this.enemy.sprite.body.setVelocityX(Math.cos(angle) * movement.speed);
-
-        // 잔상 효과
-        if (movement.afterimage) {
-          this.createAfterimage(movement.afterimageCount || 3);
-        }
-
-        // duration 후 정지
-        this.scene.time.delayedCall(movement.duration, () => {
-          if (this.enemy.sprite.body) {
-            this.enemy.sprite.body.setVelocityX(0);
-          }
-        });
-      }
-    }
+    this.scene.time.delayedCall(config.duration || 3000, () => {
+      this.enemy.speed = originalSpeed;
+    });
   }
 
-  /**
-   * 시각 효과 처리 (함수 없이)
-   */
+  executeMovement(config, target) {
+    const movement = config.movement;
+    if (movement.type !== 'dash') return;
+
+    const dashParams = this.calculateDashParameters(config, target);
+    this.executeDash(movement, dashParams);
+  }
+
+  calculateDashParameters(config, target) {
+    const startX = this.enemy.sprite.x;
+    const angle = Phaser.Math.Angle.Between(
+      this.enemy.sprite.x,
+      this.enemy.sprite.y,
+      target.sprite.x,
+      target.sprite.y,
+    );
+
+    const maxDashDistance = config.range || 250;
+    const currentDistance = this.getDistanceToTarget(target);
+    const dashDistance = Math.min(maxDashDistance, currentDistance - 80);
+
+    return { startX, angle, dashDistance };
+  }
+
+  executeDash(movement, dashParams) {
+    this.enemy.sprite.body.setVelocityX(Math.cos(dashParams.angle) * movement.speed);
+
+    if (movement.afterimage) {
+      this.createAfterimage(movement.afterimageCount || 3);
+    }
+
+    this.monitorDashProgress(movement, dashParams);
+  }
+
+  monitorDashProgress(movement, dashParams) {
+    const checkInterval = this.scene.time.addEvent({
+      delay: 16,
+      callback: () => {
+        const movedDistance = Math.abs(this.enemy.sprite.x - dashParams.startX);
+        const shouldStop =
+          movedDistance >= dashParams.dashDistance ||
+          checkInterval.getElapsed() >= movement.duration ||
+          !this.enemy.sprite.body;
+
+        if (shouldStop) {
+          this.stopEnemyMovement();
+          checkInterval.remove();
+        }
+      },
+      loop: true,
+    });
+  }
+
   handleVisualEffect(visualEffect, target) {
     if (visualEffect.type === 'warning_then_explosion') {
-      const radius = visualEffect.radius || 150;
-
-      // 경고
-      const warning = this.scene.add.circle(
-        target.sprite.x,
-        target.sprite.y,
-        radius,
-        visualEffect.warningColor,
-        0.2,
-      );
-
-      this.scene.tweens.add({
-        targets: warning,
-        alpha: { from: 0.2, to: 0.5 },
-        duration: visualEffect.warningDuration / 2,
-        yoyo: true,
-        repeat: 1,
-      });
-
-      // 폭발
-      this.scene.time.delayedCall(visualEffect.warningDuration, () => {
-        warning.destroy();
-
-        const explosion = this.scene.add.circle(
-          target.sprite.x,
-          target.sprite.y,
-          radius,
-          visualEffect.explosionColor,
-          0.6,
-        );
-
-        this.scene.tweens.add({
-          targets: explosion,
-          alpha: 0,
-          scale: 1.5,
-          duration: 500,
-          onComplete: () => explosion.destroy(),
-        });
-
-        // 화면 흔들림
-        if (visualEffect.shake) {
-          this.scene.cameras.main.shake(visualEffect.shake.duration, visualEffect.shake.intensity);
-        }
-      });
+      this.createWarningExplosion(visualEffect, target);
     }
   }
 
-  /**
-   * 오라 효과
-   */
+  createWarningExplosion(visualEffect, target) {
+    const radius = visualEffect.radius || 150;
+    const warning = this.createWarningCircle(target, radius, visualEffect);
+
+    this.scene.time.delayedCall(visualEffect.warningDuration, () => {
+      warning.destroy();
+      this.createExplosion(target, radius, visualEffect);
+    });
+  }
+
+  createWarningCircle(target, radius, visualEffect) {
+    const warning = this.scene.add.circle(
+      target.sprite.x,
+      target.sprite.y,
+      radius,
+      visualEffect.warningColor,
+      0.2,
+    );
+
+    this.scene.tweens.add({
+      targets: warning,
+      alpha: { from: 0.2, to: 0.5 },
+      duration: visualEffect.warningDuration / 2,
+      yoyo: true,
+      repeat: 1,
+    });
+
+    return warning;
+  }
+
+  createExplosion(target, radius, visualEffect) {
+    const explosion = this.scene.add.circle(
+      target.sprite.x,
+      target.sprite.y,
+      radius,
+      visualEffect.explosionColor,
+      0.6,
+    );
+
+    this.scene.tweens.add({
+      targets: explosion,
+      alpha: 0,
+      scale: 1.5,
+      duration: 500,
+      onComplete: () => explosion.destroy(),
+    });
+
+    if (visualEffect.shake) {
+      this.scene.cameras.main.shake(visualEffect.shake.duration, visualEffect.shake.intensity);
+    }
+  }
+
   handleAuraEffect(visualEffect, duration) {
     const aura = this.scene.add.circle(
       this.enemy.sprite.x,
@@ -442,16 +589,13 @@ export default class EnemySkillSystem {
       visualEffect.alpha,
     );
 
-    const followAura = () => {
-      if (aura && this.enemy.sprite) {
-        aura.x = this.enemy.sprite.x;
-        aura.y = this.enemy.sprite.y;
-      }
-    };
-
     const timer = this.scene.time.addEvent({
       delay: 16,
-      callback: followAura,
+      callback: () => {
+        if (aura && this.enemy.sprite) {
+          aura.setPosition(this.enemy.sprite.x, this.enemy.sprite.y);
+        }
+      },
       loop: true,
     });
 
@@ -461,106 +605,147 @@ export default class EnemySkillSystem {
     });
   }
 
-  /**
-   * 잔상 생성
-   */
   createAfterimage(count) {
     for (let i = 0; i < count; i++) {
       this.scene.time.delayedCall(i * 100, () => {
-        const ghost = this.scene.add.sprite(
-          this.enemy.sprite.x,
-          this.enemy.sprite.y,
-          this.enemy.sprite.texture.key,
-        );
-        ghost.setAlpha(0.3);
-        ghost.setTint(0x000000);
-        ghost.setScale(this.enemy.sprite.scaleX, this.enemy.sprite.scaleY);
-
-        this.scene.tweens.add({
-          targets: ghost,
-          alpha: 0,
-          duration: 300,
-          onComplete: () => ghost.destroy(),
-        });
+        this.createGhostSprite();
       });
     }
   }
 
-  /**
-   * 히트 체크
-   */
+  createGhostSprite() {
+    const ghost = this.scene.add.sprite(
+      this.enemy.sprite.x,
+      this.enemy.sprite.y,
+      this.enemy.sprite.texture.key,
+    );
+
+    ghost.setAlpha(0.3);
+    ghost.setTint(0x000000);
+    ghost.setScale(this.enemy.sprite.scaleX, this.enemy.sprite.scaleY);
+
+    this.scene.tweens.add({
+      targets: ghost,
+      alpha: 0,
+      duration: 300,
+      onComplete: () => ghost.destroy(),
+    });
+  }
+
   checkSkillHit(target) {
+    return this.checkRegularHitboxes(target) || this.checkSequenceHitboxes(target);
+  }
+
+  checkRegularHitboxes(target) {
     for (const hitbox of this.skillHitboxes.values()) {
-      if (hitbox.isActive()) {
-        const result = hitbox.checkHit(target);
-        if (result) {
-          const skillName = hitbox.name;
-          const skill = this.skills.get(skillName);
-
-          if (skill?.config.hitstop) {
-            this.hitstopManager.triggerPreset(skill.config.hitstop);
-          }
-
-          return result;
-        }
-      }
+      const result = this.checkSingleHitbox(hitbox, target);
+      if (result) return result;
     }
     return false;
   }
 
-  /**
-   * 활성 히트박스 가져오기
-   */
+  checkSequenceHitboxes(target) {
+    if (!this.tempSequenceHitboxes) return false;
+
+    for (const [key, hitbox] of this.tempSequenceHitboxes.entries()) {
+      const result = this.checkSingleHitbox(hitbox, target, key);
+      if (result) return result;
+    }
+    return false;
+  }
+
+  checkSingleHitbox(hitbox, target, key = null) {
+    if (!hitbox.isActive()) return false;
+
+    const identifier = key || hitbox.name;
+
+    const result = hitbox.checkHit(target);
+    if (!result) return false;
+
+    this.triggerHitstop(key || hitbox.name);
+
+    return result;
+  }
+
+  triggerHitstop(identifier) {
+    const skillName = identifier.split('_step')[0].split('_')[0];
+    const skill = this.skills.get(skillName);
+
+    if (skill?.config.hitstop) {
+      this.hitstopManager.triggerPreset(skill.config.hitstop);
+    }
+  }
+
   getActiveSkillHitbox() {
     for (const hitbox of this.skillHitboxes.values()) {
       if (hitbox.isActive()) return hitbox;
     }
+
+    for (const hitbox of this.tempSequenceHitboxes.values()) {
+      if (hitbox.isActive()) return hitbox;
+    }
+
     return null;
   }
 
-  /**
-   * 매 프레임 업데이트
-   */
   update(delta) {
+    this.updateSkills(delta);
+    this.updateHitboxes(delta);
+  }
+
+  updateSkills(delta) {
     for (const skill of this.skills.values()) {
       skill.update(delta);
     }
+  }
 
-    for (const hitbox of this.skillHitboxes.values()) {
-      if (hitbox.update) {
-        hitbox.update(delta);
-      }
+  updateHitboxes(delta) {
+    const allHitboxes = [...this.skillHitboxes.values(), ...this.tempSequenceHitboxes.values()];
+
+    for (const hitbox of allHitboxes) {
+      hitbox.update?.(delta);
     }
   }
 
-  /**
-   * 스킬 가져오기
-   */
   getSkill(name) {
     return this.skills.get(name);
   }
 
-  /**
-   * 모든 스킬 가져오기
-   */
   getAllSkills() {
     return Array.from(this.skills.values());
   }
 
-  /**
-   * 정리
-   */
   destroy() {
+    this.removeEventListeners();
+    this.clearSkills();
+    this.clearHitboxes();
+    this.destroyManagers();
+  }
+
+  removeEventListeners() {
     this.enemy.sprite.off('animationcomplete');
     this.enemy.sprite.off('animationstop');
+  }
 
+  clearSkills() {
     this.skills.clear();
+  }
 
+  clearHitboxes() {
     for (const hitbox of this.skillHitboxes.values()) {
       hitbox.destroy();
     }
     this.skillHitboxes.clear();
 
+    if (this.tempSequenceHitboxes) {
+      for (const hitbox of this.tempSequenceHitboxes.values()) {
+        hitbox.destroy();
+      }
+      this.tempSequenceHitboxes.clear();
+    }
+  }
+
+  destroyManagers() {
     if (this.hitstopManager) {
       this.hitstopManager.destroy();
     }

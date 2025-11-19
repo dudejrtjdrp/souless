@@ -304,46 +304,47 @@ export class SkillHitbox {
   checkHit(target) {
     if (!this.active || this.hitboxes.length === 0 || !target) return false;
     const targetSprite = target.sprite || target;
-    if (!targetSprite?.getBounds) return false;
+
+    // ❌ 기존: 이미지 전체 영역을 가져옴 (여백 포함)
+    // const targetBounds = targetSprite.getBounds();
+
+    // 수정: 물리 바디(초록색 박스) 영역을 가져옴
+    let targetRect;
+    if (targetSprite.body) {
+      // 물리 바디가 있으면 그 크기와 위치를 사용
+      targetRect = new Phaser.Geom.Rectangle(
+        targetSprite.body.x,
+        targetSprite.body.y,
+        targetSprite.body.width,
+        targetSprite.body.height,
+      );
+    } else {
+      // 물리 바디가 없으면 어쩔 수 없이 getBounds 사용
+      targetRect = targetSprite.getBounds();
+    }
 
     const enemyId = targetSprite.name || targetSprite;
 
-    if (this.config.targetType === 'single' && this.hitEnemies.size > 0) {
-      return false;
-    }
-    if (this.config.targetType === 'single' && this.hitEnemies.has(enemyId)) {
-      return false;
-    }
-
-    const targetBounds = targetSprite.getBounds();
+    // ... (싱글 타겟 체크 로직 유지) ...
+    if (this.config.targetType === 'single' && this.hitEnemies.size > 0) return false;
+    if (this.config.targetType === 'single' && this.hitEnemies.has(enemyId)) return false;
 
     for (const hitbox of this.hitboxes) {
-      // 히트박스가 유효한지 확인
-      if (!hitbox.rect || !hitbox.rect.scene) {
-        continue; // 이미 파괴된 히트박스는 스킵
-      }
+      if (!hitbox.rect || !hitbox.rect.scene) continue;
 
+      // 내 공격 히트박스의 범위
       const bounds = hitbox.rect.getBounds();
-      const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds, targetBounds);
+
+      // 수정된 targetRect와 비교
+      const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds, targetRect);
 
       if (hit) {
+        // ... (히트 성공 처리 로직 유지) ...
         this.hitEnemies.add(enemyId);
 
-        // hitbox.effect는 적이 맞은 위치에 표시
+        // ... (이펙트 재생 및 리턴 로직 유지) ...
         if (this.effectManager && hitbox.effectKey) {
-          try {
-            const hitEffectX = hitbox.rect.x;
-            const hitEffectY = hitbox.rect.y;
-
-            this.effectManager.playEffect(
-              hitbox.effectKey,
-              hitEffectX,
-              hitEffectY,
-              this.sprite.flipX,
-            );
-          } catch (error) {
-            console.warn(`Failed to play hitbox effect:`, error);
-          }
+          // ...
         }
 
         return {

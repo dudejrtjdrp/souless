@@ -12,6 +12,11 @@ export default class EnemyController {
   }
 
   update(time, delta) {
+    // 피격 중에는 아무 행동도 하지 않음
+    if (this.enemy.isBeingHit) {
+      return;
+    }
+
     // 1. 매 프레임 타겟을 찾거나 갱신
     this.findTarget();
 
@@ -62,9 +67,12 @@ export default class EnemyController {
 
     const playerX = player.sprite.x;
     const playerY = player.sprite.y;
+    const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
+    const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
 
-    const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
+    const dist = Phaser.Math.Distance.Between(enemyX, enemyY, playerX, playerY);
 
+    // 감지 범위 내에 있으면 항상 타겟으로 설정 (넉백 후에도 추적 재개)
     if (dist <= this.detectRange) {
       this.target = player;
     } else {
@@ -98,6 +106,11 @@ export default class EnemyController {
   }
 
   tryAttack(time) {
+    // 피격 중이면 공격 불가
+    if (this.enemy.isBeingHit) {
+      return;
+    }
+
     const timeSinceLastAttack = time - this.lastAttackTime;
     if (timeSinceLastAttack < this.attackCooldown) {
       return;

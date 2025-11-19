@@ -86,23 +86,34 @@ export default class AttackSystem {
       return false;
     }
 
-    // single 타입: 한 번만 맞춤
     if (this.targetType === 'single' && this.hasHitThisAttack) {
       return false;
     }
 
     const targetSprite = target.sprite || target;
 
-    if (!targetSprite?.getBounds) {
+    if (!targetSprite) {
       return false;
     }
 
     this.updateHitboxPosition();
 
-    const bounds1 = this.hitbox.getBounds();
-    const bounds2 = targetSprite.getBounds();
+    const attackBounds = this.hitbox.getBounds();
 
-    const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2);
+    let targetRect;
+
+    if (targetSprite.body) {
+      targetRect = new Phaser.Geom.Rectangle(
+        targetSprite.body.x,
+        targetSprite.body.y,
+        targetSprite.body.width,
+        targetSprite.body.height,
+      );
+    } else {
+      targetRect = targetSprite.getBounds();
+    }
+
+    const hit = Phaser.Geom.Intersects.RectangleToRectangle(attackBounds, targetRect);
 
     if (hit) {
       if (this.targetType === 'single') {
