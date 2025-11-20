@@ -3,18 +3,18 @@ export default class CombatCollisionHandler {
     this.scene = scene;
   }
 
-  checkAttackCollisions() {
+  async checkAttackCollisions() {
     if (!this.canCheckCollisions()) {
       return;
     }
 
     // 플레이어 → 적 공격 체크
-    this.scene.enemyManager.enemies.forEach((enemy) => {
-      this.checkPlayerAttackOnEnemy(enemy);
-    });
+    for (const enemy of this.scene.enemyManager.enemies) {
+      await this.checkPlayerAttackOnEnemy(enemy);
+    }
 
     if (this.scene.currentBoss && !this.scene.currentBoss.isDead) {
-      this.checkPlayerAttackOnEnemy(this.scene.currentBoss);
+      await this.checkPlayerAttackOnEnemy(this.scene.currentBoss);
     }
 
     // 적 → 플레이어 공격 체크
@@ -26,11 +26,11 @@ export default class CombatCollisionHandler {
   }
 
   // 플레이어가 적을 공격
-  checkPlayerAttackOnEnemy(enemy) {
+  async checkPlayerAttackOnEnemy(enemy) {
     const enemyTarget = enemy.sprite || enemy;
 
-    this.checkBasicAttack(enemy, enemyTarget);
-    this.checkSkillAttack(enemy, enemyTarget);
+    await this.checkBasicAttack(enemy, enemyTarget);
+    await this.checkSkillAttack(enemy, enemyTarget);
   }
 
   // 적이 플레이어를 공격
@@ -100,7 +100,7 @@ export default class CombatCollisionHandler {
     });
   }
 
-  checkBasicAttack(enemy, enemyTarget) {
+  async checkBasicAttack(enemy, enemyTarget) {
     if (!this.scene.player.isAttacking?.()) {
       return;
     }
@@ -108,11 +108,11 @@ export default class CombatCollisionHandler {
     const hit = this.scene.player.checkAttackHit(enemyTarget);
 
     if (hit && enemy.takeDamage) {
-      this.handleEnemyDamage(enemy, 10);
+      await this.handleEnemyDamage(enemy, 10);
     }
   }
 
-  checkSkillAttack(enemy, enemyTarget) {
+  async checkSkillAttack(enemy, enemyTarget) {
     if (!this.scene.player.isUsingSkill?.()) {
       return;
     }
@@ -120,23 +120,25 @@ export default class CombatCollisionHandler {
     const skillHit = this.scene.player.checkSkillHit(enemy);
 
     if (skillHit?.hit && enemy.takeDamage) {
-      this.handleSkillDamage(enemy, enemyTarget, skillHit);
+      await this.handleSkillDamage(enemy, enemyTarget, skillHit);
     }
   }
 
-  handleEnemyDamage(enemy, damage) {
+  async handleEnemyDamage(enemy, damage) {
     const died = enemy.takeDamage(damage);
 
     if (died && enemy.expReward) {
-      this.grantExperience(enemy.expReward);
+      // ✅ await 추가!
+      await this.grantExperience(enemy.expReward);
     }
   }
 
-  handleSkillDamage(enemy, enemyTarget, skillHit) {
+  async handleSkillDamage(enemy, enemyTarget, skillHit) {
     const died = enemy.takeDamage(skillHit.damage);
 
     if (died && enemy.expReward) {
-      this.grantExperience(enemy.expReward);
+      // ✅ await 추가!
+      await this.grantExperience(enemy.expReward);
     }
 
     if (skillHit.knockback && enemyTarget.body) {
@@ -144,9 +146,15 @@ export default class CombatCollisionHandler {
     }
   }
 
-  grantExperience(amount) {
-    this.scene.player.gainExp(amount);
-    this.scene.onExpGained(amount, this.scene.selectedCharacter);
+  async grantExperience(amount) {
+    console.log(`🎯 경험치 지급 시도: ${amount}`);
+
+    if (this.scene.player && typeof this.scene.player.gainExp === 'function') {
+      // ✅ await 추가!
+      await this.scene.player.gainExp(amount);
+    } else {
+      console.error('❌ player.gainExp를 호출할 수 없습니다');
+    }
   }
 
   // 적 넉백 적용 (기존 메서드명 변경)

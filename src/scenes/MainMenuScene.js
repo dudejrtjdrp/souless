@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import SaveManager from '../utils/SaveManager.js';
 import SaveSlotManager from '../utils/SaveSlotManager.js';
 
 export default class MainMenuScene extends Phaser.Scene {
@@ -358,11 +357,35 @@ export default class MainMenuScene extends Phaser.Scene {
    * @param {number} slotIndex - 선택된 슬롯 인덱스
    */
 
+  javascript;
+  /**
+   * 새로운 게임을 시작하고 해당 슬롯을 활성화합니다.
+   * @param {number} slotIndex - 선택된 슬롯 인덱스
+   */
   async startNewGame(slotIndex) {
-    this.cameras.main.fadeOut(500, 0, 0, 0, async () => {
-      // SaveSlotManager를 사용하여 새 게임을 생성하고 슬롯을 선택
-      await SaveSlotManager.selectSlot(slotIndex, null);
-      this.scene.start('GameScene', { mapKey: 'map1', characterType: 'soul' });
+    console.log(`🎮 새 게임 시작: 슬롯 ${slotIndex}`);
+
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+
+    // ✅ 페이드아웃 완료 후 실행
+    this.cameras.main.once('camerafadeoutcomplete', async () => {
+      try {
+        // ✅ 슬롯 선택 및 초기 데이터 생성
+        await SaveSlotManager.selectSlot(slotIndex, null);
+
+        // ✅ 슬롯이 제대로 생성되었는지 확인
+        const createdData = await SaveSlotManager.load(slotIndex);
+        console.log('✅ 생성된 슬롯 데이터:', createdData);
+
+        // 게임 시작
+        this.scene.start('GameScene', {
+          mapKey: 'map1',
+          characterType: 'soul',
+          slotIndex: slotIndex, // ✅ 슬롯 인덱스 전달
+        });
+      } catch (error) {
+        console.error('❌ 새 게임 시작 실패:', error);
+      }
     });
   }
   /**
@@ -371,18 +394,35 @@ export default class MainMenuScene extends Phaser.Scene {
    * @param {object} slotSummary - 로드할 슬롯의 요약 데이터 (캐릭터 타입 확인용)
    */
 
+  /**
+   * 저장된 게임을 로드하고 해당 슬롯을 활성화합니다.
+   * @param {number} slotIndex - 선택된 슬롯 인덱스
+   * @param {object} slotSummary - 로드할 슬롯의 요약 데이터
+   */
   async loadSlot(slotIndex, slotSummary) {
-    if (!slotSummary) return; // 데이터 없으면 로드 불가
+    if (!slotSummary) return;
 
-    this.cameras.main.fadeOut(500, 0, 0, 0, async () => {
-      // SaveSlotManager를 사용하여 기존 슬롯을 선택 (existingSlotData = true)
-      // SaveSlotManager 내부에서 SaveManager에 해당 슬롯 데이터가 반영됨
-      await SaveSlotManager.selectSlot(slotIndex, true);
+    console.log(`📂 슬롯 ${slotIndex} 로드 시도`);
 
-      this.scene.start('GameScene', {
-        mapKey: slotSummary.mapKey || 'map1',
-        characterType: slotSummary.characterType || 'soul',
-      });
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+
+    this.cameras.main.once('camerafadeoutcomplete', async () => {
+      try {
+        // ✅ 기존 슬롯 선택
+        await SaveSlotManager.selectSlot(slotIndex, true);
+
+        // ✅ 로드된 데이터 확인
+        const loadedData = await SaveSlotManager.load(slotIndex);
+        console.log('✅ 로드된 슬롯 데이터:', loadedData);
+
+        this.scene.start('GameScene', {
+          mapKey: slotSummary.mapKey || 'map1',
+          characterType: slotSummary.characterType || 'soul',
+          slotIndex: slotIndex, // ✅ 슬롯 인덱스 전달
+        });
+      } catch (error) {
+        console.error('❌ 슬롯 로드 실패:', error);
+      }
     });
   }
   /**

@@ -1,23 +1,25 @@
 import SaveSlotManager from '../../utils/SaveSlotManager.js';
-// 각 전직 조건을 추적하는 시스템
 
 export default class JobConditionTracker {
   constructor(scene, player) {
     this.scene = scene;
     this.player = player;
 
+    // 🎯 초기화 완료 플래그
+    this.isInitialized = false;
+
     // 조건 추적 데이터
     this.conditions = {
       assassin: {
         type: 'survive_no_hit',
-        duration: 15000, // 15초
+        duration: 15000,
         startTime: null,
         lastHitTime: null,
         isActive: false,
       },
       monk: {
         type: 'survive_no_attack',
-        duration: 10000, // 10초
+        duration: 10000,
         startTime: null,
         lastAttackTime: null,
         isActive: false,
@@ -27,71 +29,92 @@ export default class JobConditionTracker {
         required: 5,
         current: 0,
         lastHitTime: null,
-        comboTimeout: 2000, // 2초 안에 다음 공격
+        comboTimeout: 2000,
         isActive: false,
       },
-      fireknight: {
+      fire_knight: {
         type: 'maintain_combat',
-        duration: 10000, // 10초
+        duration: 10000,
         startTime: null,
         lastAttackTime: null,
-        combatTimeout: 1500, // 1.5초 안에 공격해야 유지
+        combatTimeout: 1500,
         isActive: false,
       },
       mauler: {
         type: 'survive_low_hp',
-        duration: 15000, // 15초
-        hpThreshold: 0.3, // 30% 이하
+        duration: 15000,
+        hpThreshold: 0.3,
         startTime: null,
         isActive: false,
       },
       princess: {
         type: 'no_damage',
-        duration: 20000, // 20초
+        duration: 20000,
         startTime: null,
         lastDamageTime: null,
         isActive: false,
       },
     };
 
+    // 🎯 이미 처치한 보스들만 트래킹 제외 (clearedBosses만 사용)
+    this.completedConditions = new Set();
+
+    this.initializeCompletedConditions();
     this.setupEventListeners();
   }
 
+  // 🎯 보스를 이미 처치한 것들만 로드 (clearedBosses)
+  async initializeCompletedConditions() {
+    const saveData = await SaveSlotManager.load();
+
+    // ✅ clearedBosses만 확인 (보스 처치 완료)
+    // availableBoss는 포함하지 않음 (조건 달성했지만 아직 도전 가능)
+    if (saveData.clearedBosses && Array.isArray(saveData.clearedBosses)) {
+      saveData.clearedBosses.forEach((job) => this.completedConditions.add(job));
+    }
+
+    console.log('📋 트래킹 제외 조건 (처치 완료):', Array.from(this.completedConditions));
+
+    // 🎯 초기화 완료 표시
+    this.isInitialized = true;
+  }
+
   setupEventListeners() {
-    // 플레이어 피격 이벤트
-    this.scene.events.on('player-hit', () => {
-      this.onPlayerHit();
-    });
-
-    // 플레이어 공격 이벤트
-    this.scene.events.on('player-attack', () => {
-      this.onPlayerAttack();
-    });
-
-    // 플레이어 데미지 받음 (트랩 포함)
-    this.scene.events.on('player-damaged', () => {
-      this.onPlayerDamaged();
-    });
+    this.scene.events.on('player-hit', () => this.onPlayerHit());
+    this.scene.events.on('player-attack', () => this.onPlayerAttack());
+    this.scene.events.on('player-damaged', () => this.onPlayerDamaged());
   }
 
   update(time) {
-    // Assassin: 피격 없이 15초 생존
-    this.updateAssassinCondition(time);
+    // 🎯 초기화가 완료될 때까지 대기
+    if (!this.isInitialized) {
+      return;
+    }
 
-    // Monk: 공격하지 않고 10초 생존
-    this.updateMonkCondition(time);
+    // ✅ 보스를 처치한 조건만 제외
+    if (!this.completedConditions.has('assassin')) {
+      this.updateAssassinCondition(time);
+    }
 
-    // Bladekeeper: 기본 공격 5타 연속 적중
-    this.updateBladekeeperCondition(time);
+    if (!this.completedConditions.has('monk')) {
+      this.updateMonkCondition(time);
+    }
 
-    // Fireknight: 10초 동안 전투 유지
-    this.updateFireknightCondition(time);
+    if (!this.completedConditions.has('bladekeeper')) {
+      this.updateBladekeeperCondition(time);
+    }
 
-    // Mauler: HP 30% 이하로 15초 생존
-    this.updateMaulerCondition(time);
+    if (!this.completedConditions.has('fire_knight')) {
+      this.updateFireknightCondition(time);
+    }
 
-    // Princess: 20초 동안 데미지 0
-    this.updatePrincessCondition(time);
+    if (!this.completedConditions.has('mauler')) {
+      this.updateMaulerCondition(time);
+    }
+
+    if (!this.completedConditions.has('princess')) {
+      this.updatePrincessCondition(time);
+    }
   }
 
   // === Assassin 조건 ===
@@ -113,8 +136,6 @@ export default class JobConditionTracker {
   onPlayerHit() {
     const cond = this.conditions.assassin;
     cond.lastHitTime = this.scene.time.now;
-
-    // Princess 조건도 리셋
     this.conditions.princess.lastDamageTime = this.scene.time.now;
   }
 
@@ -138,10 +159,7 @@ export default class JobConditionTracker {
     const cond = this.conditions.monk;
     cond.lastAttackTime = this.scene.time.now;
 
-    // Bladekeeper 조건 업데이트
     this.updateBladekeeperHit();
-
-    // Fireknight 조건 업데이트
     this.updateFireknightAttack();
   }
 
@@ -153,7 +171,6 @@ export default class JobConditionTracker {
       cond.isActive = true;
     }
 
-    // 콤보 타임아웃 체크
     if (cond.lastHitTime && time - cond.lastHitTime > cond.comboTimeout) {
       cond.current = 0;
     }
@@ -163,7 +180,6 @@ export default class JobConditionTracker {
     const cond = this.conditions.bladekeeper;
     const time = this.scene.time.now;
 
-    // 콤보 타임아웃 체크
     if (cond.lastHitTime && time - cond.lastHitTime > cond.comboTimeout) {
       cond.current = 0;
     }
@@ -178,11 +194,10 @@ export default class JobConditionTracker {
 
   // === Fireknight 조건 ===
   updateFireknightCondition(time) {
-    const cond = this.conditions.fireknight;
+    const cond = this.conditions.fire_knight;
 
     if (!cond.isActive || !cond.startTime) return;
 
-    // 전투가 끊겼는지 체크
     if (cond.lastAttackTime && time - cond.lastAttackTime > cond.combatTimeout) {
       cond.startTime = null;
       cond.isActive = false;
@@ -192,12 +207,12 @@ export default class JobConditionTracker {
     const elapsed = time - cond.startTime;
 
     if (elapsed >= cond.duration) {
-      this.completeCondition('fireknight');
+      this.completeCondition('fire_knight');
     }
   }
 
   updateFireknightAttack() {
-    const cond = this.conditions.fireknight;
+    const cond = this.conditions.fire_knight;
     const time = this.scene.time.now;
 
     if (!cond.startTime) {
@@ -225,7 +240,6 @@ export default class JobConditionTracker {
         this.completeCondition('mauler');
       }
     } else {
-      // HP가 30% 이상이면 리셋
       cond.startTime = null;
       cond.isActive = false;
     }
@@ -250,21 +264,29 @@ export default class JobConditionTracker {
   onPlayerDamaged() {
     const cond = this.conditions.princess;
     cond.lastDamageTime = this.scene.time.now;
-
-    // Assassin 조건도 리셋
     this.conditions.assassin.lastHitTime = this.scene.time.now;
   }
 
-  // 조건 완료 처리
+  // 🎯 조건 완료 처리
   async completeCondition(jobKey) {
+    // 이미 완료된 조건이면 무시
+    if (this.completedConditions.has(jobKey)) {
+      return;
+    }
+
     const cond = this.conditions[jobKey];
     cond.isActive = false;
 
-    // SaveSlotManager를 통해 availableBoss에 추가
+    // 🎯 completedConditions에 추가하여 더 이상 트래킹하지 않도록 설정
+    this.completedConditions.add(jobKey);
+
+    // ✅ availableBoss에 추가 (보스 도전 가능)
     await this.addToAvailableBoss(jobKey);
 
     // 이벤트 발생
     this.scene.events.emit('job-condition-completed', jobKey);
+
+    console.log(`✅ ${jobKey} 조건 달성! (보스 도전 가능)`);
   }
 
   async addToAvailableBoss(jobKey) {
@@ -274,10 +296,11 @@ export default class JobConditionTracker {
       saveData.availableBoss = [];
     }
 
-    // 중복 체크
+    // 🎯 중복 체크 + 순서 유지
     if (!saveData.availableBoss.includes(jobKey)) {
       saveData.availableBoss.push(jobKey);
       await SaveSlotManager.save(saveData);
+      console.log(`📋 ${jobKey}이 availableBoss에 추가됨`);
     }
   }
 
@@ -286,6 +309,17 @@ export default class JobConditionTracker {
     const progress = {};
 
     for (const [job, cond] of Object.entries(this.conditions)) {
+      // 🎯 보스를 처치한 조건만 100% 표시
+      if (this.completedConditions.has(job)) {
+        progress[job] = {
+          current: cond.duration || cond.required || 100,
+          max: cond.duration || cond.required || 100,
+          percentage: 100,
+          completed: true,
+        };
+        continue;
+      }
+
       switch (cond.type) {
         case 'survive_no_hit':
         case 'survive_no_attack':
@@ -297,6 +331,7 @@ export default class JobConditionTracker {
             current: Math.min(elapsed, cond.duration),
             max: cond.duration,
             percentage: Math.min((elapsed / cond.duration) * 100, 100),
+            completed: false,
           };
           break;
 
@@ -305,6 +340,7 @@ export default class JobConditionTracker {
             current: cond.current,
             max: cond.required,
             percentage: (cond.current / cond.required) * 100,
+            completed: false,
           };
           break;
 
@@ -315,9 +351,10 @@ export default class JobConditionTracker {
               current: Math.min(combatElapsed, cond.duration),
               max: cond.duration,
               percentage: Math.min((combatElapsed / cond.duration) * 100, 100),
+              completed: false,
             };
           } else {
-            progress[job] = { current: 0, max: cond.duration, percentage: 0 };
+            progress[job] = { current: 0, max: cond.duration, percentage: 0, completed: false };
           }
           break;
 
@@ -328,9 +365,10 @@ export default class JobConditionTracker {
               current: Math.min(surviveElapsed, cond.duration),
               max: cond.duration,
               percentage: Math.min((surviveElapsed / cond.duration) * 100, 100),
+              completed: false,
             };
           } else {
-            progress[job] = { current: 0, max: cond.duration, percentage: 0 };
+            progress[job] = { current: 0, max: cond.duration, percentage: 0, completed: false };
           }
           break;
       }

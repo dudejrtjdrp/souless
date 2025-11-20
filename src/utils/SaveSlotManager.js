@@ -1,48 +1,56 @@
-// utils/SaveSlotManager.js (SaveManager 기능 통합 완료)
+// utils/SaveSlotManager.js - 완전 통합 버전
+// SaveManager.js는 삭제 가능
 
 import { CharacterData } from '../config/characterData';
-// CharacterData는 SaveManager에서 사용되었으므로 그대로 import 유지
-
-// 통합된 SaveSlotManager는 인스턴스 패턴을 사용하지 않고 Static 메서드를 유지하여
-// 기존 SaveManager의 정적 호출 방식을 이어받았습니다.
 
 export default class SaveSlotManager {
-  // --- 1. 상수 (기존 SaveManager 및 SaveSlotManager 상수 통합) ---
+  // === 상수 ===
   static SLOT_PREFIX = 'save_slot_';
   static CURRENT_SLOT_KEY = 'current_slot';
   static MAX_SLOTS = 3;
 
-  // --- 2. 기본 유틸리티 함수 (기존 SaveManager에서 가져옴) ---
-
-  /** Electron 환경인지 확인 */
+  // === 환경 감지 ===
   static isElectron() {
     return typeof window !== 'undefined' && window.electron;
   }
 
-  /** 현재 활성 슬롯 인덱스 가져오기 */
+  // === 슬롯 관리 ===
   static getCurrentSlot() {
     const v = localStorage.getItem(this.CURRENT_SLOT_KEY);
-    // 기본값은 0번 슬롯
-    return v !== null ? parseInt(v, 10) : 0;
+    const slot = v !== null ? parseInt(v, 10) : 0;
+
+    console.log(`📍 현재 슬롯: ${slot} (localStorage: ${v})`);
+
+    return slot;
   }
 
-  /** 기본 세이브 데이터 */
   static getDefaultSaveData() {
     return {
+      // 경험치 시스템
+      levelSystem: {
+        level: 1,
+        experience: 0,
+        experienceToNext: 100,
+        totalExperience: 0,
+      },
       totalExp: 0,
       characterExp: {},
-      characters: {}, // 캐릭터 상태
-      skillCooldowns: {}, // 스킬 쿨타임
-      lastPosition: null, // 마지막 위치
+
+      // 캐릭터 데이터
+      characters: {},
       currentCharacter: 'soul',
+
+      // 게임 데이터
+      lastPosition: null,
+      skillCooldowns: {},
+
+      // 메타 데이터
       slotIndex: null,
       timestamp: Date.now(),
     };
   }
 
-  // --- 3. 핵심 저장/로드 로직 (기존 SaveManager의 save, load, clear 통합) ---
-
-  /** 세이브 데이터 로드 (SaveManager.load 역할) */
+  // === 핵심 저장/로드 ===
   static async load(slotIndex = null) {
     const targetSlotIndex = slotIndex !== null ? slotIndex : this.getCurrentSlot();
 
@@ -50,34 +58,28 @@ export default class SaveSlotManager {
       let data = null;
 
       if (this.isElectron()) {
-        // Electron 환경 로드
         data = await window.electron.loadSave(targetSlotIndex);
       } else {
         if (targetSlotIndex >= 0 && targetSlotIndex < this.MAX_SLOTS) {
           const storedSlot = localStorage.getItem(`${this.SLOT_PREFIX}${targetSlotIndex}`);
           data = storedSlot ? JSON.parse(storedSlot) : null;
         } else {
-          console.error(`❌ Load error: Invalid target slot index: ${targetSlotIndex}`);
-          // 유효하지 않은 인덱스면 null 반환 (빈 슬롯으로 처리하도록)
+          console.error(`❌ Load error: Invalid slot index ${targetSlotIndex}`);
           return null;
         }
       }
 
-      // 데이터가 없으면 null 반환 (isSlotEmpty 및 UI 처리를 위해)
-      // 데이터가 있으면 기본값과 병합하여 완전한 구조 보장
       return data ? { ...this.getDefaultSaveData(), ...data } : null;
     } catch (error) {
-      console.error('❌ Save load error:', error);
-      return null; // 로드 실패 시 null 반환
+      console.error('❌ Load error:', error);
+      return null;
     }
   }
 
-  /** 세이브 (SaveManager.save 역할) */
   static async save(data, slotIndex = null) {
     const targetSlotIndex = slotIndex !== null ? slotIndex : this.getCurrentSlot();
 
     try {
-      // timestamp를 명시적으로 업데이트
       const dataToSave = { ...data, timestamp: Date.now() };
 
       if (this.isElectron()) {
@@ -86,9 +88,8 @@ export default class SaveSlotManager {
         if (targetSlotIndex >= 0 && targetSlotIndex < this.MAX_SLOTS) {
           localStorage.setItem(`${this.SLOT_PREFIX}${targetSlotIndex}`, JSON.stringify(dataToSave));
         } else {
-          console.error(
-            `❌ Save error: Attempted save with invalid slot index: ${targetSlotIndex}`,
-          );
+          console.error(`❌ Save error: Invalid slot index ${targetSlotIndex}`);
+          return false;
         }
       }
       return true;
@@ -98,22 +99,23 @@ export default class SaveSlotManager {
     }
   }
 
-  /** 슬롯 데이터 삭제 (SaveManager.clear 역할) */
   static async clear(slotIndex = null) {
     const targetSlotIndex = slotIndex !== null ? slotIndex : this.getCurrentSlot();
 
-    if (this.isElectron()) {
-      await window.electron.clearSave(targetSlotIndex);
-    } else {
-      if (targetSlotIndex >= 0 && targetSlotIndex < this.MAX_SLOTS) {
-        localStorage.removeItem(`${this.SLOT_PREFIX}${targetSlotIndex}`);
+    try {
+      if (this.isElectron()) {
+        await window.electron.clearSave(targetSlotIndex);
+      } else {
+        if (targetSlotIndex >= 0 && targetSlotIndex < this.MAX_SLOTS) {
+          localStorage.removeItem(`${this.SLOT_PREFIX}${targetSlotIndex}`);
+        }
       }
+    } catch (error) {
+      console.error('❌ Clear error:', error);
     }
   }
 
-  // --- 4. 슬롯 관리 기능 (기존 SaveSlotManager의 기능) ---
-
-  /** 슬롯 요약 정보 추출 */
+  // === 슬롯 관리 기능 ===
   static extractSlotSummary(saveData) {
     if (!saveData) return null;
 
@@ -125,16 +127,15 @@ export default class SaveSlotManager {
       mapKey: saveData.lastPosition?.mapKey || 'map1',
       timestamp: saveData.timestamp || Date.now(),
       totalExp: saveData.totalExp || 0,
+      level: saveData.levelSystem?.level || 1,
       slotIndex: saveData.slotIndex,
     };
   }
 
-  /** 모든 슬롯의 요약 정보 로드 (MainMenuScene에서 사용) */
   static async loadAllSlots() {
     const slots = new Array(this.MAX_SLOTS).fill(null);
 
     for (let i = 0; i < this.MAX_SLOTS; i++) {
-      // 통합된 this.load 사용. 데이터가 없으면 null 반환
       const slotData = await this.load(i);
       slots[i] = slotData ? this.extractSlotSummary(slotData) : null;
     }
@@ -142,10 +143,8 @@ export default class SaveSlotManager {
     return slots;
   }
 
-  /** 특정 슬롯의 전체 데이터 로드 (loadSlotData 역할) */
   static async loadSlotData(slotIndex) {
     try {
-      // 통합된 this.load 사용. 데이터가 없으면 null 반환
       const data = await this.load(slotIndex);
       return data || null;
     } catch (err) {
@@ -154,7 +153,6 @@ export default class SaveSlotManager {
     }
   }
 
-  /** 특정 슬롯에 데이터 저장 (saveSlotData 역할) */
   static async saveSlotData(slotIndex, data) {
     try {
       const characterType = data.currentCharacter || data.lastPosition?.characterType || 'soul';
@@ -165,70 +163,101 @@ export default class SaveSlotManager {
         timestamp: Date.now(),
       };
 
-      if (payload.lastPosition) payload.lastPosition.characterType = characterType;
+      if (payload.lastPosition) {
+        payload.lastPosition.characterType = characterType;
+      }
 
-      // 통합된 this.save 사용
-      await this.save(payload, slotIndex);
-      return true;
+      console.log(`💾 슬롯 ${slotIndex} 저장 시도:`, payload);
+
+      const result = await this.save(payload, slotIndex);
+
+      if (result) {
+        console.log(`✅ 슬롯 ${slotIndex} 저장 완료`);
+
+        // ✅ 저장 검증
+        if (!this.isElectron()) {
+          const slotKey = `${this.SLOT_PREFIX}${slotIndex}`;
+          const stored = localStorage.getItem(slotKey);
+          console.log(`📦 localStorage 확인 (${slotKey}):`, stored ? 'OK' : 'FAILED');
+        }
+      } else {
+        console.error(`❌ 슬롯 ${slotIndex} 저장 실패`);
+      }
+
+      return result;
     } catch (err) {
-      console.error(`Error saving slot ${slotIndex}:`, err);
+      console.error(`❌ Error saving slot ${slotIndex}:`, err);
       return false;
     }
   }
-
-  /** 슬롯 선택 (selectSlot 역할) */
   static async selectSlot(slotIndex, existingSlotData = null) {
+    console.log(`🎯 슬롯 선택: ${slotIndex}, 기존 데이터: ${existingSlotData}`);
+
     const prevSlot = this.getCurrentSlot();
 
-    // 이전 슬롯 백업 (현재 로드된 데이터를 이전 슬롯에 저장)
+    // 이전 슬롯 백업
     if (prevSlot !== null && prevSlot !== slotIndex) {
-      // 이전 슬롯의 데이터를 다시 로드해서 백업하는 것은 비효율적일 수 있습니다.
-      // 여기서는 'SaveManager.load(prevSlot)' 대신 현재 활성 상태의 데이터를 사용해야 하지만,
-      // 현재 클래스는 '활성 데이터'를 정적 변수로 가지고 있지 않으므로
-      // SaveManager가 하던 방식(saveManager.js의 save()에서 현재 활성 슬롯을 저장하는 방식)을 따라야 합니다.
-      // 여기서는 원본 코드의 로직을 유지하면서 `this.load`와 `this.saveSlotData`를 사용합니다.
       const prevData = await this.load(prevSlot);
-      if (prevData) await this.saveSlotData(prevSlot, prevData);
+      if (prevData) {
+        await this.saveSlotData(prevSlot, prevData);
+        console.log(`💾 이전 슬롯 ${prevSlot} 백업 완료`);
+      }
     }
 
-    // 현재 활성 슬롯 인덱스 업데이트
+    // ✅ 현재 활성 슬롯 업데이트 (먼저 설정!)
     localStorage.setItem(this.CURRENT_SLOT_KEY, String(slotIndex));
+    console.log(`📍 활성 슬롯 변경: ${prevSlot} → ${slotIndex}`);
 
     if (existingSlotData) {
-      // 기존 게임 로드: 슬롯 데이터 로드 후, 현재 활성 슬롯에 해당 데이터로 다시 저장
+      // 기존 게임 로드
       const fullData = await this.loadSlotData(slotIndex);
       if (fullData) {
-        // 통합된 this.saveSlotData를 사용하여 현재 슬롯(slotIndex)에 데이터 설정
-        await this.saveSlotData(slotIndex, fullData);
+        console.log(`✅ 기존 슬롯 ${slotIndex} 로드 완료`);
+        return;
       }
-      return;
     }
 
-    // 새 게임 시작: 기본 데이터 생성 후 현재 슬롯에 저장
+    // ✅ 새 게임 시작 - 초기 데이터 생성
+    console.log(`📝 슬롯 ${slotIndex} 초기 데이터 생성 중...`);
+
     const newData = this.getDefaultSaveData();
     newData.slotIndex = slotIndex;
     newData.currentCharacter = 'soul';
     newData.timestamp = Date.now();
 
-    await this.saveSlotData(slotIndex, newData);
+    // ✅ 즉시 저장
+    const saved = await this.saveSlotData(slotIndex, newData);
+
+    if (saved) {
+      console.log(`✅ 슬롯 ${slotIndex} 초기화 완료`);
+
+      // ✅ 저장 확인
+      const verification = await this.load(slotIndex);
+      if (verification) {
+        console.log('✅ 초기 데이터 저장 검증 완료:', verification);
+      } else {
+        console.error('❌ 초기 데이터 저장 검증 실패!');
+      }
+    } else {
+      console.error(`❌ 슬롯 ${slotIndex} 초기화 실패`);
+    }
   }
 
-  /** 현재 슬롯의 데이터 백업 (backupCurrentSlot 역할) */
   static async backupCurrentSlot() {
     const slot = this.getCurrentSlot();
     const data = await this.load(slot);
-    if (data) await this.saveSlotData(slot, data);
+    if (data) {
+      await this.saveSlotData(slot, data);
+    }
   }
 
-  /** 즉시 백업 (immediateBackup 역할) */
   static async immediateBackup() {
     await this.backupCurrentSlot();
   }
 
-  /** 슬롯 데이터 삭제 (deleteSlot 역할) */
   static async deleteSlot(slotIndex) {
     try {
-      await this.clear(slotIndex); // 통합된 this.clear 사용
+      await this.clear(slotIndex);
       const current = this.getCurrentSlot();
       if (current === slotIndex) {
         localStorage.removeItem(this.CURRENT_SLOT_KEY);
@@ -240,39 +269,36 @@ export default class SaveSlotManager {
     }
   }
 
-  /** 슬롯이 비어있는지 확인 (isSlotEmpty 역할) */
   static async isSlotEmpty(slotIndex) {
     const data = await this.loadSlotData(slotIndex);
-    return data === null; // this.load가 데이터 없으면 null을 반환하도록 수정되었으므로 가능
+    return data === null;
   }
 
-  /** 모든 슬롯 초기화 (clearAllSlots 역할) */
   static async clearAllSlots() {
     for (let i = 0; i < this.MAX_SLOTS; i++) {
-      await this.clear(i); // 통합된 this.clear 사용
+      await this.clear(i);
     }
     localStorage.removeItem(this.CURRENT_SLOT_KEY);
   }
 
-  // --- 5. 게임 데이터 접근 및 업데이트 (기존 SaveManager의 세부 기능 통합) ---
-
-  /** 현재 캐릭터 업데이트 (updateCurrentCharacter 역할) */
+  // === 캐릭터 데이터 ===
   static async updateCurrentCharacter(characterType) {
     const saveData = await this.load();
     if (!saveData) return false;
     saveData.currentCharacter = characterType;
-    if (saveData.lastPosition) saveData.lastPosition.characterType = characterType;
-    return await this.save(saveData, saveData.slotIndex);
+    if (saveData.lastPosition) {
+      saveData.lastPosition.characterType = characterType;
+    }
+    return await this.save(saveData);
   }
 
-  /** 현재 캐릭터 가져오기 (getCurrentCharacter 역할) */
   static async getCurrentCharacter() {
     const saveData = await this.load();
     if (!saveData) return 'soul';
     return saveData.lastPosition?.characterType || saveData.currentCharacter || 'soul';
   }
 
-  /** 위치 저장 (savePosition 역할) */
+  // === 위치 관리 ===
   static async savePosition(mapKey, x, y, characterType) {
     const saveData = await this.load();
     if (!saveData) return false;
@@ -282,15 +308,14 @@ export default class SaveSlotManager {
       x,
       y,
       characterType,
-      physics: CharacterData[characterType].physics.collisionBox,
+      physics: CharacterData[characterType]?.physics?.collisionBox || null,
       fromPortal: false,
       isPortalSpawn: false,
       timestamp: Date.now(),
     };
-    return await this.save(saveData, saveData.slotIndex);
+    return await this.save(saveData);
   }
 
-  /** 포털 위치 저장 (savePortalPosition 역할) */
   static async savePortalPosition(targetMapKey, portalId, characterType) {
     const saveData = await this.load();
     if (!saveData) return false;
@@ -299,22 +324,21 @@ export default class SaveSlotManager {
       mapKey: targetMapKey,
       portalId,
       characterType,
-      physics: CharacterData[characterType].physics.collisionBox,
+      physics: CharacterData[characterType]?.physics?.collisionBox || null,
       fromPortal: true,
       isPortalSpawn: true,
       timestamp: Date.now(),
     };
-    return await this.save(saveData, saveData.slotIndex);
+    return await this.save(saveData);
   }
 
-  /** 저장된 위치 가져오기 (getSavedPosition 역할) */
   static async getSavedPosition() {
     const saveData = await this.load();
     if (!saveData) return null;
     return saveData.lastPosition || null;
   }
 
-  /** 캐릭터 상태 저장 (saveCharacterState 역할) */
+  // === 캐릭터 상태 ===
   static async saveCharacterState(characterType, state) {
     const saveData = await this.load();
     if (!saveData) return false;
@@ -324,17 +348,18 @@ export default class SaveSlotManager {
       ...state,
       timestamp: Date.now(),
     };
-    if (state.gainedExp) saveData.totalExp = (saveData.totalExp || 0) + state.gainedExp;
-    return await this.save(saveData, saveData.slotIndex);
+    if (state.gainedExp) {
+      saveData.totalExp = (saveData.totalExp || 0) + state.gainedExp;
+    }
+    return await this.save(saveData);
   }
 
-  /** 캐릭터 상태 가져오기 (getCharacterState 역할) */
   static async getCharacterState(characterType) {
     const saveData = await this.load();
     return saveData?.characters?.[characterType] || null;
   }
 
-  /** 캐릭터 리소스 저장 (saveCharacterResources 역할) */
+  // === 캐릭터 리소스 (체력/마나) ===
   static async saveCharacterResources(characterType, hp, mp) {
     const saveData = await this.load();
     if (!saveData) return false;
@@ -343,10 +368,9 @@ export default class SaveSlotManager {
     saveData.characters[characterType].hp = hp;
     saveData.characters[characterType].mp = mp;
     saveData.characters[characterType].timestamp = Date.now();
-    return await this.save(saveData, saveData.slotIndex);
+    return await this.save(saveData);
   }
 
-  /** 캐릭터 리소스 가져오기 (getCharacterResources 역할) */
   static async getCharacterResources(characterType) {
     const state = await this.getCharacterState(characterType);
     if (state && state.hp !== undefined && state.mp !== undefined) {
@@ -355,77 +379,127 @@ export default class SaveSlotManager {
     return null;
   }
 
-  /** 경험치 추가 (addExp 역할) */
+  // === 경험치 시스템 ===
   static async addExp(amount, characterType) {
-    if (amount <= 0) return;
-    const data = await this.load();
-    if (!data) return false;
+    if (amount <= 0) return false;
+
+    let data = await this.load();
+
+    // ✅ 데이터가 없으면 새로 생성
+    if (!data) {
+      console.warn('⚠️ 세이브 데이터가 없습니다. 새로 생성합니다.');
+      data = this.getDefaultSaveData();
+      data.currentCharacter = characterType;
+
+      // 현재 슬롯에 초기 데이터 저장
+      const currentSlot = this.getCurrentSlot();
+      await this.save(data, currentSlot);
+
+      console.log(`✅ 슬롯 ${currentSlot}에 초기 데이터 생성 완료`);
+    }
 
     data.totalExp = (data.totalExp || 0) + amount;
     data.characterExp = data.characterExp || {};
     data.characterExp[characterType] = (data.characterExp[characterType] || 0) + amount;
 
-    // 캐릭터 상태에도 EXP 업데이트
     if (!data.characters) data.characters = {};
     if (!data.characters[characterType]) data.characters[characterType] = {};
     data.characters[characterType].exp = data.characterExp[characterType];
 
-    await this.save(data, data.slotIndex);
+    console.log('💾 저장 전 데이터:', {
+      totalExp: data.totalExp,
+      characterExp: data.characterExp,
+    });
+
+    const saved = await this.save(data);
+
+    if (saved) {
+      console.log('✅ localStorage 저장 완료');
+
+      // 저장 확인
+      const slotKey = `${this.SLOT_PREFIX}${this.getCurrentSlot()}`;
+      const storedData = localStorage.getItem(slotKey);
+      console.log('📦 저장된 데이터 확인:', storedData ? JSON.parse(storedData) : 'FAILED');
+    } else {
+      console.error('❌ localStorage 저장 실패');
+    }
+
     return { characterExp: data.characterExp[characterType], totalExp: data.totalExp };
   }
 
-  /** 경험치 데이터 가져오기 (getExpData 역할) */
   static async getExpData() {
     const data = await this.load();
     if (!data) return { totalExp: 0, characterExp: {} };
     return { totalExp: data.totalExp || 0, characterExp: data.characterExp || {} };
   }
 
-  /** 스킬 쿨타임 저장 (saveSkillCooldown 역할) */
+  // === 레벨 시스템 ===
+  static async saveLevelSystem(levelData) {
+    const saveData = await this.load();
+    if (!saveData) return false;
+    saveData.levelSystem = levelData;
+    return await this.save(saveData);
+  }
+
+  static async getLevelSystem() {
+    const saveData = await this.load();
+    if (!saveData) {
+      return {
+        level: 1,
+        experience: 0,
+        experienceToNext: 100,
+        totalExperience: 0,
+      };
+    }
+    return (
+      saveData.levelSystem || {
+        level: 1,
+        experience: 0,
+        experienceToNext: 100,
+        totalExperience: 0,
+      }
+    );
+  }
+
+  // === 스킬 쿨타임 ===
   static async saveSkillCooldown(characterType, skillKey, cooldownEndTime) {
     const saveData = await this.load();
     if (!saveData) return false;
     if (!saveData.skillCooldowns) saveData.skillCooldowns = {};
     if (!saveData.skillCooldowns[characterType]) saveData.skillCooldowns[characterType] = {};
     saveData.skillCooldowns[characterType][skillKey] = cooldownEndTime;
-    await this.save(saveData, saveData.slotIndex);
+    return await this.save(saveData);
   }
 
-  /** 모든 스킬 쿨타임 저장 (saveAllSkillCooldowns 역할) */
   static async saveAllSkillCooldowns(characterType, cooldowns) {
     const saveData = await this.load();
     if (!saveData) return false;
     if (!saveData.skillCooldowns) saveData.skillCooldowns = {};
     saveData.skillCooldowns[characterType] = cooldowns;
-    await this.save(saveData, saveData.slotIndex);
+    return await this.save(saveData);
   }
 
-  /** 스킬 쿨타임 가져오기 (getSkillCooldowns 역할) */
   static async getSkillCooldowns(characterType) {
     const saveData = await this.load();
     return saveData?.skillCooldowns?.[characterType] || {};
   }
 
-  /** 남은 쿨타임 가져오기 (getRemainingCooldown 역할) */
   static async getRemainingCooldown(characterType, skillKey) {
     const cooldowns = await this.getSkillCooldowns(characterType);
     const remaining = (cooldowns[skillKey] || 0) - Date.now();
     return remaining > 0 ? remaining : 0;
   }
 
-  /** 만료된 쿨타임 정리 (cleanExpiredCooldowns 역할) */
   static async cleanExpiredCooldowns(characterType) {
     const saveData = await this.load();
     if (!saveData) return;
     const now = Date.now();
     const cooldowns = saveData?.skillCooldowns?.[characterType] || {};
 
-    // 만료된 쿨타임 삭제
     Object.keys(cooldowns).forEach((key) => {
       if (cooldowns[key] <= now) delete cooldowns[key];
     });
 
-    // 변경 사항 저장
-    await this.save(saveData, saveData.slotIndex);
+    await this.save(saveData);
   }
 }

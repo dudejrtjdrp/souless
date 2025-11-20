@@ -1,15 +1,21 @@
+// ============================================
+// 📝 UIScene.js만 수정하면 됩니다
+// ============================================
+
 import Phaser from 'phaser';
 import UIExpBar from '../ui/UIExpBar.js';
 import UIHealthMana from '../ui/UIHealthMana.js';
 import UISkillCooldown from '../ui/UISkillCooldown.js';
-import SaveManager from '../utils/SaveManager.js';
+import SaveSlotManager from '../utils/SaveSlotManager.js';
 import SkillIconLoader from '../utils/SkillIconLoader.js';
 
 export default class UIScene extends Phaser.Scene {
   constructor() {
     super('UIScene');
     this.currentCharacterType = null;
-    this.currentGameScene = null; // GameScene 참조를 유지
+    this.currentGameScene = null;
+    this.isUpdatingExp = false;
+    this.pendingExpUpdate = false;
   }
 
   preload() {
@@ -22,16 +28,16 @@ export default class UIScene extends Phaser.Scene {
 
   async create() {
     const { width, height } = this.cameras.main;
-    const centerX = width / 2; // === 중앙 상단: 경험치 바들 ===
+    const centerX = width / 2;
 
-    this.expBar = new UIExpBar(this, centerX, 20); // === 중앙 하단: HP/MP 바 ===
+    this.expBar = new UIExpBar(this, centerX, 20);
 
     const skillBarHeight = 80;
     const hpMpY = height - skillBarHeight - 70;
-    this.healthMana = new UIHealthMana(this, centerX, hpMpY); // === 중앙 하단: 스킬 쿨다운 ===
+    this.healthMana = new UIHealthMana(this, centerX, hpMpY);
 
     const skillY = height - skillBarHeight;
-    this.skillCooldown = new UISkillCooldown(this, centerX, skillY); // === 디버그 로그 (좌측 하단) ===
+    this.skillCooldown = new UISkillCooldown(this, centerX, skillY);
 
     this.logText = this.add
       .text(16, height - 30, '', {
@@ -42,17 +48,16 @@ export default class UIScene extends Phaser.Scene {
       })
       .setScrollFactor(0)
       .setDepth(1000)
-      .setAlpha(0.8); //  게임 이벤트 리스너 등록
+      .setAlpha(0.8);
 
-    this.setupEventListeners(); // 초기 데이터 로드
+    this.setupEventListeners();
 
-    await this.updateExpBars(); //  create 완료 이벤트
+    await this.updateExpBars();
 
     this.events.emit('ui-ready');
 
     const gameScene = this.scene.get('GameScene');
     if (gameScene && gameScene.player && gameScene.selectedCharacter) {
-      // 약간의 딜레이를 줘서 모든 텍스처 로딩 완료 보장
       this.time.delayedCall(0, () => {
         SkillIconLoader.updateAllIcons(
           this,
@@ -70,42 +75,35 @@ export default class UIScene extends Phaser.Scene {
       console.warn('⚠️ GameScene not found, retrying...');
       this.time.delayedCall(100, () => this.setupEventListeners());
       return;
-    } // **추가:** 캐릭터 전환 전에 쿨다운 저장을 위한 이벤트
+    }
 
-    gameScene.events.off('character-switching', this.handleCharacterSwitching, this); // 이전 리스너 제거
-    gameScene.events.on('character-switching', this.handleCharacterSwitching, this); // 캐릭터 변경 이벤트 (전환 완료 후)
+    gameScene.events.off('character-switching', this.handleCharacterSwitching, this);
+    gameScene.events.on('character-switching', this.handleCharacterSwitching, this);
 
     gameScene.events.off('character-changed', this.handleCharacterChanged, this);
-    gameScene.events.on('character-changed', this.handleCharacterChanged, this); // 경험치 획득 이벤트
+    gameScene.events.on('character-changed', this.handleCharacterChanged, this);
 
     gameScene.events.off('exp-gained', this.handleExpGained, this);
-    gameScene.events.on('exp-gained', this.handleExpGained, this); // HP/MP 업데이트 이벤트
+    gameScene.events.on('exp-gained', this.handleExpGained, this);
 
     gameScene.events.off('player-stats-updated', this.handlePlayerStatsUpdated, this);
-    gameScene.events.on('player-stats-updated', this.handlePlayerStatsUpdated, this); // 스킬 쿨다운 업데이트 이벤트
+    gameScene.events.on('player-stats-updated', this.handlePlayerStatsUpdated, this);
 
     gameScene.events.off('skill-cooldowns-updated', this.handleSkillCooldownsUpdated, this);
     gameScene.events.on('skill-cooldowns-updated', this.handleSkillCooldownsUpdated, this);
   }
-  /**
-   *  **추가:** 캐릭터 전환 직전 핸들러 (이전 캐릭터 쿨다운 저장)
-   */
 
   async handleCharacterSwitching(data) {
     const { previousCharacterType, player } = data;
     if (previousCharacterType && player) {
-      // 이전 캐릭터의 쿨다운을 저장
       await this.saveCurrentCooldowns(previousCharacterType, player);
       this.addLog(`${previousCharacterType} 쿨다운 저장됨`, '#74c0fc');
     }
   }
-  /**
-   *  캐릭터 변경 핸들러 (전환 완료 후)
-   */
 
   async handleCharacterChanged(data) {
     const { characterType, player } = data;
-    this.currentCharacterType = characterType; // 스킬 아이콘 업데이트
+    this.currentCharacterType = characterType;
 
     if (player && player.skillSystem) {
       SkillIconLoader.updateAllIcons(
@@ -113,39 +111,130 @@ export default class UIScene extends Phaser.Scene {
         this.skillCooldown,
         characterType,
         this.skillCooldown.container,
-      ); // 쿨다운 복원 로직 (만료된 쿨다운 정리)
+      );
       await this.restoreSkillCooldowns(characterType, player);
-    } // 경험치 바 업데이트
+    }
 
-    await this.updatePlayerExp(characterType); //  HP/MP 업데이트 및 쿨다운 UI 갱신
+    await this.updatePlayerExp(characterType);
 
     if (player) {
-      this.updateUI(player); // **수정:** 쿨다운 데이터가 player.skillSystem에 로드되었다고 가정하고 UI를 갱신
+      this.updateUI(player);
       this.handleSkillCooldownsUpdated(data);
     }
 
     this.addLog(`${characterType} 활성화`, '#51cf66');
   }
-  /**
-   *  경험치 획득 핸들러
-   */
 
-  async handleExpGained(data) {
-    const { amount, characterType } = data; // 즉시 UI 업데이트
-    await this.updateExpBars();
+  handleExpGained(data) {
+    const { amount, characterType, levelInfo, characterExp } = data;
+
+    // 로그 즉시 표시
     this.addLog(`+${amount} EXP`, '#ffd43b');
+
+    console.log(`📊 UI에서 경험치 이벤트 수신:`, {
+      amount,
+      characterType,
+      levelInfo,
+      characterExp,
+    });
+
+    // ✅ 데이터가 이미 포함되어 있으므로 즉시 업데이트
+    if (levelInfo) {
+      this.updateTotalExpDirect(levelInfo);
+    }
+
+    if (characterType && characterExp !== undefined) {
+      this.updatePlayerExpDirect(characterType, characterExp);
+    }
+
+    // ✅ 혹시 모를 누락을 대비해 비동기 재확인 (200ms 후)
+    this.time.delayedCall(200, () => {
+      this.scheduleExpUpdate();
+    });
   }
-  /**
-   *  플레이어 스탯 업데이트 핸들러
-   */
+
+  updatePlayerExpDirect(characterType, exp) {
+    console.log(`⚡ 캐릭터 경험치 즉시 업데이트: ${characterType} - ${exp}`);
+
+    if (!this.expBar) return;
+
+    this.expBar.updatePlayerExp(characterType, exp);
+  }
+
+  updateTotalExpDirect(levelInfo) {
+    const { level, experience, experienceToNext } = levelInfo;
+    const percent = Math.min(experience / experienceToNext, 1);
+
+    console.log(`⚡ 총 경험치 즉시 업데이트: Lv.${level} (${experience}/${experienceToNext})`);
+
+    if (!this.expBar || !this.expBar.totalExpBar) return;
+
+    // 게이지 그리기
+    this.expBar.totalExpBar.clear();
+    const width = this.expBar.barWidth * percent;
+
+    this.expBar.drawExpGradient(
+      this.expBar.totalExpBar,
+      0,
+      0,
+      width,
+      this.expBar.barHeight,
+      0xffd43b,
+      0xf59f00,
+    );
+
+    // 텍스트 업데이트
+    if (this.expBar.totalExpText) {
+      this.expBar.totalExpText.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
+    }
+
+    // 레벨업 효과
+    if (percent >= 1) {
+      this.expBar.playLevelUpEffect(this.expBar.totalExpContainer);
+    }
+  }
+
+  async scheduleExpUpdate() {
+    // 이미 업데이트 중이면 큐에 추가
+    if (this.isUpdatingExp) {
+      this.pendingExpUpdate = true;
+      return;
+    }
+
+    this.isUpdatingExp = true;
+
+    try {
+      // ⏱️ localStorage 동기화 대기
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // UI 업데이트
+      await this.expBar.updateTotalExp();
+
+      if (this.currentCharacterType) {
+        await this.updatePlayerExp(this.currentCharacterType);
+      }
+
+      console.log(`✅ 경험치 바 업데이트 완료`);
+    } catch (error) {
+      console.error('❌ 경험치 업데이트 실패:', error);
+    } finally {
+      this.isUpdatingExp = false;
+
+      // 대기 중인 업데이트가 있으면 재실행
+      if (this.pendingExpUpdate) {
+        this.pendingExpUpdate = false;
+
+        this.time.delayedCall(50, () => {
+          this.scheduleExpUpdate();
+        });
+      }
+    }
+  }
 
   handlePlayerStatsUpdated(player) {
     if (!player) return;
     this.updateUI(player);
   }
-  /**
-   *  스킬 쿨다운 업데이트 핸들러
-   */
 
   handleSkillCooldownsUpdated(data) {
     const { player } = data;
@@ -154,14 +243,13 @@ export default class UIScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    const gameScene = this.scene.get('GameScene'); // 새 GameScene이 이전과 다르면 이벤트 재연결
+    const gameScene = this.scene.get('GameScene');
 
     if (gameScene && this.currentGameScene !== gameScene) {
       this.currentGameScene = gameScene;
-      this.setupEventListeners(); // 캐릭터 상태 강제 갱신
+      this.setupEventListeners();
 
       if (gameScene.player) {
-        // 새로운 씬 시작 시에는 'character-changed'만으로 충분
         this.handleCharacterChanged({
           characterType: gameScene.selectedCharacter,
           player: gameScene.player,
@@ -169,81 +257,69 @@ export default class UIScene extends Phaser.Scene {
       }
     }
   }
-  /**
-   * 플레이어 UI 업데이트 (HP/MP)
-   */
 
   updateUI(player) {
     if (!player) return;
     this.healthMana.update(player);
   }
-  /**
-   * 저장된 쿨타임 복원 (캐릭터 전환 시)
-   * (주의: SaveManager.loadAllSkillCooldowns 함수가 없으므로 cleanExpiredCooldowns만 호출)
-   */
 
   async restoreSkillCooldowns(characterType, player) {
-    if (!this.skillCooldown || !player || !player.skillSystem) return; // 현재 캐릭터의 만료된 쿨다운 데이터만 정리 (에러 수정)
-
-    await SaveManager.cleanExpiredCooldowns(characterType);
+    if (!this.skillCooldown || !player || !player.skillSystem) return;
+    await SaveSlotManager.cleanExpiredCooldowns(characterType);
   }
-  /**
-   * 현재 쿨타임 저장 (캐릭터 전환 전)
-   */
 
   async saveCurrentCooldowns(characterType, player) {
-    if (!this.skillCooldown || !player || !player.skillSystem) return; // 쿨다운 시스템에서 현재 활성화된 쿨다운 데이터를 가져옴
+    if (!this.skillCooldown || !player || !player.skillSystem) return;
 
     const cooldowns = this.skillCooldown.getCurrentCooldowns(player.skillSystem.skills);
 
     if (Object.keys(cooldowns).length > 0) {
-      await SaveManager.saveAllSkillCooldowns(characterType, cooldowns);
+      await SaveSlotManager.saveAllSkillCooldowns(characterType, cooldowns);
     }
   }
-  /**
-   * 경험치 바들 업데이트
-   */
 
+  // ✅ 수정: SaveSlotManager에서 저장된 데이터 직접 로드
   async updateExpBars() {
-    const expData = await SaveManager.getExpData();
-    const totalExp = expData.totalExp || 0; // 총 경험치 (100 경험치당 1레벨)
+    try {
+      // SaveSlotManager에서 저장된 전체 데이터 로드
+      const saveData = await SaveSlotManager.load();
 
-    const level = Math.floor(totalExp / 100) + 1;
-    const currentLevelExp = totalExp % 100;
-    const nextLevelExp = 100;
+      if (saveData && saveData.levelSystem) {
+        const levelSystem = saveData.levelSystem;
+        console.log('📊 로드된 LevelSystem:', levelSystem);
 
-    if (this.expBar) {
-      this.expBar.updateTotalExp(currentLevelExp, nextLevelExp, level);
-    } // 현재 캐릭터 경험치도 업데이트
+        await this.expBar.updateTotalExp();
+      }
 
-    if (this.currentCharacterType) {
-      await this.updatePlayerExp(this.currentCharacterType);
+      if (this.currentCharacterType) {
+        await this.updatePlayerExp(this.currentCharacterType);
+      }
+    } catch (error) {
+      console.error('❌ 경험치 바 업데이트 실패:', error);
     }
   }
-  /**
-   * 플레이어 경험치 업데이트
-   */
 
   async updatePlayerExp(characterType) {
     if (!characterType) return;
 
-    const expData = await SaveManager.getExpData();
-    const characterExp = expData.characterExp || {};
-    const exp = characterExp[characterType] || 0;
+    try {
+      const expData = await SaveSlotManager.getExpData();
+      const characterExp = expData.characterExp || {};
+      const exp = characterExp[characterType] || 0;
 
-    if (this.expBar) {
-      this.expBar.updatePlayerExp(characterType, exp);
+      if (this.expBar) {
+        this.expBar.updatePlayerExp(characterType, exp);
+      }
+    } catch (error) {
+      console.error('❌ 캐릭터 경험치 업데이트 실패:', error);
     }
   }
-  /**
-   * 로그 추가
-   */
 
   addLog(message, color = '#ffffff') {
     if (this.logText) {
       const timestamp = new Date().toLocaleTimeString();
       this.logText.setText(`[${timestamp}] ${message}`);
-      this.logText.setStyle({ fill: color }); // 3초 후 페이드아웃
+      this.logText.setStyle({ fill: color });
 
       this.time.delayedCall(3000, () => {
         if (this.logText) {
@@ -262,9 +338,6 @@ export default class UIScene extends Phaser.Scene {
       });
     }
   }
-  /**
-   * 전체 UI 숨기기/보이기
-   */
 
   hide() {
     if (this.expBar) this.expBar.hide();
@@ -277,9 +350,6 @@ export default class UIScene extends Phaser.Scene {
     if (this.healthMana) this.healthMana.show();
     if (this.skillCooldown) this.skillCooldown.show();
   }
-  /**
-   * Scene 종료 시 이벤트 리스너 정리
-   */
 
   shutdown() {
     const gameScene = this.scene.get('GameScene');

@@ -1,7 +1,6 @@
 import SaveSlotManager from '../../utils/SaveSlotManager.js';
 
 export default class JobUnlockManager {
-  // 전직 조건과 보스 매칭 정보
   static JOB_BOSS_MAPPING = {
     assassin: 'assassin_boss',
     monk: 'monk_boss',
@@ -11,31 +10,29 @@ export default class JobUnlockManager {
     princess: 'princess_boss',
   };
 
-  // 초기 해금 캐릭터
   static INITIAL_CHARACTERS = ['soul'];
 
   /**
-   * availableBoss에서 선택 가능한 보스 목록 반환
-   * 조건에 도달한 순서대로 정렬됨
+   * 🎯 availableBoss에서 선택 가능한 보스 목록 반환
+   * (조건 달성했지만 아직 처치 안 한 보스들)
    */
   static async getAvailableBosses() {
     const saveData = await SaveSlotManager.load();
 
     if (!saveData || !saveData.availableBoss || saveData.availableBoss.length === 0) {
-      // 기본 보스 (Assassin)
-      return ['assassin'];
+      return [];
     }
 
     return saveData.availableBoss;
   }
 
   /**
-   * availableTypes에서 선택 가능한 캐릭터 목록 반환
+   * 선택 가능한 캐릭터 목록 반환
    */
   static async getAvailableCharacters() {
     const saveData = await SaveSlotManager.load();
 
-    let availableTypes = [...this.INITIAL_CHARACTERS]; // soul은 항상 가능
+    let availableTypes = [...this.INITIAL_CHARACTERS];
 
     if (saveData && saveData.availableTypes) {
       availableTypes = [...new Set([...availableTypes, ...saveData.availableTypes])];
@@ -45,39 +42,65 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 보스 처치 시 캐릭터 해금
+   * 🎯 보스 처치 시 캐릭터 해금
+   * availableBoss에서 제거 + clearedBosses에 추가 + availableTypes에 추가
    */
   static async unlockCharacter(jobKey) {
     const saveData = await SaveSlotManager.load();
 
+    // 이미 처치한 보스면 중복 방지
+    if (saveData.clearedBosses && saveData.clearedBosses.includes(jobKey)) {
+      console.log(`⚠️ ${jobKey} 보스는 이미 처치했습니다.`);
+      return false;
+    }
+
+    // 1️⃣ availableTypes에 추가 (캐릭터 해금)
     if (!saveData.availableTypes) {
       saveData.availableTypes = [...this.INITIAL_CHARACTERS];
     }
 
-    // 중복 체크 후 추가
     if (!saveData.availableTypes.includes(jobKey)) {
       saveData.availableTypes.push(jobKey);
-      await SaveSlotManager.save(saveData);
-
-      console.log(`🎉 ${jobKey} 캐릭터 해금!`);
-      return true;
     }
 
-    return false;
+    // 2️⃣ availableBoss에서 제거 (보스 처치 확정 시에만 제거)
+    if (saveData.availableBoss) {
+      saveData.availableBoss = saveData.availableBoss.filter((key) => key !== jobKey);
+    }
+
+    // 3️⃣ clearedBosses에 추가 (다시는 availableBoss에 추가 안 됨)
+    if (!saveData.clearedBosses) {
+      saveData.clearedBosses = [];
+    }
+
+    if (!saveData.clearedBosses.includes(jobKey)) {
+      saveData.clearedBosses.push(jobKey);
+    }
+
+    await SaveSlotManager.save(saveData);
+
+    console.log(`🎉 ${jobKey} 캐릭터 해금! (보스 처치 완료)`);
+    return true;
   }
 
   /**
-   * 조건 달성 시 availableBoss에 추가
-   * (JobConditionTracker에서 호출)
+   * 🎯 조건 달성 시 availableBoss에 추가
+   * clearedBosses에 있으면 추가하지 않음
    */
   static async addAvailableBoss(jobKey) {
     const saveData = await SaveSlotManager.load();
+
+    // 이미 처치한 보스면 추가 안 함
+    if (saveData.clearedBosses && saveData.clearedBosses.includes(jobKey)) {
+      console.log(`⚠️ ${jobKey} 보스는 이미 처치했으므로 다시 추가하지 않음`);
+      return false;
+    }
 
     if (!saveData.availableBoss) {
       saveData.availableBoss = [];
     }
 
-    // 중복 체크 후 추가 (순서 유지)
+    // 중복 체크 후 추가
     if (!saveData.availableBoss.includes(jobKey)) {
       saveData.availableBoss.push(jobKey);
       await SaveSlotManager.save(saveData);
@@ -90,7 +113,7 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 보스 타입에 해당하는 직업 키 반환
+   * 보스 타입 → 직업 키
    */
   static getJobKeyFromBoss(bossType) {
     return Object.keys(this.JOB_BOSS_MAPPING).find(
@@ -99,7 +122,7 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 직업 키에 해당하는 보스 타입 반환
+   * 직업 키 → 보스 타입
    */
   static getBossTypeFromJob(jobKey) {
     return this.JOB_BOSS_MAPPING[jobKey] || null;
@@ -122,36 +145,30 @@ export default class JobUnlockManager {
   }
 
   /**
-   * availableBoss에서 보스 제거 (보스 처치 후)
+   * 🎯 보스 처치 후 availableBoss에서 제거
+   * ⚠️ 이 메서드는 사용하지 않음 - unlockCharacter()에서 처리
    */
   static async removeBossFromAvailable(jobKey) {
-    const saveData = await SaveSlotManager.load();
-
-    if (saveData.availableBoss) {
-      saveData.availableBoss = saveData.availableBoss.filter((key) => key !== jobKey);
-      await SaveSlotManager.save(saveData);
-    }
+    // unlockCharacter()에서 통합 처리되므로 별도로 호출하지 않음
+    console.warn('⚠️ removeBossFromAvailable()는 deprecated - unlockCharacter() 사용');
   }
 
   /**
    * 전직 가능 여부 체크
-   * availableBoss에 해당 직업이 있고, 보스를 처치하지 않았는지 확인
    */
   static async canJobChange(jobKey) {
     const isBossAvailable = await this.isBossAvailable(jobKey);
     const isAlreadyUnlocked = await this.isCharacterUnlocked(jobKey);
 
-    // 보스는 도전 가능하지만 아직 해금되지 않은 경우에만 전직 가능
     return isBossAvailable && !isAlreadyUnlocked;
   }
 
   /**
-   * 다음 전직 가능한 보스 선택
-   * availableBoss의 첫 번째 항목 반환
+   * 🎯 다음 전직 가능한 보스 선택 (availableBoss의 첫 번째)
    */
   static async getNextJobBoss() {
     const bosses = await this.getAvailableBosses();
-    return bosses.length > 0 ? bosses[0] : 'assassin'; // 기본값 assassin
+    return bosses.length > 0 ? bosses[0] : null;
   }
 
   /**
@@ -161,13 +178,16 @@ export default class JobUnlockManager {
     const availableBosses = await this.getAvailableBosses();
     const availableCharacters = await this.getAvailableCharacters();
 
-    const allJobs = Object.keys(this.JOB_BOSS_MAPPING);
+    const saveData = await SaveSlotManager.load();
+    const clearedBosses = saveData.clearedBosses || [];
 
+    const allJobs = Object.keys(this.JOB_BOSS_MAPPING);
     const summary = {};
 
     for (const job of allJobs) {
       summary[job] = {
-        conditionMet: availableBosses.includes(job),
+        conditionMet: availableBosses.includes(job) || clearedBosses.includes(job),
+        bossCleared: clearedBosses.includes(job),
         unlocked: availableCharacters.includes(job),
         bossType: this.JOB_BOSS_MAPPING[job],
       };
@@ -184,6 +204,7 @@ export default class JobUnlockManager {
 
     saveData.availableBoss = [];
     saveData.availableTypes = [...this.INITIAL_CHARACTERS];
+    saveData.clearedBosses = [];
 
     await SaveSlotManager.save(saveData);
 

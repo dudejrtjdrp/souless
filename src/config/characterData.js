@@ -1624,7 +1624,7 @@ export const CharacterData = {
             damage: 5,
           },
         ],
-        knockback: { x: 250, y: -150 },
+        knockback: { x: 50, y: 50 },
         effects: ['burn'],
         cooldown: 100,
         cost: { mana: 0 },

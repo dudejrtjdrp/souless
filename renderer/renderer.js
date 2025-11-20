@@ -19,9 +19,9 @@ const config = {
     arcade: { debug: true },
   },
   scene: [
+    MainMenuScene,
     GameScene,
     BossTestScene,
-    MainMenuScene,
     PauseMenuScene,
     EffectTestScene,
     SoulScene,

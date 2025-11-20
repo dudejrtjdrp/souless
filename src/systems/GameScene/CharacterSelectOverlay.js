@@ -1,4 +1,4 @@
-import CharacterFactory from '../../entities/characters/base/CharacterFactory';
+import CharacterFactory from '../../entities/characters/base/CharacterFactory.js';
 
 export default class CharacterSelectOverlay {
   constructor(scene) {
@@ -6,8 +6,8 @@ export default class CharacterSelectOverlay {
     this.isVisible = false;
     this.selectedIndex = 0;
 
-    // 캐릭터 타입 목록 (순서대로)
-    this.characters = CharacterFactory.getAvailableTypes(); // 실제 캐릭터 타입으로 변경
+    // 🎯 처음엔 빈 배열, show()에서 로드
+    this.characters = [];
 
     this.container = null;
     this.icons = [];
@@ -15,7 +15,12 @@ export default class CharacterSelectOverlay {
     this.HOLD_THRESHOLD = 300; // 300ms 이상 누르면 UI 표시
   }
 
-  create() {
+  async create() {
+    // 🎯 저장된 데이터에서 사용 가능한 캐릭터만 로드
+    this.characters = await CharacterFactory.getAvailableCharacters();
+
+    console.log('📋 사용 가능한 캐릭터:', this.characters);
+
     const camera = this.scene.cameras.main;
     const centerX = camera.width / 2;
     const centerY = camera.height / 2;
@@ -26,8 +31,9 @@ export default class CharacterSelectOverlay {
     this.container.setDepth(10000);
     this.container.setVisible(false);
 
-    // 반투명 배경
-    const bg = this.scene.add.rectangle(centerX, centerY, 400, 150, 0x000000, 0.8);
+    // 반투명 배경 (캐릭터 개수에 따라 크기 조정)
+    const bgWidth = Math.max(400, this.characters.length * 100 + 50);
+    const bg = this.scene.add.rectangle(centerX, centerY, bgWidth, 150, 0x000000, 0.8);
     this.container.add(bg);
 
     // 타이틀
@@ -41,10 +47,11 @@ export default class CharacterSelectOverlay {
     this.container.add(title);
 
     // 캐릭터 아이콘들 생성
-    const startX = centerX - (this.characters.length - 1) * 60;
+    const iconSpacing = 100;
+    const startX = centerX - ((this.characters.length - 1) * iconSpacing) / 2;
 
     this.characters.forEach((charType, index) => {
-      const x = startX + index * 120;
+      const x = startX + index * iconSpacing;
       const y = centerY + 10;
 
       // 아이콘 배경
@@ -53,7 +60,7 @@ export default class CharacterSelectOverlay {
       // 캐릭터 이름 텍스트
       const nameText = this.scene.add
         .text(x, y, this.getCharacterName(charType), {
-          fontSize: '16px',
+          fontSize: '12px',
           color: '#ffffff',
         })
         .setOrigin(0.5);
@@ -75,7 +82,7 @@ export default class CharacterSelectOverlay {
     // 힌트 텍스트
     const hint = this.scene.add
       .text(centerX, centerY + 60, 'Use ← → to select, release ` to confirm', {
-        fontSize: '14px',
+        fontSize: '12px',
         color: '#aaaaaa',
       })
       .setOrigin(0.5);
@@ -87,23 +94,32 @@ export default class CharacterSelectOverlay {
 
   getCharacterName(charType) {
     const names = {
+      soul: 'Soul',
       assassin: 'Assassin',
       warrior: 'Warrior',
-      mage: 'Mage',
+      monk: 'Monk',
+      magician: 'Magician',
+      bladekeeper: 'Bladekeeper',
+      fireknight: 'Fireknight',
+      ranger: 'Ranger',
+      mauler: 'Mauler',
+      princess: 'Princess',
     };
     return names[charType] || charType;
   }
 
-  show() {
+  async show() {
     if (!this.container) {
-      this.create();
+      await this.create();
     }
 
-    // 현재 캐릭터를 선택된 상태로 설정
+    // 🎯 현재 캐릭터를 선택된 상태로 설정
     const currentType = this.scene.selectedCharacter;
     const currentIndex = this.characters.indexOf(currentType);
     if (currentIndex !== -1) {
       this.selectedIndex = currentIndex;
+    } else {
+      this.selectedIndex = 0; // 기본값: 첫 번째 캐릭터
     }
 
     this.updateSelection();
@@ -119,6 +135,8 @@ export default class CharacterSelectOverlay {
   }
 
   updateSelection() {
+    if (this.icons.length === 0) return;
+
     this.icons.forEach((icon, index) => {
       if (index === this.selectedIndex) {
         icon.selector.setAlpha(1);
@@ -133,7 +151,7 @@ export default class CharacterSelectOverlay {
   }
 
   moveSelection(direction) {
-    if (!this.isVisible) return;
+    if (!this.isVisible || this.characters.length === 0) return;
 
     if (direction === 'left') {
       this.selectedIndex =
@@ -143,13 +161,10 @@ export default class CharacterSelectOverlay {
     }
 
     this.updateSelection();
-
-    // 선택 사운드 (옵션)
-    // this.scene.sound.play('select');
   }
 
   getSelectedCharacter() {
-    return this.characters[this.selectedIndex];
+    return this.characters[this.selectedIndex] || 'soul';
   }
 
   destroy() {
@@ -157,5 +172,6 @@ export default class CharacterSelectOverlay {
       this.container.destroy();
     }
     this.icons = [];
+    this.characters = [];
   }
 }

@@ -1,4 +1,3 @@
-// controllers/EnemyManager.js
 import Phaser from 'phaser';
 import Canine from '../entities/enemies/useable/Canine.js';
 import Slime from '../entities/enemies/useable/Slime.js';

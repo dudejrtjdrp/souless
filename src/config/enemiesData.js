@@ -521,7 +521,7 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 50,
       speed: { min: 50, max: 50 },
       runSpeed: 120,
       patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
@@ -546,11 +546,9 @@ export const EnemiesData = {
       walk: { start: 24, end: 29, frameRate: 6, repeat: -1 },
       run: { start: 24, end: 29, frameRate: 12, repeat: -1 },
       dash: { start: 24, end: 29, frameRate: 12, repeat: 0 },
-      hit: { start: 18, end: 27, frameRate: 4, repeat: 0 },
+      hit: { start: 18, end: 21, frameRate: 10, repeat: 0 },
       death: { start: 6, end: 11, frameRate: 10, repeat: 0 },
       attack: { start: 0, end: 4, frameRate: 8, repeat: 0 },
-      skill1: { start: 39, end: 47, frameRate: 10, repeat: 0 },
-      skill2: { start: 0, end: 11, frameRate: 10, repeat: 0 },
     },
 
     ai: {

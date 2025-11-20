@@ -1,4 +1,5 @@
-// ui/UIExpBar.js
+import SaveSlotManager from '../utils/SaveSlotManager';
+
 export default class UIExpBar {
   constructor(scene, centerX, topY) {
     this.scene = scene;
@@ -107,8 +108,10 @@ export default class UIExpBar {
   }
 
   // 총 경험치 업데이트
-  updateTotalExp(currentExp, nextLevelExp, level) {
-    const percent = Math.min(currentExp / nextLevelExp, 1);
+  async updateTotalExp() {
+    const saveData = await SaveSlotManager.load();
+    const { level, experience, experienceToNext } = saveData.levelSystem;
+    const percent = Math.min(experience / experienceToNext, 1);
 
     // 게이지 그리기 (황금색 그라디언트)
     this.totalExpBar.clear();
@@ -117,7 +120,7 @@ export default class UIExpBar {
     this.drawExpGradient(this.totalExpBar, 0, 0, width, this.barHeight, 0xffd43b, 0xf59f00);
 
     // 텍스트 업데이트
-    this.totalExpText.setText(`Lv.${level} | ${currentExp} / ${nextLevelExp}`);
+    this.totalExpText.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
 
     // 레벨업 효과 (100% 도달 시)
     if (percent >= 1) {

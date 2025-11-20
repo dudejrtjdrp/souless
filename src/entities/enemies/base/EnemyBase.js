@@ -69,8 +69,6 @@ export default class EnemyBase {
     this.sprite.body.setOffset(offsetX, offsetY);
 
     this.sprite.body.setVelocityX(this.speed * this.direction);
-    console.log(this.data.sprite.scale);
-
     const colliderTop = scene.physics.world.bounds.height - 200;
     const spriteY = colliderTop - physics.height * this.data.sprite.scale;
 
@@ -101,8 +99,6 @@ export default class EnemyBase {
     }
 
     const attackRange = aiConfig.attack?.range || aiConfig.attack?.attackRange || 70;
-    console.log(aiConfig, attackRange);
-
     // 공격 시스템
     if (aiConfig.attack) {
       this.attackSystem = new EnemyAttackSystem(this, this.scene, {
@@ -122,9 +118,7 @@ export default class EnemyBase {
         : Object.keys(aiConfig.skills).length > 0;
 
       if (hasSkills) {
-        console.log(`🔧 Initializing skill system for ${this.enemyType}`);
         this.skillSystem = new EnemySkillSystem(this, this.scene, aiConfig.skills);
-        console.log(`Skill system created with ${this.skillSystem.skills.size} skills`);
       }
     }
 
@@ -139,8 +133,6 @@ export default class EnemyBase {
         walkRange: aiConfig.attack?.walkRange || 1200,
         runRange: aiConfig.attack?.runRange || 500,
       });
-
-      console.log(`Boss controller created for ${this.enemyType}`);
     } else if (aiConfig.type === 'aggressive' || aiConfig.type === 'patrol') {
       this.controller = new EnemyController(this, {
         attackRange: attackRange,
@@ -197,24 +189,7 @@ export default class EnemyBase {
       scene.load.spritesheet(`${enemyType}_${key}`, path, { frameWidth, frameHeight });
     });
 
-    scene.load.once('complete', () => {
-      console.log(`All assets loaded for ${enemyType}`);
-
-      // 실제로 텍스처가 존재하는지 확인
-      Object.keys(assets).forEach((key) => {
-        const textureKey = `${enemyType}_${key}`;
-        if (scene.textures.exists(textureKey)) {
-          console.log(`Texture exists: ${textureKey}`);
-        } else {
-          console.error(`❌ Texture missing: ${textureKey}`);
-        }
-      });
-    });
-
-    // 개별 파일 로드 완료
-    scene.load.on('filecomplete', (key, type, data) => {
-      console.log(`File loaded: ${key}`);
-    });
+    scene.load.once('complete', () => {});
 
     // 로드 에러
     scene.load.on('loaderror', (file) => {
