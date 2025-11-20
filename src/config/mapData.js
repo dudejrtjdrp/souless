@@ -439,6 +439,12 @@ export const MAPS = {
       // 전직별 보스 매핑
       jobBossMapping: {
         assassin: 'assassin_boss',
+        fire_knight: 'fire_boss',
+        bladekeeper: 'bladekeeper_boss',
+        monk: 'monk_boss',
+        princess: 'princess_boss',
+        mauler: 'mauler_boss',
+        final: 'final_boss',
       },
     },
     portals: generateMapPortals('temple_1'),

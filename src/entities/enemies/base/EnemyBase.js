@@ -100,7 +100,8 @@ export default class EnemyBase {
       return;
     }
 
-    const attackRange = aiConfig.attack?.range || 70;
+    const attackRange = aiConfig.attack?.range || aiConfig.attack?.attackRange || 70;
+    console.log(aiConfig, attackRange);
 
     // 공격 시스템
     if (aiConfig.attack) {

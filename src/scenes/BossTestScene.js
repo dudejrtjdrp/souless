@@ -14,8 +14,9 @@ export default class BossTestScene extends Phaser.Scene {
   }
 
   init(data = {}) {
-    // 테스트할 보스 타입 (기본값: assassin_boss)
-    this.bossType = 'assassin_boss';
+    // 테스트할 보스 타입 (기본값: assassin_boss,monk_boss,bladekeeper_boss,princess_boss,fire_boss,mauler_boss,final_boss)
+    this.bossType = 'final_boss';
+    // this.bossType = 'bladekeeper_boss';
     // 플레이어 캐릭터 타입 (기본값: soul)
     this.selectedCharacter = data.characterType || 'soul';
   }
@@ -46,7 +47,6 @@ export default class BossTestScene extends Phaser.Scene {
     this.createUI();
 
     EffectLoader.createAllAnimations(this);
-    console.log(this);
   }
 
   setupScene() {
@@ -97,22 +97,21 @@ export default class BossTestScene extends Phaser.Scene {
     this.platforms = this.physics.add.staticGroup();
 
     // 메인 바닥
-    const ground = this.add.rectangle(960, 900, 1920, 100, 0x333333);
+    const ground = this.add.rectangle(960, 1000, 1920, 200, 0x333333);
     this.physics.add.existing(ground, true);
     this.platforms.add(ground);
 
-    // 추가 플랫폼 (선택사항)
-    const platform1 = this.add.rectangle(400, 700, 300, 30, 0x444444);
-    this.physics.add.existing(platform1, true);
-    this.platforms.add(platform1);
+    // const platform1 = this.add.rectangle(400, 700, 300, 30, 0x444444);
+    // this.physics.add.existing(platform1, true);
+    // this.platforms.add(platform1);
 
-    const platform2 = this.add.rectangle(1520, 700, 300, 30, 0x444444);
-    this.physics.add.existing(platform2, true);
-    this.platforms.add(platform2);
+    // const platform2 = this.add.rectangle(1520, 700, 300, 30, 0x444444);
+    // this.physics.add.existing(platform2, true);
+    // this.platforms.add(platform2);
 
-    const platform3 = this.add.rectangle(960, 500, 400, 30, 0x444444);
-    this.physics.add.existing(platform3, true);
-    this.platforms.add(platform3);
+    // const platform3 = this.add.rectangle(960, 500, 400, 30, 0x444444);
+    // this.physics.add.existing(platform3, true);
+    // this.platforms.add(platform3);
   }
 
   setupPlayer() {
@@ -137,7 +136,6 @@ export default class BossTestScene extends Phaser.Scene {
     this.boss = new EnemyBase(this, 1600, 700, this.bossType, -1);
 
     if (!this.boss || !this.boss.sprite) {
-      console.error('❌ Failed to create boss!');
       return;
     }
 
@@ -160,7 +158,7 @@ export default class BossTestScene extends Phaser.Scene {
 
     // BossController 인스턴스 생성
     this.boss.controller = new BossController(this.boss, {
-      attackRange: aiConfig.attackRange || 70,
+      attackRange: aiConfig.attack?.attackRange || 70,
       detectRange: aiConfig.detectRange || 200,
       attackCooldown: aiConfig.attackCooldown || 1500,
       skillCooldown: aiConfig.skillCooldown || 3000,

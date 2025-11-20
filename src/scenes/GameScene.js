@@ -618,7 +618,7 @@ export default class GameScene extends Phaser.Scene {
     if (input.isBPressed) {
       if (this.canSpawnBoss()) {
         // 임시로 기본 보스 타입 지정 (원하는 보스로 변경 가능)
-        const targetJob = 'assassin'; // 또는 'warrior', 'mage' 등
+        const targetJob = 'final'; // 또는 'warrior', 'mage' 등
         this.spawnBoss(targetJob);
       } else {
         console.log('⚠️ Cannot spawn boss: boss already exists or config disabled');
