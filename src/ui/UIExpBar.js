@@ -14,7 +14,6 @@ export default class UIExpBar {
       .setScrollFactor(0)
       .setDepth(1001);
 
-    // 라벨
     this.totalExpLabel = scene.add
       .text(0, -20, '🌟 TOTAL LEVEL', {
         fontSize: '14px',
@@ -26,17 +25,14 @@ export default class UIExpBar {
       })
       .setOrigin(0);
 
-    // 배경
     this.totalExpBg = scene.add.graphics();
     this.totalExpBg.fillStyle(0x1a1a1a, 0.9);
     this.totalExpBg.fillRoundedRect(0, 0, barWidth, barHeight, 10);
     this.totalExpBg.lineStyle(2, 0x444444, 1);
     this.totalExpBg.strokeRoundedRect(0, 0, barWidth, barHeight, 10);
 
-    // 게이지
     this.totalExpBar = scene.add.graphics();
 
-    // 레벨 텍스트
     this.totalExpText = scene.add
       .text(barWidth / 2, barHeight / 2, 'Lv.1 | 0 / 100', {
         fontSize: '13px',
@@ -61,7 +57,6 @@ export default class UIExpBar {
       .setScrollFactor(0)
       .setDepth(1001);
 
-    // 라벨
     this.playerExpLabel = scene.add
       .text(0, -20, '⚔️ CHARACTER', {
         fontSize: '14px',
@@ -73,19 +68,16 @@ export default class UIExpBar {
       })
       .setOrigin(0);
 
-    // 배경
     this.playerExpBg = scene.add.graphics();
     this.playerExpBg.fillStyle(0x1a1a1a, 0.9);
     this.playerExpBg.fillRoundedRect(0, 0, barWidth, barHeight, 10);
     this.playerExpBg.lineStyle(2, 0x444444, 1);
     this.playerExpBg.strokeRoundedRect(0, 0, barWidth, barHeight, 10);
 
-    // 게이지
     this.playerExpBar = scene.add.graphics();
 
-    // 경험치 텍스트
     this.playerExpText = scene.add
-      .text(barWidth / 2, barHeight / 2, 'WARRIOR: 0', {
+      .text(barWidth / 2, barHeight / 2, 'SOUL: 0', {
         fontSize: '13px',
         color: '#ffffff',
         fontStyle: 'bold',
@@ -102,35 +94,14 @@ export default class UIExpBar {
       this.playerExpText,
     ]);
 
-    // 속성 저장
     this.barWidth = barWidth;
     this.barHeight = barHeight;
   }
 
-  // 총 경험치 업데이트
-  async updateTotalExp() {
-    const saveData = await SaveSlotManager.load();
-    const { level, experience, experienceToNext } = saveData.levelSystem;
-    const percent = Math.min(experience / experienceToNext, 1);
-
-    // 게이지 그리기 (황금색 그라디언트)
-    this.totalExpBar.clear();
-    const width = this.barWidth * percent;
-
-    this.drawExpGradient(this.totalExpBar, 0, 0, width, this.barHeight, 0xffd43b, 0xf59f00);
-
-    // 텍스트 업데이트
-    this.totalExpText.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
-
-    // 레벨업 효과 (100% 도달 시)
-    if (percent >= 1) {
-      this.playLevelUpEffect(this.totalExpContainer);
-    }
-  }
-
-  // 플레이어 경험치 업데이트
-  updatePlayerExp(characterType, exp) {
+  // ✅ 동기 버전 (초고속)
+  updatePlayerExpSync(characterType, exp) {
     const characterNames = {
+      soul: 'SOUL',
       warrior: 'WARRIOR',
       mage: 'MAGE',
       archer: 'ARCHER',
@@ -138,27 +109,64 @@ export default class UIExpBar {
     };
 
     const name = characterNames[characterType] || characterType.toUpperCase();
+    const validExp = typeof exp === 'number' && exp >= 0 ? exp : 0;
 
-    // 간단한 게이지 (경험치 비율 시각화)
+    // 게이지
     this.playerExpBar.clear();
 
-    // 경험치에 따른 진행도 (0~1000 범위로 가정)
     const maxDisplay = 1000;
-    const displayExp = Math.min(exp, maxDisplay);
+    const displayExp = Math.min(validExp, maxDisplay);
     const percent = displayExp / maxDisplay;
     const width = this.barWidth * percent;
 
     this.drawExpGradient(this.playerExpBar, 0, 0, width, this.barHeight, 0x4dabf7, 0x339af0);
 
-    // 텍스트 업데이트
-    this.playerExpText.setText(`${name}: ${exp} EXP`);
+    // 텍스트
+    this.playerExpText.setText(`${name}: ${validExp} EXP`);
   }
 
+  // 기존 비동기 버전 (호환성)
+  updatePlayerExp(characterType, exp) {
+    this.updatePlayerExpSync(characterType, exp);
+  }
+
+  // 총 경험치 업데이트
+  async updateTotalExp() {
+    try {
+      const saveData = await SaveSlotManager.load();
+
+      if (!saveData || !saveData.levelSystem) {
+        console.warn('⚠️ [ExpBar] 레벨 시스템 데이터 없음');
+        return;
+      }
+
+      const { level, experience, experienceToNext } = saveData.levelSystem;
+      const percent = Math.min(experience / experienceToNext, 1);
+
+      // 게이지 그리기
+      this.totalExpBar.clear();
+      const width = this.barWidth * percent;
+
+      this.drawExpGradient(this.totalExpBar, 0, 0, width, this.barHeight, 0xffd43b, 0xf59f00);
+
+      // 텍스트 업데이트
+      this.totalExpText.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
+
+      // 레벨업 효과
+      if (percent >= 1) {
+        this.playLevelUpEffect(this.totalExpContainer);
+      }
+    } catch (error) {
+      console.error('❌ [ExpBar] updateTotalExp 실패:', error);
+    }
+  }
+
+  // ✅ 그라디언트 최적화 (단계 수 감소)
   drawExpGradient(graphics, x, y, width, height, color1, color2) {
     if (width <= 0) return;
 
-    // 가로 그라디언트
-    const steps = 20;
+    // ✅ 10단계로 줄여서 렌더링 빠르게
+    const steps = 10;
     const stepWidth = width / steps;
 
     for (let i = 0; i < steps; i++) {
@@ -174,7 +182,7 @@ export default class UIExpBar {
       graphics.fillRect(x + i * stepWidth, y, stepWidth, height);
     }
 
-    // 하이라이트 효과 (상단에 밝은 선)
+    // 하이라이트 효과
     graphics.fillStyle(0xffffff, 0.3);
     graphics.fillRect(x, y, width, height * 0.3);
 
@@ -184,7 +192,6 @@ export default class UIExpBar {
   }
 
   playLevelUpEffect(container) {
-    // 간단한 펄스 효과
     this.scene.tweens.add({
       targets: container,
       scaleX: 1.05,

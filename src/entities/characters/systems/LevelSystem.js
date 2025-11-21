@@ -17,24 +17,10 @@ export default class LevelSystem {
    * @returns {boolean} - 레벨업 발생 여부
    */
   async addExperience(amount) {
-    if (amount <= 0) return false;
-
-    this.experience += amount;
-    this.totalExperience += amount;
-
-    let leveledUp = false;
-
-    while (this.experience >= this.experienceToNext) {
-      await this.levelUp();
-      leveledUp = true;
-    }
-
-    return leveledUp;
+    return this.addExperienceSync(amount);
   }
 
-  /**
-   * 레벨업 처리
-   */
+  // 레벨업 처리
   async levelUp() {
     this.experience -= this.experienceToNext;
     this.level++;
@@ -42,8 +28,6 @@ export default class LevelSystem {
     this.experienceToNext = this.calculateNextLevelExp(this.level);
 
     this.scene.events.emit('player-level-up', this.level);
-
-    console.log(`🎉 레벨업! ${this.level} (다음 레벨: ${this.experienceToNext} EXP)`);
 
     await this.save();
   }
@@ -158,7 +142,6 @@ export default class LevelSystem {
       const levelData = await SaveSlotManager.getLevelSystem();
       if (levelData) {
         this.deserialize(levelData);
-        console.log(`레벨 데이터 로드: Lv.${this.level}`);
         return true;
       }
       return false;
@@ -166,6 +149,26 @@ export default class LevelSystem {
       console.error('레벨 시스템 로드 실패:', error);
       return false;
     }
+  }
+
+  addExperienceSync(amount) {
+    if (amount <= 0) return false;
+
+    this.experience += amount;
+    this.totalExperience += amount;
+
+    let leveledUp = false;
+
+    while (this.experience >= this.experienceToNext) {
+      this.experience -= this.experienceToNext;
+      this.level++;
+      this.experienceToNext = this.calculateNextLevelExp(this.level);
+
+      this.scene.events.emit('player-level-up', this.level);
+      leveledUp = true;
+    }
+
+    return leveledUp;
   }
 
   /**
@@ -196,13 +199,11 @@ export default class LevelSystem {
    * 디버그용: 레벨별 필요 경험치 테이블 출력
    */
   printExpTable(maxLevel = 30) {
-    console.log('=== 레벨별 필요 경험치 테이블 ===');
     let required = 100;
     let cumulative = 0;
 
     for (let lvl = 1; lvl <= maxLevel; lvl++) {
       cumulative += required;
-      console.log(`Lv.${lvl}: ${required} EXP (누적: ${cumulative})`);
 
       if (lvl % 10 === 0) {
         required = Math.floor(required * 1.5);

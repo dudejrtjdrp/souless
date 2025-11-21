@@ -38,13 +38,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async init(data = {}) {
-    console.log('🎮 GameScene init 데이터:', data);
-
     await GameSceneInitializer.initializeScene(this, data);
     const currentSlot = SaveSlotManager.getCurrentSlot();
-    console.log(`📍 현재 활성 슬롯: ${currentSlot}`);
 
-    // ✅ 슬롯 데이터 확인
     const slotData = await SaveSlotManager.load(currentSlot);
   }
 
@@ -86,7 +82,6 @@ export default class GameScene extends Phaser.Scene {
 
     const jobBossMapping = this.mapConfig.boss.jobBossMapping;
     Object.values(jobBossMapping).forEach((bossType) => {
-      console.log(`📦 Preloading boss: ${bossType}`);
       EnemyBase.preload(this, bossType);
     });
   }
@@ -143,7 +138,6 @@ export default class GameScene extends Phaser.Scene {
   }
   async ensureSaveSlotInitialized() {
     const currentSlot = SaveSlotManager.getCurrentSlot();
-    console.log(`🎮 현재 활성 슬롯: ${currentSlot}`);
 
     let saveData = await SaveSlotManager.load(currentSlot);
 
@@ -155,9 +149,6 @@ export default class GameScene extends Phaser.Scene {
       saveData.currentCharacter = this.selectedCharacter || 'soul';
 
       await SaveSlotManager.save(saveData, currentSlot);
-      console.log(`✅ 슬롯 ${currentSlot} 초기화 완료`);
-    } else {
-      console.log(`✅ 슬롯 ${currentSlot} 로드 완료:`, saveData);
     }
   }
 
@@ -169,11 +160,12 @@ export default class GameScene extends Phaser.Scene {
 
   async setupLevelSystem() {
     this.levelSystem = new LevelSystem(this);
-
-    // 저장된 레벨 데이터 로드
     await this.levelSystem.load();
 
-    // 레벨업 이벤트 리스너
+    // 캐릭터 경험치 캐시 로드
+    const expData = await SaveSlotManager.getExpData();
+    this._characterExpCache = expData.characterExp || {};
+
     this.events.on('player-level-up', (newLevel) => {
       this.onPlayerLevelUp(newLevel);
     });
@@ -182,35 +174,21 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async onExpGained(amount, characterType) {
-    if (!this.levelSystem) {
-      console.warn('⚠️ 레벨 시스템이 초기화되지 않았습니다');
-      return;
-    }
-
-    console.log(`💎 경험치 획득 시작: ${amount} (${characterType})`);
+    if (!this.levelSystem) return;
 
     try {
-      // ✅ 1. 레벨 시스템에 경험치 추가
-      const leveledUp = await this.levelSystem.addExperience(amount);
+      // ✅ 1. 메모리에서 즉시 경험치 추가 (await 제거!)
+      const leveledUp = this.levelSystem.addExperienceSync(amount);
 
-      // ✅ 2. SaveSlotManager에 저장 (완전히 대기)
-      await SaveSlotManager.addExp(amount, characterType);
+      // ✅ 2. 캐릭터별 경험치도 메모리에서 즉시 계산
+      if (!this._characterExpCache) this._characterExpCache = {};
+      this._characterExpCache[characterType] =
+        (this._characterExpCache[characterType] || 0) + amount;
 
-      // ⏱️ 저장이 완전히 완료될 때까지 잠시 대기 (선택사항)
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      const finalCharacterExp = this._characterExpCache[characterType];
+      const levelInfo = this.levelSystem.serialize();
 
-      // ✅ 3. 최신 데이터 다시 로드하여 확인
-      const saveData = await SaveSlotManager.load();
-      const levelInfo = saveData.levelSystem;
-      const characterExp = saveData.expData?.characterExp?.[characterType] || 0;
-
-      console.log(`✅ 경험치 저장 완료:`, {
-        totalLevel: levelInfo.level,
-        totalExp: levelInfo.experience,
-        characterExp: characterExp,
-      });
-
-      // ✅ 4. 검증된 최신 데이터로 이벤트 발생
+      // ✅ 3. UI 즉시 업데이트 (await 없음!)
       this.events.emit('exp-gained', {
         amount,
         characterType,
@@ -218,13 +196,15 @@ export default class GameScene extends Phaser.Scene {
           level: levelInfo.level,
           experience: levelInfo.experience,
           experienceToNext: levelInfo.experienceToNext,
+          totalExperience: levelInfo.totalExperience,
         },
-        characterExp: characterExp,
+        characterExp: finalCharacterExp,
       });
 
-      // ✅ 5. 레벨업 시 추가 저장
+      // ✅ 4. 저장은 백그라운드에서 (UI 블로킹 없음)
+      this.saveExpDataBackground(characterType, finalCharacterExp, levelInfo);
+
       if (leveledUp) {
-        await this.levelSystem.save();
         console.log(`🎉 레벨업! Lv.${levelInfo.level}`);
       }
     } catch (error) {
@@ -232,12 +212,34 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * 레벨업 콜백
-   */
-  async onPlayerLevelUp(newLevel) {
-    console.log(`🎉 플레이어 레벨업! ${newLevel}`);
+  saveExpDataBackground(characterType, characterExp, levelInfo) {
+    // Promise로 감싸서 백그라운드 실행
+    Promise.resolve().then(async () => {
+      try {
+        const currentSlot = SaveSlotManager.getCurrentSlot();
+        let saveData = await SaveSlotManager.load(currentSlot);
 
+        if (!saveData) {
+          saveData = SaveSlotManager.getDefaultSaveData();
+        }
+
+        // 캐릭터 경험치 업데이트
+        if (!saveData.characterExp) saveData.characterExp = {};
+        saveData.characterExp[characterType] = characterExp;
+
+        // 레벨 시스템 업데이트
+        saveData.levelSystem = levelInfo;
+
+        // 저장
+        await SaveSlotManager.save(saveData, currentSlot);
+      } catch (error) {
+        console.error('❌ 백그라운드 저장 실패:', error);
+      }
+    });
+  }
+
+  // 레벨업 콜백
+  async onPlayerLevelUp(newLevel) {
     // 플레이어 스탯 증가
     if (this.player) {
       this.applyLevelUpBonus();
@@ -460,8 +462,6 @@ export default class GameScene extends Phaser.Scene {
         return null;
       }
 
-      console.log(`🎭 Spawning boss: ${bossType} for job: ${targetJob}`);
-
       const spawnPos = this.calculateBossSpawnPosition();
       const colliderTop = this.physics.world.bounds.height - 200;
 
@@ -497,7 +497,7 @@ export default class GameScene extends Phaser.Scene {
   // 🎯 보스 스폰 위치 계산
   calculateBossSpawnPosition() {
     const spawnConfig = this.mapConfig.boss.spawnPosition;
-    console.log(this.mapConfig.boss.spawnPosition);
+
     const worldBounds = this.physics.world.bounds;
 
     let x, y;
@@ -840,6 +840,17 @@ export default class GameScene extends Phaser.Scene {
     this.inputHandler = new InputHandler(this);
   }
 
+  async openPauseMenu() {
+    this.scene.pause();
+
+    await this.saveCurrentPosition();
+    await this.saveCurrentCharacterResources();
+
+    this.scene.launch('PauseMenuScene', {
+      callingScene: 'GameScene',
+    });
+  }
+
   handleInput(time, delta) {
     const input = this.inputHandler.getInputState();
 
@@ -857,7 +868,6 @@ export default class GameScene extends Phaser.Scene {
           console.error('Error spawning boss:', err);
         });
       } else {
-        console.log('⚠️ Cannot spawn boss: already spawning or conditions not met');
       }
     }
 

@@ -73,8 +73,6 @@ export default class JobConditionTracker {
       saveData.clearedBosses.forEach((job) => this.completedConditions.add(job));
     }
 
-    console.log('📋 트래킹 제외 조건 (처치 완료):', Array.from(this.completedConditions));
-
     // 🎯 초기화 완료 표시
     this.isInitialized = true;
   }

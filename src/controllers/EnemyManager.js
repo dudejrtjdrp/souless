@@ -31,13 +31,11 @@ export default class EnemyManager {
   // 스폰 일시 중지
   pauseSpawning() {
     this.isSpawningPaused = true;
-    console.log('🛑 Enemy spawning paused');
   }
 
   // 스폰 재개
   resumeSpawning() {
     this.isSpawningPaused = false;
-    console.log('▶️ Enemy spawning resumed');
   }
 
   createInitial() {
@@ -51,29 +49,26 @@ export default class EnemyManager {
     const { types, maxCount, respawnInterval, patrolRangeX, minPlayerDistance } =
       this.mapConfig.enemies;
 
-    // 적 업데이트 (AI 포함)
+    // 적 업데이트
     this.enemies.forEach((enemy) => {
       if (enemy && enemy.sprite && !enemy.isDead) {
-        // EnemyBase의 update가 AI 로직을 처리함
         if (enemy.update) {
           enemy.update(time, delta);
         }
       }
     });
 
-    // 죽은 적 제거 및 경험치 지급
+    // 죽은 적 제거만 수행 (경험치는 EnemyBase.destroy에서 처리됨)
     this.enemies = this.enemies.filter((enemy) => {
       if (enemy.isDead) {
-        this.handleEnemyDeath(enemy);
-        return false;
+        return false; // 배열에서 제거
       }
       return true;
     });
 
-    // 스폰이 일시 중지되었으면 리젠 스킵
+    // 스폰 체크
     if (this.isSpawningPaused) return;
 
-    // 리젠
     if (this.enemies.length < maxCount && time - this.lastSpawnTime > respawnInterval) {
       this.spawnRandomEnemyNearPlayer(types, patrolRangeX, minPlayerDistance);
       this.lastSpawnTime = time;

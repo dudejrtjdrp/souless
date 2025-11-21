@@ -207,7 +207,5 @@ export default class JobUnlockManager {
     saveData.clearedBosses = [];
 
     await SaveSlotManager.save(saveData);
-
-    console.log('🔄 전직 진행 상황 초기화됨');
   }
 }

@@ -360,42 +360,6 @@ export default class CharacterBase {
     }
   }
 
-  async gainExp(amount) {
-    if (amount <= 0) return;
-
-    console.log(`💰 경험치 획득: ${amount} (${this.characterType})`);
-
-    try {
-      // 1️⃣ LevelSystem에 경험치 추가 (GameScene에서 처리)
-      if (this.scene && this.scene.player && this.scene.player.levelSystem) {
-        const leveledUp = await this.scene.player.levelSystem.addExperience(amount);
-        console.log(
-          `📊 LevelSystem 업데이트: level=${this.scene.player.levelSystem.level}, exp=${this.scene.player.levelSystem.experience}`,
-        );
-
-        // 2️⃣ SaveSlotManager에 LevelSystem 저장
-        await SaveSlotManager.saveLevelSystem(this.scene.player.levelSystem.serialize());
-        console.log('✅ LevelSystem 저장 완료');
-      }
-
-      // 3️⃣ SaveSlotManager에도 경험치 추가 (캐릭터별 경험치 추적용)
-      const result = await SaveSlotManager.addExp(amount, this.characterType);
-      console.log('✅ 캐릭터별 경험치 저장:', result);
-
-      // 4️⃣ GameScene의 onExpGained 호출
-      // if (this.scene && typeof this.scene.onExpGained === 'function') {
-      //   await this.scene.onExpGained(amount, this.characterType);
-      // }
-
-      // 5️⃣ 경험치 획득 이펙트
-      this.showExpGainEffect(amount);
-
-      console.log('✅ 경험치 처리 완료');
-    } catch (error) {
-      console.error('❌ 경험치 처리 중 오류:', error);
-    }
-  }
-
   showExpGainEffect(amount) {
     const expText = this.scene.add
       .text(this.sprite.x, this.sprite.y - 50, `+${amount} EXP`, {

@@ -373,21 +373,35 @@ export default class EnemyBase {
     if (this.scene.anims.exists(deathKey)) {
       this.sprite.play(deathKey);
       this.sprite.once(`animationcomplete-${deathKey}`, () => {
-        this.destroy();
+        this.destroy(); // await 추가
       });
     } else {
-      // 죽음 애니메이션 없으면 바로 파괴
       this.destroy();
     }
   }
 
   destroy() {
+    // ✅ await 제거 (비동기 처리 불필요)
+    if (this.isDead && this.expReward > 0 && !this.hasGrantedExp) {
+      this.hasGrantedExp = true;
+
+      if (this.scene?.onExpGained) {
+        const characterType = this.scene.selectedCharacter || 'soul';
+
+        // ✅ await 제거 - 즉시 실행
+        this.scene.onExpGained(this.expReward, characterType);
+
+        // 이펙트
+        if (this.scene.player?.showExpGainEffect) {
+          this.scene.player.showExpGainEffect(this.expReward);
+        }
+      }
+    }
+
+    // 기존 destroy
     if (this.sprite) this.sprite.destroy();
     if (this.hpBar) this.hpBar.destroy();
-
-    if (this.skillSystem) {
-      this.skillSystem.destroy();
-    }
+    if (this.skillSystem) this.skillSystem.destroy();
   }
 
   // === Getter 프로퍼티 ===

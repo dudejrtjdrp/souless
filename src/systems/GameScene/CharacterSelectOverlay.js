@@ -19,8 +19,6 @@ export default class CharacterSelectOverlay {
     // 🎯 저장된 데이터에서 사용 가능한 캐릭터만 로드
     this.characters = await CharacterFactory.getAvailableCharacters();
 
-    console.log('📋 사용 가능한 캐릭터:', this.characters);
-
     const camera = this.scene.cameras.main;
     const centerX = camera.width / 2;
     const centerY = camera.height / 2;

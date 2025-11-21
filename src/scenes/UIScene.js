@@ -1,7 +1,3 @@
-// ============================================
-// 📝 UIScene.js만 수정하면 됩니다
-// ============================================
-
 import Phaser from 'phaser';
 import UIExpBar from '../ui/UIExpBar.js';
 import UIHealthMana from '../ui/UIHealthMana.js';
@@ -128,46 +124,65 @@ export default class UIScene extends Phaser.Scene {
   handleExpGained(data) {
     const { amount, characterType, levelInfo, characterExp } = data;
 
-    // 로그 즉시 표시
+    if (!levelInfo || characterExp === undefined) return;
+
+    // 로그
     this.addLog(`+${amount} EXP`, '#ffd43b');
 
-    console.log(`📊 UI에서 경험치 이벤트 수신:`, {
-      amount,
-      characterType,
-      levelInfo,
-      characterExp,
-    });
+    // ✅ 즉시 업데이트 (동기 처리)
+    this.updateTotalExpDirectSync(levelInfo);
+    this.updatePlayerExpDirectSync(characterType, characterExp);
+  }
 
-    // ✅ 데이터가 이미 포함되어 있으므로 즉시 업데이트
-    if (levelInfo) {
-      this.updateTotalExpDirect(levelInfo);
+  updateTotalExpDirectSync(levelInfo) {
+    const { level, experience, experienceToNext } = levelInfo;
+
+    if (!this.expBar?.totalExpBar) return;
+
+    const percent = Math.min(experience / experienceToNext, 1);
+    const width = this.expBar.barWidth * percent;
+
+    // 게이지 그리기
+    this.expBar.totalExpBar.clear();
+    this.expBar.drawExpGradient(
+      this.expBar.totalExpBar,
+      0,
+      0,
+      width,
+      this.expBar.barHeight,
+      0xffd43b,
+      0xf59f00,
+    );
+
+    // 텍스트
+    this.expBar.totalExpText?.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
+
+    // 레벨업 효과
+    if (percent >= 1) {
+      this.expBar.playLevelUpEffect(this.expBar.totalExpContainer);
     }
+  }
 
-    if (characterType && characterExp !== undefined) {
-      this.updatePlayerExpDirect(characterType, characterExp);
-    }
+  updatePlayerExpDirectSync(characterType, exp) {
+    if (!this.expBar) return;
 
-    // ✅ 혹시 모를 누락을 대비해 비동기 재확인 (200ms 후)
-    this.time.delayedCall(200, () => {
-      this.scheduleExpUpdate();
-    });
+    const validExp = typeof exp === 'number' && exp >= 0 ? exp : 0;
+    this.expBar.updatePlayerExpSync(characterType, validExp);
   }
 
   updatePlayerExpDirect(characterType, exp) {
-    console.log(`⚡ 캐릭터 경험치 즉시 업데이트: ${characterType} - ${exp}`);
+    if (!this.expBar || exp === undefined) return;
 
-    if (!this.expBar) return;
-
-    this.expBar.updatePlayerExp(characterType, exp);
+    const validExp = typeof exp === 'number' && exp >= 0 ? exp : 0;
+    this.expBar.updatePlayerExp(characterType, validExp);
   }
 
   updateTotalExpDirect(levelInfo) {
     const { level, experience, experienceToNext } = levelInfo;
+
+    if (!this.expBar?.totalExpBar) return;
+
     const percent = Math.min(experience / experienceToNext, 1);
-
-    console.log(`⚡ 총 경험치 즉시 업데이트: Lv.${level} (${experience}/${experienceToNext})`);
-
-    if (!this.expBar || !this.expBar.totalExpBar) return;
 
     // 게이지 그리기
     this.expBar.totalExpBar.clear();
@@ -213,8 +228,6 @@ export default class UIScene extends Phaser.Scene {
       if (this.currentCharacterType) {
         await this.updatePlayerExp(this.currentCharacterType);
       }
-
-      console.log(`✅ 경험치 바 업데이트 완료`);
     } catch (error) {
       console.error('❌ 경험치 업데이트 실패:', error);
     } finally {
@@ -286,7 +299,6 @@ export default class UIScene extends Phaser.Scene {
 
       if (saveData && saveData.levelSystem) {
         const levelSystem = saveData.levelSystem;
-        console.log('📊 로드된 LevelSystem:', levelSystem);
 
         await this.expBar.updateTotalExp();
       }

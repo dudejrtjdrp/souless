@@ -58,26 +58,23 @@ export default class MainMenuScene extends Phaser.Scene {
    */
 
   isSlotEmpty(slotSummary) {
-    if (!slotSummary) return true; // 1. lastPosition (맵/좌표) 정보가 없거나,
+    if (!slotSummary) return true;
 
-    const hasMapKey = !!slotSummary.mapKey; // 2. 총 경험치가 0이거나 (경험치가 1이라도 있으면 플레이 이력이 있다고 간주),
-
-    const hasExp = slotSummary.totalExp > 0; // lastPosition 정보도 없고, 총 경험치도 0이면 빈 슬롯으로 간주
-
-    return !hasMapKey && !hasExp;
+    // SaveSlotManager의 isSlotReallyEmpty 사용
+    return SaveSlotManager.isSlotReallyEmpty(slotSummary);
   }
+
   /**
    * 모든 슬롯의 요약 정보를 SaveSlotManager를 통해 로드하고 비어있는지 검사합니다.
    */
 
   async loadSaveSlots() {
     try {
-      // SaveSlotManager가 로컬 스토리지를 읽어 슬롯별 데이터를 로드 시도
-      const loadedSlots = await SaveSlotManager.loadAllSlots(); // 로드된 데이터가 실제 사용된 데이터인지 isSlotEmpty를 통해 확인하여 this.saveSlots에 할당
+      this.saveSlots = await SaveSlotManager.loadAllSlots();
 
-      this.saveSlots = loadedSlots.map((summary) => (this.isSlotEmpty(summary) ? null : summary));
+      console.log('✅ 슬롯 정보:', this.saveSlots);
     } catch (error) {
-      console.error('Error loading save slots:', error);
+      console.error('❌ Error loading save slots:', error);
       this.saveSlots = new Array(SaveSlotManager.MAX_SLOTS).fill(null);
     }
   }
@@ -98,14 +95,16 @@ export default class MainMenuScene extends Phaser.Scene {
       minute: '2-digit',
     });
 
+    // ✅ level 정보 추가
     const content = [
+      { key: 'Level:', value: `${slotSummary.level || 1}` },
       { key: 'Character:', value: slotSummary.characterType.toUpperCase() },
       { key: 'Location:', value: slotSummary.mapKey },
-      { key: 'Total EXP:', value: slotSummary.totalExp.toLocaleString() },
+      { key: 'Total EXP:', value: (slotSummary.totalExp || 0).toLocaleString() },
       { key: 'Last Save:', value: `${dateString} ${timeString}` },
     ];
 
-    let yOffset = -height / 2 + 50;
+    let yOffset = -height / 2 + 40;
     const padding = 15;
 
     content.forEach((item) => {
@@ -363,8 +362,6 @@ export default class MainMenuScene extends Phaser.Scene {
    * @param {number} slotIndex - 선택된 슬롯 인덱스
    */
   async startNewGame(slotIndex) {
-    console.log(`🎮 새 게임 시작: 슬롯 ${slotIndex}`);
-
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
     // ✅ 페이드아웃 완료 후 실행
@@ -375,11 +372,10 @@ export default class MainMenuScene extends Phaser.Scene {
 
         // ✅ 슬롯이 제대로 생성되었는지 확인
         const createdData = await SaveSlotManager.load(slotIndex);
-        console.log('✅ 생성된 슬롯 데이터:', createdData);
 
         // 게임 시작
         this.scene.start('GameScene', {
-          mapKey: 'map1',
+          mapKey: 'other_cave',
           characterType: 'soul',
           slotIndex: slotIndex, // ✅ 슬롯 인덱스 전달
         });
@@ -402,8 +398,6 @@ export default class MainMenuScene extends Phaser.Scene {
   async loadSlot(slotIndex, slotSummary) {
     if (!slotSummary) return;
 
-    console.log(`📂 슬롯 ${slotIndex} 로드 시도`);
-
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
     this.cameras.main.once('camerafadeoutcomplete', async () => {
@@ -413,7 +407,6 @@ export default class MainMenuScene extends Phaser.Scene {
 
         // ✅ 로드된 데이터 확인
         const loadedData = await SaveSlotManager.load(slotIndex);
-        console.log('✅ 로드된 슬롯 데이터:', loadedData);
 
         this.scene.start('GameScene', {
           mapKey: slotSummary.mapKey || 'map1',
