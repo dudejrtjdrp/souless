@@ -14,7 +14,6 @@ export default class BackgroundLayerManager {
     const repeatCount = mapConfig.repeatCount || 1;
 
     mapConfig.layers.forEach((layer, index) => {
-      // 🔄 반복 횟수만큼 레이어 생성
       for (let i = 0; i < repeatCount; i++) {
         const img = this.createLayerImage(layer, i);
         this.scaleLayer(img);

@@ -288,6 +288,11 @@ export class SkillSystem {
           const skillName = hitbox.name;
           const skill = this.skills.get(skillName);
 
+          // strength 적용된 데미지 계산
+          if (result.damage !== undefined) {
+            result.damage = this.character.calculateDamage(result.damage);
+          }
+
           if (skill?.config.hitstop) {
             this.hitstopManager.triggerPreset(skill.config.hitstop);
           }

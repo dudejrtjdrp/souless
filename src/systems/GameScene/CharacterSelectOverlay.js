@@ -6,7 +6,7 @@ export default class CharacterSelectOverlay {
     this.isVisible = false;
     this.selectedIndex = 0;
 
-    // 🎯 처음엔 빈 배열, show()에서 로드
+    // 처음엔 빈 배열, show()에서 로드
     this.characters = [];
 
     this.container = null;
@@ -16,7 +16,7 @@ export default class CharacterSelectOverlay {
   }
 
   async create() {
-    // 🎯 저장된 데이터에서 사용 가능한 캐릭터만 로드
+    // 저장된 데이터에서 사용 가능한 캐릭터만 로드
     this.characters = await CharacterFactory.getAvailableCharacters();
 
     const camera = this.scene.cameras.main;
@@ -111,7 +111,7 @@ export default class CharacterSelectOverlay {
       await this.create();
     }
 
-    // 🎯 현재 캐릭터를 선택된 상태로 설정
+    // 현재 캐릭터를 선택된 상태로 설정
     const currentType = this.scene.selectedCharacter;
     const currentIndex = this.characters.indexOf(currentType);
     if (currentIndex !== -1) {

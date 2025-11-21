@@ -98,7 +98,7 @@ export default class UIExpBar {
     this.barHeight = barHeight;
   }
 
-  // ✅ 동기 버전 (초고속)
+  // 동기 버전 (초고속)
   updatePlayerExpSync(characterType, exp) {
     const characterNames = {
       soul: 'SOUL',
@@ -161,11 +161,11 @@ export default class UIExpBar {
     }
   }
 
-  // ✅ 그라디언트 최적화 (단계 수 감소)
+  // 그라디언트 최적화 (단계 수 감소)
   drawExpGradient(graphics, x, y, width, height, color1, color2) {
     if (width <= 0) return;
 
-    // ✅ 10단계로 줄여서 렌더링 빠르게
+    // 10단계로 줄여서 렌더링 빠르게
     const steps = 10;
     const stepWidth = width / steps;
 

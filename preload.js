@@ -8,7 +8,7 @@ contextBridge.exposeInMainWorld('electron', {
   // 앱 경로 가져오기
   getAppPath: () => ipcRenderer.invoke('get-app-path'),
 
-  // ===== 🎮 세이브 시스템 API =====
+  // 세이브 시스템 API
 
   /**
    * 세이브 파일 로드

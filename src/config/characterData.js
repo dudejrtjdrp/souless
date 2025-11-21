@@ -24,7 +24,7 @@ export const CharacterData = {
     skills: {
       attack: {
         type: 'instant',
-        icon: 'assets/skills/monk/attack.png', // 아이콘 추가
+        icon: 'assets/skills/monk/attack.png',
         hitboxSequence: [
           {
             hitbox: {
@@ -145,9 +145,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
@@ -342,9 +342,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         // cost: { mana: 10 },
         cooldown: 3000,
@@ -607,9 +607,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
@@ -806,9 +806,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
@@ -982,9 +982,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
@@ -1193,9 +1193,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
@@ -1504,9 +1504,9 @@ export const CharacterData = {
         animation: 'e_skill',
         isChanneling: true,
         channeling: {
-          type: 'hold', // 'hold' = 키를 누르고 있는 동안 유지
-          maxDuration: 3000, // 최대 3초
-          manaPerTick: 0, // 100ms당 2 마나 소모,
+          type: 'hold',
+          maxDuration: 3000,
+          manaPerTick: 0,
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
@@ -1621,7 +1621,7 @@ export const CharacterData = {
           {
             delay: 150,
             hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0, duration: 100 },
-            damage: 5,
+            damage: 500,
           },
         ],
         knockback: { x: 50, y: 50 },
@@ -1658,6 +1658,7 @@ export const CharacterData = {
       { key: 'jump', frames: { start: 41, end: 48 }, frameRate: 8, repeat: 0 },
       { key: 'jump_down', frames: { start: 41, end: 48 }, frameRate: 8, repeat: 0 },
       { key: 'attack', frames: { start: 65, end: 68 }, frameRate: 12, repeat: 0 },
+      { key: 'death', frames: { start: 56, end: 63 }, frameRate: 12, repeat: 0 },
     ],
   },
 };

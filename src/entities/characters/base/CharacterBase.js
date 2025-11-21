@@ -18,10 +18,13 @@ export default class CharacterBase {
     this.health = 100;
     this.maxMana = 100;
     this.mana = 100;
+
+    this.strength = 1; // 물리 공격력 배수 (기본 1)
+    this.defense = 0; // 방어력 (기본 0)
+
     this.isInvincible = false;
     this.invincibleTimer = null;
 
-    // 넉백 상태 추가
     this.isKnockedBack = false;
 
     this.activeSkillHitbox = null;
@@ -42,26 +45,39 @@ export default class CharacterBase {
       const savedResources = await SaveSlotManager.getCharacterResources(this.characterType);
 
       if (savedResources) {
-        this.health = savedResources.hp;
-        this.mana = savedResources.mp;
+        // ✅ 스탯을 먼저 로드 (maxHealth, maxMana 포함)
+        if (savedResources.stats) {
+          this.setStats(savedResources.stats);
+        }
 
+        // ✅ 그 다음 현재 HP/MP 복원
+        this.health = Math.min(savedResources.hp, this.maxHealth);
+        this.mana = Math.min(savedResources.mp, this.maxMana);
+
+        console.log(`📂 ${this.characterType} 로드 완료:`, this.getStats());
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error(`❌ ${this.characterType} 체력/마나 복원 실패:`, error);
+      console.error(`❌ ${this.characterType} 리소스 복원 실패:`, error);
       return false;
     }
   }
 
   async saveResources() {
     try {
-      await SaveSlotManager.saveCharacterResources(this.characterType, this.health, this.mana);
+      // 스탯 포함해서 저장
+      await SaveSlotManager.saveCharacterResources(
+        this.characterType,
+        this.health,
+        this.mana,
+        this.getStats(),
+      );
 
       return true;
     } catch (error) {
-      console.error(`❌ ${this.characterType} 체력/마나 저장 실패:`, error);
+      console.error(`❌ ${this.characterType} 리소스 저장 실패:`, error);
       return false;
     }
   }
@@ -158,6 +174,7 @@ export default class CharacterBase {
 
     const attackTargetType = this.config.skills?.attack?.targetType || 'single';
 
+    // ✅ AttackSystem에 this (character) 전달
     this.attackSystem = new AttackSystem(
       this.scene,
       this.sprite,
@@ -165,6 +182,7 @@ export default class CharacterBase {
       this.config.attackDuration,
       this.config.attackHitboxOffset,
       attackTargetType,
+      this, // ✅ character 참조 전달
     );
 
     this.movement = new MovementController(this.sprite, {
@@ -175,7 +193,6 @@ export default class CharacterBase {
     });
 
     this.inputHandler = new InputHandler(this.scene);
-
     this.stateMachine.changeState('idle');
   }
 
@@ -218,7 +235,8 @@ export default class CharacterBase {
   takeDamage(amount) {
     if (this.isInvincible) return;
 
-    this.health = Math.max(0, this.health - amount);
+    const actualDamage = this.calculateDamageTaken(amount);
+    this.health = Math.max(0, this.health - actualDamage);
 
     this.scene.events.emit('player-damaged');
     this.scene.events.emit('player-hit');
@@ -226,7 +244,6 @@ export default class CharacterBase {
       this.onDeath();
     }
   }
-
   heal(amount) {
     this.health = Math.min(this.maxHealth, this.health + amount);
   }
@@ -244,25 +261,204 @@ export default class CharacterBase {
   setInvincible(duration) {
     this.isInvincible = true;
 
+    // 기존 타이머가 있다면 제거 (Phaser Timer 방식)
     if (this.invincibleTimer) {
-      clearTimeout(this.invincibleTimer);
+      this.invincibleTimer.remove(false);
     }
 
-    this.invincibleTimer = setTimeout(() => {
+    // setTimeout 대신 scene.time.delayedCall 사용
+    this.invincibleTimer = this.scene.time.delayedCall(duration, () => {
       this.isInvincible = false;
-    }, duration);
+      this.invincibleTimer = null;
+    });
   }
 
-  onDeath() {}
+  async onDeath() {
+    if (this.isDying) return;
+    this.isDying = true;
+    this.scene.setDeath(this.isDying);
+
+    await this.playDeathAnimation();
+
+    const ghostSpawnX = this.sprite.x;
+    const ghostSpawnY = this.sprite.y;
+
+    const ghostSprite = this.createFloatingGhost(ghostSpawnX, ghostSpawnY);
+
+    await this.showRespawnPrompt(ghostSprite);
+
+    await this.handleRespawn(ghostSprite);
+  }
+
+  async playDeathAnimation() {
+    return new Promise((resolve) => {
+      if (this.sprite.body) {
+        this.sprite.setVelocityX(0);
+        this.sprite.setVelocityY(0);
+      }
+
+      if (this.stateMachine) {
+        this.stateMachine.changeState('death');
+        this.stateMachine.lock(2000);
+      }
+
+      this.scene.cameras.main.shake(300, 0.02);
+
+      this.scene.time.delayedCall(2000, () => {
+        if (this.sprite.anims) {
+          this.sprite.anims.pause();
+        }
+        resolve();
+      });
+    });
+  }
+
+  createFloatingGhost(x, y) {
+    const ghost = this.scene.add.sprite(x, y, this.config.spriteKey, 0);
+    ghost.setTint(0x6666ff);
+    ghost.setAlpha(0.6);
+    ghost.setDepth(this.config.depth - 1);
+
+    this.scene.tweens.add({
+      targets: ghost,
+      y: y - 30,
+      duration: 1500,
+      ease: 'Sine.inOut',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    this.scene.tweens.add({
+      targets: ghost,
+      rotation: Math.PI * 2,
+      duration: 3000,
+      ease: 'Linear',
+      repeat: -1,
+    });
+
+    this.scene.tweens.add({
+      targets: ghost,
+      alpha: { from: 0.6, to: 0.3 },
+      duration: 800,
+      ease: 'Sine.inOut',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    return ghost;
+  }
+
+  showRespawnPrompt(ghostSprite) {
+    return new Promise((resolve) => {
+      const centerX = this.scene.cameras.main.centerX;
+      const centerY = this.scene.cameras.main.centerY;
+
+      const overlay = this.scene.add
+        .rectangle(centerX, centerY, 800, 600, 0x000000, 0.5)
+        .setOrigin(0.5)
+        .setDepth(10000)
+        .setScrollFactor(0);
+
+      const diedText = this.createDeathText(centerX, centerY);
+      const descText = this.createDescriptionText(centerX, centerY);
+
+      const confirmButton = this.createButton(centerX, centerY + 80, '확인', '#4CAF50', () => {
+        this.destroyRespawnUI(overlay, diedText, descText, confirmButton);
+        resolve(true);
+      });
+    });
+  }
+
+  createDeathText(centerX, centerY) {
+    return this.scene.add
+      .text(centerX, centerY - 100, 'YOU DIED', {
+        fontSize: '64px',
+        fontFamily: 'Arial Black',
+        color: '#ff0000',
+        stroke: '#000000',
+        strokeThickness: 8,
+      })
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0);
+  }
+
+  createDescriptionText(centerX, centerY) {
+    return this.scene.add
+      .text(centerX, centerY, '리스폰 하시겠습니까?', {
+        fontSize: '24px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0);
+  }
+
+  destroyRespawnUI(overlay, diedText, descText, confirmButton) {
+    overlay.destroy();
+    diedText.destroy();
+    descText.destroy();
+    confirmButton.bg.destroy();
+    confirmButton.text.destroy();
+  }
+
+  createButton(x, y, text, color, callback) {
+    const bg = this.scene.add
+      .rectangle(x, y, 150, 50, color)
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+
+    const btnText = this.scene.add
+      .text(x, y, text, {
+        fontSize: '20px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0);
+
+    bg.on('pointerdown', callback);
+    bg.on('pointerover', () => {
+      bg.setScale(1.1);
+    });
+    bg.on('pointerout', () => {
+      bg.setScale(1);
+    });
+
+    return { bg, text: btnText };
+  }
+
+  async handleRespawn(ghostSprite) {
+    await new Promise((resolve) => {
+      this.scene.cameras.main.fade(800, 0, 0, 0, false, () => {
+        resolve();
+      });
+    });
+
+    if (ghostSprite) ghostSprite.destroy();
+
+    this.scene.scene.restart({
+      respawningCharacter: this.characterType,
+      respawnHealth: this.maxHealth,
+    });
+  }
 
   update() {
     const input = this.inputHandler.getInputState();
 
     this.movement.update();
 
-    // 넉백 중이면 입력 처리 스킵
+    if (this.isDying) {
+      this.renderDebug();
+      return;
+    }
+
     if (this.isKnockedBack) {
-      // 넉백 중에도 애니메이션은 업데이트
       if (typeof this.onUpdate === 'function') {
         this.onUpdate(input);
       }
@@ -293,6 +489,49 @@ export default class CharacterBase {
     if (!this.stateMachine.isStateLocked()) {
       this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
     }
+  }
+
+  calculateDamage(baseDamage) {
+    return Math.floor(baseDamage * this.strength);
+  }
+
+  // 방어력 적용된 받는 데미지 계산
+  calculateDamageTaken(incomingDamage) {
+    const reduction = Math.min(this.defense * 0.01, 0.8);
+    const damage = Math.floor(incomingDamage * (1 - reduction));
+    return Math.max(1, damage); // 최소 1 데미지
+  }
+
+  addStrength(amount) {
+    this.strength += amount;
+  }
+
+  addDefense(amount) {
+    this.defense += amount;
+  }
+
+  setStats(stats) {
+    if (stats.strength !== undefined) this.strength = stats.strength;
+    if (stats.defense !== undefined) this.defense = stats.defense;
+    if (stats.maxHealth !== undefined) {
+      this.maxHealth = stats.maxHealth;
+      // 현재 체력이 새로운 최대값을 초과하지 않도록
+      this.health = Math.min(this.health, this.maxHealth);
+    }
+    if (stats.maxMana !== undefined) {
+      this.maxMana = stats.maxMana;
+      // 현재 마나가 새로운 최대값을 초과하지 않도록
+      this.mana = Math.min(this.mana, this.maxMana);
+    }
+  }
+
+  getStats() {
+    return {
+      strength: this.strength,
+      defense: this.defense,
+      maxHealth: this.maxHealth,
+      maxMana: this.maxMana,
+    };
   }
 
   updateState(input) {

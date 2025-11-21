@@ -5,7 +5,7 @@ export default class JobConditionTracker {
     this.scene = scene;
     this.player = player;
 
-    // 🎯 초기화 완료 플래그
+    // 초기화 완료 플래그
     this.isInitialized = false;
 
     // 조건 추적 데이터
@@ -56,24 +56,24 @@ export default class JobConditionTracker {
       },
     };
 
-    // 🎯 이미 처치한 보스들만 트래킹 제외 (clearedBosses만 사용)
+    // 이미 처치한 보스들만 트래킹 제외 (clearedBosses만 사용)
     this.completedConditions = new Set();
 
     this.initializeCompletedConditions();
     this.setupEventListeners();
   }
 
-  // 🎯 보스를 이미 처치한 것들만 로드 (clearedBosses)
+  // 보스를 이미 처치한 것들만 로드 (clearedBosses)
   async initializeCompletedConditions() {
     const saveData = await SaveSlotManager.load();
 
-    // ✅ clearedBosses만 확인 (보스 처치 완료)
+    // clearedBosses만 확인 (보스 처치 완료)
     // availableBoss는 포함하지 않음 (조건 달성했지만 아직 도전 가능)
     if (saveData.clearedBosses && Array.isArray(saveData.clearedBosses)) {
       saveData.clearedBosses.forEach((job) => this.completedConditions.add(job));
     }
 
-    // 🎯 초기화 완료 표시
+    // 초기화 완료 표시
     this.isInitialized = true;
   }
 
@@ -84,12 +84,12 @@ export default class JobConditionTracker {
   }
 
   update(time) {
-    // 🎯 초기화가 완료될 때까지 대기
+    // 초기화가 완료될 때까지 대기
     if (!this.isInitialized) {
       return;
     }
 
-    // ✅ 보스를 처치한 조건만 제외
+    // 보스를 처치한 조건만 제외
     if (!this.completedConditions.has('assassin')) {
       this.updateAssassinCondition(time);
     }
@@ -265,7 +265,7 @@ export default class JobConditionTracker {
     this.conditions.assassin.lastHitTime = this.scene.time.now;
   }
 
-  // 🎯 조건 완료 처리
+  // 조건 완료 처리
   async completeCondition(jobKey) {
     // 이미 완료된 조건이면 무시
     if (this.completedConditions.has(jobKey)) {
@@ -275,16 +275,16 @@ export default class JobConditionTracker {
     const cond = this.conditions[jobKey];
     cond.isActive = false;
 
-    // 🎯 completedConditions에 추가하여 더 이상 트래킹하지 않도록 설정
+    // completedConditions에 추가하여 더 이상 트래킹하지 않도록 설정
     this.completedConditions.add(jobKey);
 
-    // ✅ availableBoss에 추가 (보스 도전 가능)
+    // availableBoss에 추가 (보스 도전 가능)
     await this.addToAvailableBoss(jobKey);
 
     // 이벤트 발생
     this.scene.events.emit('job-condition-completed', jobKey);
 
-    console.log(`✅ ${jobKey} 조건 달성! (보스 도전 가능)`);
+    console.log(`${jobKey} 조건 달성! (보스 도전 가능)`);
   }
 
   async addToAvailableBoss(jobKey) {
@@ -294,7 +294,7 @@ export default class JobConditionTracker {
       saveData.availableBoss = [];
     }
 
-    // 🎯 중복 체크 + 순서 유지
+    // 중복 체크 + 순서 유지
     if (!saveData.availableBoss.includes(jobKey)) {
       saveData.availableBoss.push(jobKey);
       await SaveSlotManager.save(saveData);
@@ -307,7 +307,7 @@ export default class JobConditionTracker {
     const progress = {};
 
     for (const [job, cond] of Object.entries(this.conditions)) {
-      // 🎯 보스를 처치한 조건만 100% 표시
+      // 보스를 처치한 조건만 100% 표시
       if (this.completedConditions.has(job)) {
         progress[job] = {
           current: cond.duration || cond.required || 100,

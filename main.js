@@ -74,12 +74,12 @@ app.on('window-all-closed', () => {
   }
 });
 
-// IPC 통신 예제 (필요시 사용)
+// IPC 통신 예제
 ipcMain.handle('get-app-path', () => {
   return app.getAppPath();
 });
 
-// ===== 🎮 세이브 시스템 IPC 핸들러 =====
+// 세이브 시스템 IPC 핸들러
 
 // 세이브 파일 경로 설정
 const SAVE_FILE_NAME = 'save.json';

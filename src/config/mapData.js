@@ -128,7 +128,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -170,7 +170,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -213,7 +213,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -256,7 +256,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -300,7 +300,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -341,7 +341,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -379,7 +379,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -478,7 +478,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -536,7 +536,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -594,7 +594,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -654,7 +654,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'PurpleMonkey', 'Canine'],
+      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,

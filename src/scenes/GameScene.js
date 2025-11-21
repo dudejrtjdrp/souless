@@ -26,6 +26,10 @@ import JobUnlockManager from '../systems/characterType/JobUnlockManager.js';
 import BossEventHandler from '../systems/characterType/BossEventHandler.js';
 import LevelSystem from '../entities/characters/systems/LevelSystem.js';
 
+import { KillTracker } from '../systems/KillTracker';
+import { PortalConditionManager } from '../systems/PortalConditionManager';
+import SoulAbsorb from '../systems/SoulAbsorb.js';
+
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -35,6 +39,8 @@ export default class GameScene extends Phaser.Scene {
     this.bossEventHandler = null;
     // this.isBossSpawning = false;
     this.levelSystem = null;
+
+    this.isPlayerDead = false;
   }
 
   async init(data = {}) {
@@ -42,6 +48,12 @@ export default class GameScene extends Phaser.Scene {
     const currentSlot = SaveSlotManager.getCurrentSlot();
 
     const slotData = await SaveSlotManager.load(currentSlot);
+
+    // 리스폰 데이터 확인
+    if (data.respawningCharacter) {
+      this.respawningCharacter = data.respawningCharacter;
+      this.respawnHealth = data.respawnHealth || 100;
+    }
   }
 
   preload() {
@@ -50,7 +62,7 @@ export default class GameScene extends Phaser.Scene {
     this.loadMapAssets();
     this.loadCharacterAssets();
     this.loadPortalAssets();
-    this.loadBossAssets(); // 🎯 보스 에셋 로드
+    this.loadBossAssets(); // 보스 에셋 로드
   }
 
   loadMapAssets() {
@@ -65,6 +77,7 @@ export default class GameScene extends Phaser.Scene {
   loadCharacterAssets() {
     CharacterAssetLoader.preload(this);
     EnemyAssetLoader.preload(this);
+    SoulAbsorb.preload(this);
 
     this.effectManager = new EffectManager(this);
     EffectLoader.preloadAllEffects(this);
@@ -76,7 +89,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  // 🎯 보스 에셋 로드
+  // 보스 에셋 로드
   loadBossAssets() {
     if (!this.mapConfig.boss?.enabled) return;
 
@@ -87,22 +100,40 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async create() {
+    this.isPlayerDead = false;
     await this.initializeUI();
     await this.ensureSaveSlotInitialized();
+
+    await SaveSlotManager.loadKillData(KillTracker, PortalConditionManager);
+
+    PortalConditionManager.revalidateAllPortals();
+
     this.preventTabDefault();
     this.setupInputHandler();
     EffectLoader.createAllAnimations(this);
+
+    SoulAbsorb.createAnimations(this);
+    this.soulAbsorb = new SoulAbsorb(this);
 
     const shouldContinue = await this.loadSaveData();
     if (!shouldContinue) {
       return;
     }
-
     this.setupScene();
     this.createBackground();
 
     await this.setupPlayer();
-    this.setupLevelSystem(); // 플레이어 생성 후 호출
+
+    // 리스폰된 경우 체력 회복
+    if (this.respawningCharacter) {
+      if (this.player) {
+        this.player.health = this.respawnHealth;
+        this.player.maxHealth = this.respawnHealth;
+      }
+      this.respawningCharacter = null;
+    }
+
+    this.setupLevelSystem();
 
     this.bossEventHandler = new BossEventHandler(this);
     this.bossEventHandler.setupBossEvents();
@@ -169,18 +200,20 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('player-level-up', (newLevel) => {
       this.onPlayerLevelUp(newLevel);
     });
-
-    console.log(`✅ 레벨 시스템 초기화 완료: Lv.${this.levelSystem.level}`);
   }
 
   async onExpGained(amount, characterType) {
+    if (this.isPlayerDead || (this.player && this.player.health <= 0)) {
+      return;
+    }
+
     if (!this.levelSystem) return;
 
     try {
-      // ✅ 1. 메모리에서 즉시 경험치 추가 (await 제거!)
+      // 메모리에서 즉시 경험치 추가
       const leveledUp = this.levelSystem.addExperienceSync(amount);
 
-      // ✅ 2. 캐릭터별 경험치도 메모리에서 즉시 계산
+      // 캐릭터별 경험치도 메모리에서 즉시 계산
       if (!this._characterExpCache) this._characterExpCache = {};
       this._characterExpCache[characterType] =
         (this._characterExpCache[characterType] || 0) + amount;
@@ -188,7 +221,7 @@ export default class GameScene extends Phaser.Scene {
       const finalCharacterExp = this._characterExpCache[characterType];
       const levelInfo = this.levelSystem.serialize();
 
-      // ✅ 3. UI 즉시 업데이트 (await 없음!)
+      // UI 즉시 업데이트
       this.events.emit('exp-gained', {
         amount,
         characterType,
@@ -201,7 +234,7 @@ export default class GameScene extends Phaser.Scene {
         characterExp: finalCharacterExp,
       });
 
-      // ✅ 4. 저장은 백그라운드에서 (UI 블로킹 없음)
+      // 저장은 백그라운드에서 (UI 블로킹 없음)
       this.saveExpDataBackground(characterType, finalCharacterExp, levelInfo);
 
       if (leveledUp) {
@@ -238,9 +271,12 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  // 레벨업 콜백
+  // 플레이어 스탯 증가
   async onPlayerLevelUp(newLevel) {
-    // 플레이어 스탯 증가
+    if (this.isPlayerDead || (this.player && this.player.health <= 0)) {
+      return;
+    }
+
     if (this.player) {
       this.applyLevelUpBonus();
     }
@@ -260,18 +296,26 @@ export default class GameScene extends Phaser.Scene {
   applyLevelUpBonus() {
     if (!this.player) return;
 
-    // 레벨업 시 스탯 증가 예시
-    this.player.maxHealth += 10;
-    this.player.health = this.player.maxHealth; // 체력 회복
-    this.player.maxMana += 5;
-    this.player.mana = this.player.maxMana; // 마나 회복
+    const newLevel = this.levelSystem.level;
+    const isMilestone = newLevel % 10 === 0;
 
-    // 공격력 증가 (캐릭터 config에 따라)
-    if (this.player.config) {
-      this.player.config.attackDamage = (this.player.config.attackDamage || 10) + 2;
-    }
+    // 체력: 1레벨당 5%, 10레벨당 10%
+    const healthBonus = isMilestone ? 0.1 : 0.05;
+    this.player.maxHealth = Math.floor(this.player.maxHealth * (1 + healthBonus));
+    this.player.health = this.player.maxHealth;
 
-    this.events.emit('player-stats-updated', this.player);
+    // 마나: 1레벨당 3%, 10레벨당 10%
+    const manaBonus = isMilestone ? 0.1 : 0.03;
+    this.player.maxMana = Math.floor(this.player.maxMana * (1 + manaBonus));
+    this.player.mana = this.player.maxMana;
+
+    // strength: 1레벨당 +0.1, 10레벨당 +0.5
+    const strengthBonus = isMilestone ? 0.5 : 0.1;
+    this.player.addStrength(strengthBonus);
+
+    // defense: 1레벨당 +0.1, 10레벨당 +0.5
+    const defenseBonus = isMilestone ? 0.5 : 0.1;
+    this.player.addDefense(defenseBonus);
   }
 
   /**
@@ -413,7 +457,7 @@ export default class GameScene extends Phaser.Scene {
     this.backQuoteHoldStartTime = 0;
   }
 
-  // 🎯 보스 스폰 가능 여부 확인
+  // 보스 스폰 가능 여부 확인
   canSpawnBoss() {
     const bossConfig = this.mapConfig.boss;
 
@@ -424,7 +468,7 @@ export default class GameScene extends Phaser.Scene {
     return true;
   }
 
-  // 🎯 보스 스폰
+  // 보스 스폰
   async spawnBoss(targetJob = null) {
     const bossConfig = this.mapConfig.boss;
 
@@ -494,7 +538,7 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  // 🎯 보스 스폰 위치 계산
+  // 보스 스폰 위치 계산
   calculateBossSpawnPosition() {
     const spawnConfig = this.mapConfig.boss.spawnPosition;
 
@@ -649,7 +693,18 @@ export default class GameScene extends Phaser.Scene {
   createPlayer(characterType, x, y) {
     const finalY = this.calculatePlayerSpawnY(y);
 
-    this.player = CharacterFactory.create(this, characterType, x, finalY, {
+    // 맵 중앙으로 스폰 위치 변경
+    let spawnX = x;
+    let spawnY = finalY;
+
+    if (this.respawningCharacter === characterType) {
+      // 리스폰 시 맵 중앙에서 스폰
+      const worldBounds = this.physics.world.bounds;
+      spawnX = worldBounds.width / 2;
+      spawnY = worldBounds.height / 2;
+    }
+
+    this.player = CharacterFactory.create(this, characterType, spawnX, spawnY, {
       scale: this.mapConfig.playerScale || 1,
     });
 
@@ -657,6 +712,41 @@ export default class GameScene extends Phaser.Scene {
     this.playerCollider = this.mapModel.addPlayer(this.player.sprite);
 
     this.setupSwitchCooldown();
+    // ✅ [추가] 3초(3000ms) 무적 로직 및 시각 효과 적용
+    if (this.player.setInvincible) {
+      this.player.setInvincible(3000); // 플레이어 클래스의 메서드 호출
+    }
+    this.playSpawnBlinkEffect(3000); // 시각적 깜빡임 효과
+  }
+
+  playSpawnBlinkEffect(duration) {
+    if (!this.player || !this.player.sprite) return;
+
+    // 이미 깜빡이고 있다면 멈춤
+    if (this.currentBlinkTween) {
+      this.currentBlinkTween.stop();
+    }
+
+    // 깜빡임 애니메이션 (Alpha 1 <-> 0.5)
+    this.currentBlinkTween = this.tweens.add({
+      targets: this.player.sprite,
+      alpha: 0.5,
+      duration: 100, // 0.1초 간격
+      yoyo: true,
+      repeat: -1, // 무한 반복 (타이머로 멈춤)
+    });
+
+    // duration 후에 깜빡임 중단 및 투명도 원복
+    this.time.delayedCall(duration, () => {
+      if (this.currentBlinkTween) {
+        this.currentBlinkTween.stop();
+        this.currentBlinkTween = null;
+      }
+      // 플레이어가 존재한다면 투명도 100%로 복구
+      if (this.player && this.player.sprite) {
+        this.player.sprite.alpha = 1;
+      }
+    });
   }
 
   calculatePlayerSpawnY(y) {
@@ -731,16 +821,17 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async onPortalEnter(targetMapKey, portalId) {
-    if (this.isPortalTransitioning) return;
+    if (this.isPortalTransitioning || this.isPlayerDead) return;
 
     this.isPortalTransitioning = true;
 
-    // 레벨 데이터 저장
     if (this.levelSystem) {
       await this.levelSystem.save();
     }
 
     await this.saveCurrentCharacterResources();
+
+    await SaveSlotManager.saveKillData(KillTracker, PortalConditionManager);
 
     await SaveSlotManager.savePortalPosition(targetMapKey, portalId, this.selectedCharacter);
 
@@ -803,7 +894,13 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async update(time, delta) {
-    if (!this.isPlayerReady()) return;
+    if (!this.isPlayerReady() || this.isPlayerDead) {
+      return;
+    }
+
+    if (this.player.health <= 0 && !this.isPlayerDead) {
+      return;
+    }
 
     if (this.jobConditionTracker) {
       this.jobConditionTracker.update(time);
@@ -832,7 +929,7 @@ export default class GameScene extends Phaser.Scene {
     const handler = new CombatCollisionHandler(this);
     this.uiScene.update(time, delta);
 
-    // ✅ await 추가!
+    // await 추가!
     await handler.checkAttackCollisions();
   }
 
@@ -861,7 +958,6 @@ export default class GameScene extends Phaser.Scene {
 
     this.handleCharacterSelectInput(input, time);
 
-    // 🎯 B key to spawn boss with better logic
     if (input.isBPressed) {
       if (this.canSpawnBoss()) {
         this.spawnBoss().catch((err) => {
@@ -929,15 +1025,18 @@ export default class GameScene extends Phaser.Scene {
   }
 
   async autoSave(time) {
+    if (this.isPlayerDead) return;
     if (!this.lastSaveTime || time - this.lastSaveTime > 5000) {
       this.lastSaveTime = time;
       this.saveCurrentPosition();
       this.saveCurrentCharacterResources();
 
-      // 레벨 시스템 저장
       if (this.levelSystem) {
         await this.levelSystem.save();
       }
+
+      // 킬/포탈 데이터 저장 추가
+      await SaveSlotManager.saveKillData(KillTracker, PortalConditionManager);
 
       SaveSlotManager.backupCurrentSlot();
     }
@@ -954,7 +1053,11 @@ export default class GameScene extends Phaser.Scene {
 
   // 데미지 받을 시 (트랩 포함)
   takeDamage(amount) {
-    // ... 기존 데미지 처리 ...
     this.scene.events.emit('player-damaged');
+  }
+
+  setDeath(isDeath) {
+    console.log(isDeath);
+    this.isPlayerDead = isDeath;
   }
 }

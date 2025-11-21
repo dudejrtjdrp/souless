@@ -72,7 +72,7 @@ export default class MainMenuScene extends Phaser.Scene {
     try {
       this.saveSlots = await SaveSlotManager.loadAllSlots();
 
-      console.log('✅ 슬롯 정보:', this.saveSlots);
+      console.log('슬롯 정보:', this.saveSlots);
     } catch (error) {
       console.error('❌ Error loading save slots:', error);
       this.saveSlots = new Array(SaveSlotManager.MAX_SLOTS).fill(null);
@@ -95,7 +95,7 @@ export default class MainMenuScene extends Phaser.Scene {
       minute: '2-digit',
     });
 
-    // ✅ level 정보 추가
+    // level 정보 추가
     const content = [
       { key: 'Level:', value: `${slotSummary.level || 1}` },
       { key: 'Character:', value: slotSummary.characterType.toUpperCase() },
@@ -364,20 +364,20 @@ export default class MainMenuScene extends Phaser.Scene {
   async startNewGame(slotIndex) {
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
-    // ✅ 페이드아웃 완료 후 실행
+    // 페이드아웃 완료 후 실행
     this.cameras.main.once('camerafadeoutcomplete', async () => {
       try {
-        // ✅ 슬롯 선택 및 초기 데이터 생성
+        // 슬롯 선택 및 초기 데이터 생성
         await SaveSlotManager.selectSlot(slotIndex, null);
 
-        // ✅ 슬롯이 제대로 생성되었는지 확인
+        // 슬롯이 제대로 생성되었는지 확인
         const createdData = await SaveSlotManager.load(slotIndex);
 
         // 게임 시작
         this.scene.start('GameScene', {
           mapKey: 'other_cave',
           characterType: 'soul',
-          slotIndex: slotIndex, // ✅ 슬롯 인덱스 전달
+          slotIndex: slotIndex, // 슬롯 인덱스 전달
         });
       } catch (error) {
         console.error('❌ 새 게임 시작 실패:', error);
@@ -402,16 +402,16 @@ export default class MainMenuScene extends Phaser.Scene {
 
     this.cameras.main.once('camerafadeoutcomplete', async () => {
       try {
-        // ✅ 기존 슬롯 선택
+        // 기존 슬롯 선택
         await SaveSlotManager.selectSlot(slotIndex, true);
 
-        // ✅ 로드된 데이터 확인
+        // 로드된 데이터 확인
         const loadedData = await SaveSlotManager.load(slotIndex);
 
         this.scene.start('GameScene', {
           mapKey: slotSummary.mapKey || 'map1',
           characterType: slotSummary.characterType || 'soul',
-          slotIndex: slotIndex, // ✅ 슬롯 인덱스 전달
+          slotIndex: slotIndex, // 슬롯 인덱스 전달
         });
       } catch (error) {
         console.error('❌ 슬롯 로드 실패:', error);

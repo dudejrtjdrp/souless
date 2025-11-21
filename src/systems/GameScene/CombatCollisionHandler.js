@@ -25,7 +25,7 @@ export default class CombatCollisionHandler {
     return this.scene.enemyManager?.enemies && this.scene.player;
   }
 
-  // ✅ 단순화: 데미지만 처리, 경험치는 EnemyBase에서
+  // 단순화: 데미지만 처리, 경험치는 EnemyBase에서
   checkPlayerAttackOnEnemy(enemy) {
     const enemyTarget = enemy.sprite || enemy;
 
@@ -34,7 +34,7 @@ export default class CombatCollisionHandler {
       const hit = this.scene.player.checkAttackHit(enemyTarget);
       if (hit && enemy.takeDamage) {
         enemy.takeDamage(10);
-        // ✅ 경험치는 takeDamage → playDeath → destroy에서 자동 처리
+        // 경험치는 takeDamage → playDeath → destroy에서 자동 처리
       }
     }
 
@@ -43,7 +43,7 @@ export default class CombatCollisionHandler {
       const skillHit = this.scene.player.checkSkillHit(enemy);
       if (skillHit?.hit && enemy.takeDamage) {
         enemy.takeDamage(skillHit.damage);
-        // ✅ 경험치는 자동 처리
+        // 경험치는 자동 처리
 
         // 넉백 처리
         if (skillHit.knockback && enemyTarget.body) {

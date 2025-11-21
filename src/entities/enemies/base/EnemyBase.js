@@ -4,6 +4,8 @@ import EnemyController from '../systems/EnemyController.js';
 import EnemyAttackSystem from '../systems/EnemyAttackSystem.js';
 import EnemySkillSystem from '../systems/EnemySkillSystem.js';
 import BossController from '../systems/BossController.js';
+import { KillTracker } from '../../../systems/KillTracker';
+import SoulAbsorb from '../../../systems/SoulAbsorb.js';
 
 export default class EnemyBase {
   constructor(scene, x, y, enemyType, direction = 1) {
@@ -53,7 +55,6 @@ export default class EnemyBase {
     this.sprite.body.setCollideWorldBounds(physics.collideWorldBounds);
     this.sprite.body.setVelocityX(this.speed * this.direction);
 
-    // 🎯 히트박스 오프셋 계산
     let offsetX, offsetY;
 
     // 커스텀 오프셋이 지정되어 있으면 사용
@@ -225,7 +226,7 @@ export default class EnemyBase {
       this.skillSystem.update(delta);
     }
 
-    // === 방향 flip (🔒 스킬 사용 중이 아닐 때만) ===
+    // === 방향 flip (스킬 사용 중이 아닐 때만) ===
     if (!this.isLockingDirection) {
       const baseFlip = this.data.sprite.flipX || false;
       this.sprite.setFlipX(this.direction > 0 ? !baseFlip : baseFlip);
@@ -373,7 +374,22 @@ export default class EnemyBase {
     if (this.scene.anims.exists(deathKey)) {
       this.sprite.play(deathKey);
       this.sprite.once(`animationcomplete-${deathKey}`, () => {
-        this.destroy(); // await 추가
+        this.spawnSoul(); // 영혼 생성
+      });
+    } else {
+      this.spawnSoul(); // 영혼 생성
+    }
+  }
+
+  spawnSoul() {
+    const player = this.scene.player;
+
+    if (player && this.scene.soulAbsorb) {
+      // 적 위치에서 영혼 생성 → 플레이어에게 흡수
+      this.scene.soulAbsorb.spawnAndAbsorb(this.sprite.x, this.sprite.y, player, () => {
+        // 흡수 완료 후 실행할 콜백 (선택사항)
+        // 예: 플레이어 이펙트, 사운드 등
+        this.destroy();
       });
     } else {
       this.destroy();
@@ -381,30 +397,29 @@ export default class EnemyBase {
   }
 
   destroy() {
-    // ✅ await 제거 (비동기 처리 불필요)
     if (this.isDead && this.expReward > 0 && !this.hasGrantedExp) {
       this.hasGrantedExp = true;
 
+      const currentMapKey = this.scene.currentMapKey;
+      if (currentMapKey) {
+        KillTracker.recordKill(currentMapKey, this.enemyType);
+      }
+
       if (this.scene?.onExpGained) {
         const characterType = this.scene.selectedCharacter || 'soul';
-
-        // ✅ await 제거 - 즉시 실행
         this.scene.onExpGained(this.expReward, characterType);
 
-        // 이펙트
         if (this.scene.player?.showExpGainEffect) {
           this.scene.player.showExpGainEffect(this.expReward);
         }
       }
     }
 
-    // 기존 destroy
     if (this.sprite) this.sprite.destroy();
     if (this.hpBar) this.hpBar.destroy();
     if (this.skillSystem) this.skillSystem.destroy();
   }
 
-  // === Getter 프로퍼티 ===
   get x() {
     return this.sprite ? this.sprite.x : 0;
   }

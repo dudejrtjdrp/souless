@@ -311,8 +311,9 @@ export default class MapModel {
       console.error('❌ Player sprite has no physics body');
       return false;
     }
+    console.log(playerSprite);
 
-    const safePos = this.getSafeSpawnPosition(playerSprite.x, 150);
+    const safePos = this.getSafeSpawnPosition(playerSprite.x, playerSprite.body.height);
     playerSprite.setPosition(safePos.x, safePos.y);
     playerSprite.setDepth(this.config.depths?.player || 100);
 
@@ -341,8 +342,9 @@ export default class MapModel {
       console.error('❌ Failed to create physics body for enemy');
       return false;
     }
+    console.log(enemySprite);
 
-    const safePos = this.getSafeSpawnPosition(enemySprite.x, 150);
+    const safePos = this.getSafeSpawnPosition(enemySprite.x, enemySprite.body.height);
     enemySprite.setPosition(safePos.x, safePos.y);
 
     enemySprite.body.setAllowGravity(true);

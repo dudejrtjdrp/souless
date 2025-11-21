@@ -13,7 +13,7 @@ export default class JobUnlockManager {
   static INITIAL_CHARACTERS = ['soul'];
 
   /**
-   * 🎯 availableBoss에서 선택 가능한 보스 목록 반환
+   * availableBoss에서 선택 가능한 보스 목록 반환
    * (조건 달성했지만 아직 처치 안 한 보스들)
    */
   static async getAvailableBosses() {
@@ -42,7 +42,7 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 🎯 보스 처치 시 캐릭터 해금
+   * 보스 처치 시 캐릭터 해금
    * availableBoss에서 제거 + clearedBosses에 추가 + availableTypes에 추가
    */
   static async unlockCharacter(jobKey) {
@@ -54,7 +54,6 @@ export default class JobUnlockManager {
       return false;
     }
 
-    // 1️⃣ availableTypes에 추가 (캐릭터 해금)
     if (!saveData.availableTypes) {
       saveData.availableTypes = [...this.INITIAL_CHARACTERS];
     }
@@ -63,12 +62,10 @@ export default class JobUnlockManager {
       saveData.availableTypes.push(jobKey);
     }
 
-    // 2️⃣ availableBoss에서 제거 (보스 처치 확정 시에만 제거)
     if (saveData.availableBoss) {
       saveData.availableBoss = saveData.availableBoss.filter((key) => key !== jobKey);
     }
 
-    // 3️⃣ clearedBosses에 추가 (다시는 availableBoss에 추가 안 됨)
     if (!saveData.clearedBosses) {
       saveData.clearedBosses = [];
     }
@@ -84,7 +81,7 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 🎯 조건 달성 시 availableBoss에 추가
+   * 조건 달성 시 availableBoss에 추가
    * clearedBosses에 있으면 추가하지 않음
    */
   static async addAvailableBoss(jobKey) {
@@ -145,7 +142,7 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 🎯 보스 처치 후 availableBoss에서 제거
+   * 보스 처치 후 availableBoss에서 제거
    * ⚠️ 이 메서드는 사용하지 않음 - unlockCharacter()에서 처리
    */
   static async removeBossFromAvailable(jobKey) {
@@ -164,7 +161,7 @@ export default class JobUnlockManager {
   }
 
   /**
-   * 🎯 다음 전직 가능한 보스 선택 (availableBoss의 첫 번째)
+   * 다음 전직 가능한 보스 선택 (availableBoss의 첫 번째)
    */
   static async getNextJobBoss() {
     const bosses = await this.getAvailableBosses();

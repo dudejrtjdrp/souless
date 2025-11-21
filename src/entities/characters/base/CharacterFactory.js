@@ -75,7 +75,7 @@ export default class CharacterFactory {
 
   // CharacterSelectOverlay 등에서 빠르게 접근해야 할 때만 사용
   static getAvailableTypes() {
-    // ✅ 이제는 모든 가능한 캐릭터를 반환 (실제 제한은 UI에서 처리)
+    // 이제는 모든 가능한 캐릭터를 반환 (실제 제한은 UI에서 처리)
     return this.ALL_CHARACTERS;
   }
 

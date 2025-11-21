@@ -8,7 +8,7 @@ export default class CharacterSwitchManager {
     this.currentCharacterType = null;
     this.isTransitioning = false;
 
-    // 🆕 현재 맵 정보
+    //  현재 맵 정보
     this.currentMapKey = null;
   }
 

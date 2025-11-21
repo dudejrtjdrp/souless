@@ -129,7 +129,7 @@ export default class UIScene extends Phaser.Scene {
     // 로그
     this.addLog(`+${amount} EXP`, '#ffd43b');
 
-    // ✅ 즉시 업데이트 (동기 처리)
+    // 즉시 업데이트 (동기 처리)
     this.updateTotalExpDirectSync(levelInfo);
     this.updatePlayerExpDirectSync(characterType, characterExp);
   }
@@ -219,7 +219,7 @@ export default class UIScene extends Phaser.Scene {
     this.isUpdatingExp = true;
 
     try {
-      // ⏱️ localStorage 동기화 대기
+      //  localStorage 동기화 대기
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       // UI 업데이트
@@ -291,7 +291,7 @@ export default class UIScene extends Phaser.Scene {
     }
   }
 
-  // ✅ 수정: SaveSlotManager에서 저장된 데이터 직접 로드
+  // 수정: SaveSlotManager에서 저장된 데이터 직접 로드
   async updateExpBars() {
     try {
       // SaveSlotManager에서 저장된 전체 데이터 로드

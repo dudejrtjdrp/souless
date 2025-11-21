@@ -13,8 +13,8 @@ export const EnemiesData = {
       width: 20,
       height: 20,
       collideWorldBounds: true,
-      offsetX: 22, // 직접 조정
-      offsetY: 30, // 직접 조정
+      offsetX: 22,
+      offsetY: 30,
     },
 
     stats: {
@@ -65,8 +65,8 @@ export const EnemiesData = {
       width: 60,
       height: 30,
       collideWorldBounds: true,
-      offsetX: 0, // 직접 조정
-      offsetY: 30, // 직접 조정
+      offsetX: 0,
+      offsetY: 30,
     },
 
     stats: {
@@ -153,7 +153,7 @@ export const EnemiesData = {
     },
   },
 
-  purple_monkey: {
+  monkey: {
     type: 'normal',
 
     sprite: {
@@ -167,8 +167,8 @@ export const EnemiesData = {
       width: 26,
       height: 15,
       collideWorldBounds: true,
-      offsetX: 5, // 직접 조정
-      offsetY: 18, // 직접 조정
+      offsetX: 5,
+      offsetY: 18,
     },
 
     stats: {
