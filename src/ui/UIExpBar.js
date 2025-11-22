@@ -98,8 +98,14 @@ export default class UIExpBar {
     this.barHeight = barHeight;
   }
 
-  // 동기 버전 (초고속)
+  // ✅ null 체크 추가
   updatePlayerExpSync(characterType, exp) {
+    // null 체크
+    if (!this.playerExpBar || !this.playerExpText) {
+      console.warn('⚠️ Player exp bar not initialized');
+      return;
+    }
+
     const characterNames = {
       soul: 'SOUL',
       warrior: 'WARRIOR',
@@ -125,14 +131,19 @@ export default class UIExpBar {
     this.playerExpText.setText(`${name}: ${validExp} EXP`);
   }
 
-  // 기존 비동기 버전 (호환성)
   updatePlayerExp(characterType, exp) {
     this.updatePlayerExpSync(characterType, exp);
   }
 
-  // 총 경험치 업데이트
+  // ✅ null 체크 추가
   async updateTotalExp() {
     try {
+      // null 체크
+      if (!this.totalExpBar || !this.totalExpText) {
+        console.warn('⚠️ Total exp bar not initialized');
+        return;
+      }
+
       const saveData = await SaveSlotManager.load();
 
       if (!saveData || !saveData.levelSystem) {
@@ -161,11 +172,9 @@ export default class UIExpBar {
     }
   }
 
-  // 그라디언트 최적화 (단계 수 감소)
   drawExpGradient(graphics, x, y, width, height, color1, color2) {
-    if (width <= 0) return;
+    if (width <= 0 || !graphics) return;
 
-    // 10단계로 줄여서 렌더링 빠르게
     const steps = 10;
     const stepWidth = width / steps;
 
@@ -182,16 +191,16 @@ export default class UIExpBar {
       graphics.fillRect(x + i * stepWidth, y, stepWidth, height);
     }
 
-    // 하이라이트 효과
     graphics.fillStyle(0xffffff, 0.3);
     graphics.fillRect(x, y, width, height * 0.3);
 
-    // 모서리 둥글게
     graphics.lineStyle(0);
     graphics.fillRoundedRect(x, y, width, height, 10);
   }
 
   playLevelUpEffect(container) {
+    if (!container) return;
+
     this.scene.tweens.add({
       targets: container,
       scaleX: 1.05,
@@ -204,13 +213,13 @@ export default class UIExpBar {
   }
 
   hide() {
-    this.totalExpContainer.setVisible(false);
-    this.playerExpContainer.setVisible(false);
+    if (this.totalExpContainer) this.totalExpContainer.setVisible(false);
+    if (this.playerExpContainer) this.playerExpContainer.setVisible(false);
   }
 
   show() {
-    this.totalExpContainer.setVisible(true);
-    this.playerExpContainer.setVisible(true);
+    if (this.totalExpContainer) this.totalExpContainer.setVisible(true);
+    if (this.playerExpContainer) this.playerExpContainer.setVisible(true);
   }
 
   destroy() {

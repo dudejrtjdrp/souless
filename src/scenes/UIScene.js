@@ -135,9 +135,15 @@ export default class UIScene extends Phaser.Scene {
   }
 
   updateTotalExpDirectSync(levelInfo) {
-    const { level, experience, experienceToNext } = levelInfo;
+    if (!levelInfo) return;
 
-    if (!this.expBar?.totalExpBar) return;
+    // ✅ null 체크 추가
+    if (!this.expBar || !this.expBar.totalExpBar || !this.expBar.totalExpText) {
+      console.warn('⚠️ ExpBar not ready');
+      return;
+    }
+
+    const { level, experience, experienceToNext } = levelInfo;
 
     const percent = Math.min(experience / experienceToNext, 1);
     const width = this.expBar.barWidth * percent;
@@ -155,7 +161,7 @@ export default class UIScene extends Phaser.Scene {
     );
 
     // 텍스트
-    this.expBar.totalExpText?.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
+    this.expBar.totalExpText.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
 
     // 레벨업 효과
     if (percent >= 1) {
@@ -164,7 +170,11 @@ export default class UIScene extends Phaser.Scene {
   }
 
   updatePlayerExpDirectSync(characterType, exp) {
-    if (!this.expBar) return;
+    // ✅ null 체크 추가
+    if (!this.expBar) {
+      console.warn('⚠️ ExpBar not initialized');
+      return;
+    }
 
     const validExp = typeof exp === 'number' && exp >= 0 ? exp : 0;
     this.expBar.updatePlayerExpSync(characterType, validExp);
@@ -328,27 +338,31 @@ export default class UIScene extends Phaser.Scene {
   }
 
   addLog(message, color = '#ffffff') {
-    if (this.logText) {
-      const timestamp = new Date().toLocaleTimeString();
-      this.logText.setText(`[${timestamp}] ${message}`);
-      this.logText.setStyle({ fill: color });
-
-      this.time.delayedCall(3000, () => {
-        if (this.logText) {
-          this.tweens.add({
-            targets: this.logText,
-            alpha: 0,
-            duration: 500,
-            onComplete: () => {
-              if (this.logText) {
-                this.logText.setText('');
-                this.logText.setAlpha(0.8);
-              }
-            },
-          });
-        }
-      });
+    // ✅ null 체크 추가
+    if (!this.logText) {
+      console.warn('⚠️ LogText not initialized');
+      return;
     }
+
+    const timestamp = new Date().toLocaleTimeString();
+    this.logText.setText(`[${timestamp}] ${message}`);
+    this.logText.setStyle({ fill: color });
+
+    this.time.delayedCall(3000, () => {
+      if (this.logText) {
+        this.tweens.add({
+          targets: this.logText,
+          alpha: 0,
+          duration: 500,
+          onComplete: () => {
+            if (this.logText) {
+              this.logText.setText('');
+              this.logText.setAlpha(0.8);
+            }
+          },
+        });
+      }
+    });
   }
 
   hide() {

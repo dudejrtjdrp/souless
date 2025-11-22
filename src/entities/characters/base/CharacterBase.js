@@ -28,6 +28,7 @@ export default class CharacterBase {
     this.isKnockedBack = false;
 
     this.activeSkillHitbox = null;
+    this.isDying = false;
 
     this.initSprite(x, y);
     this.applyNormalization();
@@ -50,8 +51,10 @@ export default class CharacterBase {
           this.setStats(savedResources.stats);
         }
 
-        // ✅ 그 다음 현재 HP/MP 복원
-        this.health = Math.min(savedResources.hp, this.maxHealth);
+        // ✅ HP가 0이면 최소한 10%는 회복 (사망 루프 방지)
+        const minHealth = Math.max(10, Math.floor(this.maxHealth * 0.1));
+        this.health = Math.max(minHealth, Math.min(savedResources.hp, this.maxHealth));
+
         this.mana = Math.min(savedResources.mp, this.maxMana);
 
         console.log(`📂 ${this.characterType} 로드 완료:`, this.getStats());
@@ -233,17 +236,20 @@ export default class CharacterBase {
   }
 
   takeDamage(amount) {
-    if (this.isInvincible) return;
+    if (this.isInvincible || this.isDying) return; // ✅ isDying 체크 추가
 
     const actualDamage = this.calculateDamageTaken(amount);
     this.health = Math.max(0, this.health - actualDamage);
 
     this.scene.events.emit('player-damaged');
     this.scene.events.emit('player-hit');
-    if (this.health <= 0) {
+
+    if (this.health <= 0 && !this.isDying) {
+      // ✅ isDying 중복 체크 방지
       this.onDeath();
     }
   }
+
   heal(amount) {
     this.health = Math.min(this.maxHealth, this.health + amount);
   }
@@ -442,9 +448,17 @@ export default class CharacterBase {
 
     if (ghostSprite) ghostSprite.destroy();
 
+    // ✅ 리스폰 전 상태 초기화
+    this.isDying = false;
+    this.scene.isPlayerDead = false; // 씬의 플래그도 초기화
+
+    if (this.stateMachine) {
+      this.stateMachine.unlock();
+    }
+
     this.scene.scene.restart({
       respawningCharacter: this.characterType,
-      respawnHealth: this.maxHealth,
+      respawnHealth: this.maxHealth, // 최대 체력으로 리스폰
     });
   }
 
@@ -453,8 +467,15 @@ export default class CharacterBase {
 
     this.movement.update();
 
+    // ✅ 사망 중일 때는 입력 무시
     if (this.isDying) {
       this.renderDebug();
+      return;
+    }
+
+    // ✅ HP 0 체크 추가
+    if (this.health <= 0 && !this.isDying) {
+      this.onDeath();
       return;
     }
 

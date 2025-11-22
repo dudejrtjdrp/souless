@@ -68,7 +68,7 @@ export default class BossController extends EnemyController {
         }
       }
     }
-    // 달리기 범위
+
     // 달리기 범위
     else if (dist <= this.runRange) {
       if (!this.isInAttackState && !this.isUsingSkill()) {

@@ -1,4 +1,5 @@
 import JobUnlockManager from './JobUnlockManager.js';
+import { PortalConditionManager } from '../PortalConditionManager.js';
 
 export default class BossEventHandler {
   constructor(scene) {
@@ -27,6 +28,11 @@ export default class BossEventHandler {
       if (unlocked) {
         // 전직 완료 연출
         this.showJobUnlockEffect(jobKey);
+
+        this.scene.events.on('bossDefeated', async (bossType) => {
+          // 보스 처치 기록
+          await PortalConditionManager.recordBossDefeat(bossType);
+        });
 
         this.scene.scene.start('GameScene', {
           characterType: jobKey,

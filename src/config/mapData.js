@@ -141,7 +141,7 @@ export const MAPS = {
   scary_cave: {
     key: 'scary_cave',
     name: 'Scary Cave',
-    mapScale: 3, // 수동으로 스케일 조정 (원본의 50% 크기)
+    mapScale: 3,
     layersOffsetY: 450,
     camera: {
       offsetY: -50,
@@ -183,7 +183,7 @@ export const MAPS = {
   other_cave: {
     key: 'other_cave',
     name: 'Other Cave',
-    mapScale: 2, // 수동으로 스케일 조정 (원본의 50% 크기)
+    mapScale: 2,
     layersOffsetY: 0,
     camera: {
       offsetY: -50,
@@ -226,9 +226,9 @@ export const MAPS = {
   oakwood: {
     key: 'oakwood',
     name: 'Oakwood',
-    mapScale: 6, // 수동으로 스케일 조정 (원본의 50% 크기)
+    mapScale: 6,
     layersOffsetY: 100,
-    repeatCount: 2, // 🔄 맵을 3번 반복!
+    repeatCount: 2,
     camera: {
       offsetY: -50,
     },
@@ -270,7 +270,7 @@ export const MAPS = {
     key: 'dark',
     name: 'Dark',
     layersOffsetY: 0,
-    repeatCount: 2, // 🔄 맵을 3번 반복!
+    repeatCount: 2,
     camera: {
       offsetY: -50,
     },
@@ -309,11 +309,12 @@ export const MAPS = {
     },
     portals: generateMapPortals('dark'),
   },
+
   snow: {
     key: 'snow',
     name: 'Snow',
     layersOffsetY: 100,
-    repeatCount: 2, // 🔄 맵을 3번 반복!
+    repeatCount: 2,
     camera: {
       offsetY: -50,
     },
@@ -389,6 +390,7 @@ export const MAPS = {
     portals: generateMapPortals('temple_way'),
   },
 
+  // ✅ temple_1: 보스 맵이므로 일반 적 없음
   temple_1: {
     key: 'temple_1',
     name: 'Temple1',
@@ -414,29 +416,27 @@ export const MAPS = {
       tilemapStart: 50,
       player: 100,
       enemy: 90,
+      boss: 95,
       ui: 1000,
     },
+    // ✅ 적 스폰 비활성화
     enemies: {
-      types: [],
-      initialCount: 20,
-      maxCount: 35,
+      types: [], // 빈 배열 유지
+      initialCount: 0, // ✅ 0으로 변경
+      maxCount: 0, // ✅ 0으로 변경
       respawnInterval: 5000,
       patrolRangeX: 100,
       minPlayerDistance: 100,
     },
     boss: {
-      enabled: true, // 이 맵에서 보스 등장 가능 여부
-      spawnCondition: 'jobChange', // 스폰 조건 타입
-
-      // 스폰 위치 (맵 중앙 추천)
+      enabled: true,
+      spawnCondition: 'jobChange',
       spawnPosition: {
-        x: 'center', // 'center', 'left', 'right', 또는 숫자
-        y: '700', // 'center', 'top', 'bottom', 또는 숫자
+        x: 'center',
+        y: '700',
         offsetX: 0,
-        offsetY: -100, // 살짝 위쪽에 스폰
+        offsetY: -100,
       },
-
-      // 전직별 보스 매핑
       jobBossMapping: {
         assassin: 'assassin_boss',
         fire_knight: 'fire_boss',
@@ -475,6 +475,7 @@ export const MAPS = {
       tilemapStart: 50,
       player: 100,
       enemy: 90,
+      boss: 95,
       ui: 1000,
     },
     enemies: {
@@ -486,18 +487,14 @@ export const MAPS = {
       minPlayerDistance: 100,
     },
     boss: {
-      enabled: true, // 이 맵에서 보스 등장 가능 여부
-      spawnCondition: 'jobChange', // 스폰 조건 타입
-
-      // 스폰 위치 (맵 중앙 추천)
+      enabled: true,
+      spawnCondition: 'jobChange',
       spawnPosition: {
-        x: 'center', // 'center', 'left', 'right', 또는 숫자
-        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        x: 'center',
+        y: 'center',
         offsetX: 0,
-        offsetY: -100, // 살짝 위쪽에 스폰
+        offsetY: -100,
       },
-
-      // 전직별 보스 매핑
       jobBossMapping: {
         warrior: 'fireBoss',
         mage: 'iceBoss',
@@ -533,6 +530,7 @@ export const MAPS = {
       tilemapStart: 50,
       player: 100,
       enemy: 90,
+      boss: 95,
       ui: 1000,
     },
     enemies: {
@@ -544,18 +542,14 @@ export const MAPS = {
       minPlayerDistance: 100,
     },
     boss: {
-      enabled: true, // 이 맵에서 보스 등장 가능 여부
-      spawnCondition: 'jobChange', // 스폰 조건 타입
-
-      // 스폰 위치 (맵 중앙 추천)
+      enabled: true,
+      spawnCondition: 'jobChange',
       spawnPosition: {
-        x: 'center', // 'center', 'left', 'right', 또는 숫자
-        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        x: 'center',
+        y: 'center',
         offsetX: 0,
-        offsetY: -100, // 살짝 위쪽에 스폰
+        offsetY: -100,
       },
-
-      // 전직별 보스 매핑
       jobBossMapping: {
         warrior: 'fireBoss',
         mage: 'iceBoss',
@@ -591,6 +585,7 @@ export const MAPS = {
       tilemapStart: 50,
       player: 100,
       enemy: 90,
+      boss: 95,
       ui: 1000,
     },
     enemies: {
@@ -602,18 +597,14 @@ export const MAPS = {
       minPlayerDistance: 100,
     },
     boss: {
-      enabled: true, // 이 맵에서 보스 등장 가능 여부
-      spawnCondition: 'jobChange', // 스폰 조건 타입
-
-      // 스폰 위치 (맵 중앙 추천)
+      enabled: true,
+      spawnCondition: 'jobChange',
       spawnPosition: {
-        x: 'center', // 'center', 'left', 'right', 또는 숫자
-        y: 'center', // 'center', 'top', 'bottom', 또는 숫자
+        x: 'center',
+        y: 'center',
         offsetX: 0,
-        offsetY: -100, // 살짝 위쪽에 스폰
+        offsetY: -100,
       },
-
-      // 전직별 보스 매핑
       jobBossMapping: {
         warrior: 'fireBoss',
         mage: 'iceBoss',
@@ -632,9 +623,12 @@ export const MAPS = {
     camera: {
       offsetY: -50,
     },
-    layers: [{ key: 'final_map_layer2', path: '/assets/map/final_map/background2.png' }],
-    layers: [{ key: 'final_map_layer3', path: '/assets/map/final_map/background3.png' }],
-    layers: [{ key: 'final_map_layer1', path: '/assets/map/final_map/background1.png' }],
+    // ✅ layers 중복 제거 (마지막 것만 유지)
+    layers: [
+      { key: 'final_map_layer1', path: '/assets/map/final_map/background1.png' },
+      { key: 'final_map_layer2', path: '/assets/map/final_map/background2.png' },
+      { key: 'final_map_layer3', path: '/assets/map/final_map/background3.png' },
+    ],
     underSolidRectangle: {
       y: 200,
       color: '#000000',

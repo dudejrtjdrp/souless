@@ -223,7 +223,8 @@ export default class MapModel {
   createPortals() {
     if (!this.config.portals) return;
 
-    const collisionTopY = this.getCollisionTopY();
+    // collider 윗면 = 맵 높이 - 200(collider 높이)
+    const collisionTopY = this.mapHeight - 200;
 
     this.config.portals.forEach((portalData) => {
       const adjustedData = {
@@ -233,11 +234,6 @@ export default class MapModel {
       const portal = new Portal(this.scene, adjustedData);
       this.portals.push(portal);
     });
-  }
-
-  getCollisionTopY() {
-    if (!this.collisionGround) return this.mapHeight;
-    return this.collisionGround.y - this.collisionGround.height / 2;
   }
 
   getPortalById(portalId) {
@@ -283,40 +279,17 @@ export default class MapModel {
     return nearest;
   }
 
-  getGroundY() {
-    const groundHeight = this.AUTO_CONFIG.COLLISION_HEIGHT;
-    return this.mapHeight - groundHeight;
-  }
-
-  /**
-   * 📍 안전한 스폰 위치 계산
-   */
-  getSafeSpawnPosition(x, offsetY = 150) {
-    const groundY = this.getGroundY();
-    return {
-      x: x,
-      y: groundY - offsetY,
-    };
-  }
-
   update(player) {
     this.portals.forEach((portal) => portal.update(player));
   }
 
-  /**
-   * 👤 플레이어 추가
-   */
   addPlayer(playerSprite) {
     if (!playerSprite || !playerSprite.body) {
       console.error('❌ Player sprite has no physics body');
       return false;
     }
-    console.log(playerSprite);
 
-    const safePos = this.getSafeSpawnPosition(playerSprite.x, playerSprite.body.height);
-    playerSprite.setPosition(safePos.x, safePos.y);
     playerSprite.setDepth(this.config.depths?.player || 100);
-
     playerSprite.body.setAllowGravity(true);
     playerSprite.body.setCollideWorldBounds(true);
     playerSprite.body.setBounce(0);
@@ -325,9 +298,6 @@ export default class MapModel {
     return this.addEntityCollision(playerSprite, 'Player');
   }
 
-  /**
-   * 👾 적 추가
-   */
   addEnemy(enemySprite) {
     if (!enemySprite) {
       console.warn('❌ Enemy sprite is null');
@@ -342,10 +312,6 @@ export default class MapModel {
       console.error('❌ Failed to create physics body for enemy');
       return false;
     }
-    console.log(enemySprite);
-
-    const safePos = this.getSafeSpawnPosition(enemySprite.x, enemySprite.body.height);
-    enemySprite.setPosition(safePos.x, safePos.y);
 
     enemySprite.body.setAllowGravity(true);
     enemySprite.body.setCollideWorldBounds(true);
@@ -353,15 +319,13 @@ export default class MapModel {
     enemySprite.body.setVelocityY(0);
     enemySprite.body.setBounce(0);
     enemySprite.body.setMass(1);
-
     enemySprite.setDepth(this.config.depths?.enemy || 90);
 
     return this.addEntityCollision(enemySprite, 'Enemy');
   }
 
-  /**
-   * 🔗 Entity Collision 추가
-   */
+  // Entity Collision 추가
+
   addEntityCollision(entitySprite, entityType = 'Entity') {
     if (!this.collisionGround) {
       console.error('❌ No collision ground available');

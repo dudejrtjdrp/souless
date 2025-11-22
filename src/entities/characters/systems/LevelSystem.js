@@ -1,5 +1,3 @@
-// systems/LevelSystem.js
-
 import SaveSlotManager from '../../../utils/SaveSlotManager.js';
 
 export default class LevelSystem {

@@ -43,6 +43,9 @@ export default class Portal extends Phaser.GameObjects.Sprite {
 
     // 초기 상태 업데이트
     this.updateVisualState();
+
+    // ✅ 초기 잠금 UI 업데이트 (async)
+    this.updateLockUI();
   }
 
   createAnimation() {
@@ -95,8 +98,8 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     };
     PortalConditionManager.addListener(this.conditionListener);
 
-    // KillTracker 변경사항 실시간 반영을 위한 리스너 추가
-    this.killListener = () => {
+    // ✅ KillTracker 변경사항 실시간 반영을 위한 리스너 추가
+    this.killListener = async () => {
       // 1. 현재 플레이어가 근처에 없다면 UI 갱신 불필요
       if (!this.isPlayerNear) return;
 
@@ -113,8 +116,8 @@ export default class Portal extends Phaser.GameObjects.Sprite {
         this.updateVisualState();
       } else {
         // [아직 잠겨있음]
-        // 남은 킬 수 등 진행도 UI만 업데이트
-        this.updateLockUI();
+        // ✅ await 추가
+        await this.updateLockUI();
 
         // 만약 포탈 텍스트가 켜져있다면 끔
         this.portalText.setVisible(false);
@@ -127,6 +130,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
   // 포탈 열림 여부 확인
   isUnlocked() {
     return PortalConditionManager.isPortalUnlocked(this.portalId);
+    return true;
   }
 
   // 시각적 상태 업데이트
@@ -169,34 +173,53 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     });
   }
 
-  // 잠금 상태 UI 업데이트
-
-  updateLockUI() {
-    const progress = PortalConditionManager.getPortalProgress(this.portalId);
+  // ✅ 잠금 상태 UI 업데이트 (async로 변경)
+  async updateLockUI() {
+    const progress = await PortalConditionManager.getPortalProgress(this.portalId);
 
     if (!progress || progress.isComplete) {
       this.lockText.setVisible(false);
       return;
     }
 
-    if (progress.type === 'kill_count') {
-      console.log('🔍 Portal Progress:', this.portalId, progress);
+    let lockTextContent = '🔒 Locked\n';
 
+    // 킬 카운트 조건
+    if (progress.type === 'kill_count') {
       const lines = progress.progress.map((p) => {
         const icon = p.completed ? '✓' : '✗';
-        // 원본 이름(enemyType) 사용
-        const displayName = p.enemyType;
-        return `${icon} ${displayName}: ${p.current}/${p.required}`;
+        return `${icon} ${p.enemyType}: ${p.current}/${p.required}`;
       });
-      this.lockText.setText(`🔒 Locked\n${lines.join('\n')}`);
-    } else if (progress.type === 'boss_defeat') {
-      this.lockText.setText('🔒 Defeat the Boss');
+      lockTextContent += lines.join('\n');
+    }
+    // 보스 처치 수 조건
+    else if (progress.type === 'boss_count') {
+      lockTextContent += `👑 Bosses: ${progress.current}/${progress.required}`;
+    }
+    // 특정 보스 처치 조건
+    else if (progress.type === 'boss_defeat') {
+      lockTextContent += '👑 Defeat the Boss';
+    }
+    // 총 레벨 조건
+    else if (progress.type === 'total_level') {
+      const icon = progress.isComplete ? '✓' : '✗';
+      lockTextContent += `${icon} Total Level: ${progress.current}/${progress.required}`;
+    }
+    // 각 캐릭터 레벨 조건
+    else if (progress.type === 'character_levels') {
+      const lines = progress.progress.map((p) => {
+        const icon = p.completed ? '✓' : '✗';
+        return `${icon} ${p.characterType}: Lv.${p.level}/${p.required}`;
+      });
+      lockTextContent += lines.join('\n');
     }
 
+    this.lockText.setText(lockTextContent);
     this.lockText.setVisible(true);
   }
 
-  update(player) {
+  // ✅ update도 async로 변경
+  async update(player) {
     if (!player || !player.body) return;
 
     const distance = Phaser.Math.Distance.Between(player.x, player.y, this.x, this.y);
@@ -212,7 +235,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
         this.lockText.setVisible(false);
       } else {
         this.portalText.setVisible(false);
-        this.updateLockUI();
+        await this.updateLockUI();
       }
     } else if (!isNear && this.isPlayerNear) {
       this.isPlayerNear = false;
