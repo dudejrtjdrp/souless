@@ -1113,33 +1113,37 @@ export const EnemiesData = {
 
     animations: {
       idle: { start: 0, end: 14, frameRate: 20, repeat: -1 },
-      walk: { start: 0, end: 14, frameRate: 12, repeat: -1 },
+      walk: { start: 0, end: 14, frameRate: 20, repeat: -1 },
       run: { start: 0, end: 14, frameRate: 20, repeat: -1 },
       dash: { start: 0, end: 14, frameRate: 20, repeat: 0 },
-      hit: { start: 0, end: 14, frameRate: 12, repeat: 0 },
-      death: { start: 0, end: 14, frameRate: 67, repeat: 0 },
-      attack: { start: 10, end: 14, frameRate: 30, repeat: 0 },
+      hit: { start: 0, end: 14, frameRate: 20, repeat: 0 },
+      death: { start: 0, end: 14, frameRate: 20, repeat: 0 },
+      attack: { start: 10, end: 14, frameRate: 20, repeat: 0 },
     },
 
     ai: {
       type: 'boss',
-      detectRange: 1200,
+      detectRange: 2000,
 
       maxPhase: 3, // 3페이즈
-      phaseThresholds: [0.7, 0.3], // HP 70%에서 2페이즈, 30%에서 3페이즈
+      phaseMaxHPs: {
+        1: 500,
+        2: 1000,
+        3: 1500,
+      },
       attack: {
-        attackRange: 100, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리
-        runRange: 450, // 달리기 거리
+        attackRange: 2000, // 멈추고 공격하는 거리
+        walkRange: 0, // 걷기 거리
+        runRange: 0, // 달리기 거리
       },
 
-      skillNames: ['attack', 'shadowDash'],
+      skillNames: ['attack', 'explosion'],
 
       skills: {
         attack: {
           type: 'melee',
           animation: 'attack',
-          range: 100,
+          range: 2000,
           cooldown: 1000,
           hitDelay: 100,
           duration: 500,
@@ -1167,7 +1171,7 @@ export const EnemiesData = {
         },
 
         // 단일 히트박스 → hitboxSequence로 변환
-        shadowDash: {
+        explosion: {
           type: 'movement',
           animation: 'dash',
           range: 350,

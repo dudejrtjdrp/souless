@@ -38,10 +38,29 @@ export default class BossController extends EnemyController {
       return;
     }
 
-    // ✅ 새로 추가: 페이즈 전환 체크
-    this.checkPhaseTransition();
+    // ✅ 고정 보스 (final_boss)는 이동 없이 스킬만 사용
+    if (this.enemy.isStationary) {
+      // 속도 강제로 0 유지
+      if (this.enemy.sprite.body) {
+        this.enemy.sprite.body.setVelocity(0, 0);
+      }
 
-    // 매 프레임 타겟 갱신
+      // 페이즈 전환 체크
+      this.checkPhaseTransition();
+
+      // 타겟 찾기
+      this.findTarget();
+
+      // 스킬 사용
+      if (this.target && this.target.sprite && this.target.sprite.active) {
+        this.tryAttackOrSkill(time);
+      }
+
+      return; // 이동 로직 건너뛰기
+    }
+
+    // ✅ 일반 보스는 기존 로직
+    this.checkPhaseTransition();
     this.findTarget();
 
     if (!this.target) {
@@ -55,7 +74,6 @@ export default class BossController extends EnemyController {
       return;
     }
 
-    // 타겟 sprite 체크
     if (!this.target.sprite || !this.target.sprite.active) {
       this.target = null;
       return;
@@ -66,7 +84,6 @@ export default class BossController extends EnemyController {
     const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
     const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
 
-    // 거리 계산 - body 존재 여부 체크
     const dist = Phaser.Math.Distance.Between(enemyX, enemyY, targetX, targetY);
 
     let sizeOffset = 0;
@@ -78,7 +95,6 @@ export default class BossController extends EnemyController {
 
     const realDist = dist - sizeOffset;
 
-    // 스킬 사용 중이면 이동 제한
     if (this.isUsingSkill()) {
       return;
     }
@@ -213,6 +229,9 @@ export default class BossController extends EnemyController {
   }
 
   moveTowardTarget(targetX, targetY, speed) {
+    // ✅ 고정 보스는 이동 안 함
+    if (this.enemy.isStationary) return;
+
     if (this.enemy.isDead || !this.enemy.sprite.body) return;
 
     const angle = Phaser.Math.Angle.Between(
@@ -233,13 +252,15 @@ export default class BossController extends EnemyController {
     if (this.enemy.isBeingHit) return;
     if (this.isInAttackState) return;
     if (!this.enemy.skillSystem) {
-      console.warn('⚠️ No skill system for', this.enemy.enemyType);
       return;
     }
     if (!this.target || !this.target.sprite || !this.target.sprite.active) return;
 
     const usableSkills = this.enemy.skillSystem.getUsableSkills(this.target);
-    if (usableSkills.length === 0) return;
+    if (usableSkills.length === 0) {
+      console.log('📌 No usable skills available');
+      return;
+    }
 
     let availableSkills = usableSkills;
     if (this.skillNames.length > 0) {
@@ -249,7 +270,9 @@ export default class BossController extends EnemyController {
       });
     }
 
-    if (availableSkills.length === 0) return;
+    if (availableSkills.length === 0) {
+      return;
+    }
 
     const targetX = this.target.sprite ? this.target.sprite.x : this.target.x;
     const targetY = this.target.sprite ? this.target.sprite.y : this.target.y;
@@ -285,7 +308,9 @@ export default class BossController extends EnemyController {
       return true;
     });
 
-    if (availableSkills.length === 0) return;
+    if (availableSkills.length === 0) {
+      return;
+    }
 
     availableSkills.sort((a, b) => {
       const priorityA = a.config?.priority || 0;
@@ -293,10 +318,18 @@ export default class BossController extends EnemyController {
       return priorityB - priorityA;
     });
 
-    this.isInAttackState = true;
-
     const selectedSkill = availableSkills[0];
     const skillName = selectedSkill.name || selectedSkill.config?.name;
+
+    // ✅ 수정: 스킬 사용 후 isInAttackState 설정 (스킬 duration만큼 지속)
+    this.isInAttackState = true;
+    const skillDuration = selectedSkill.config?.duration || 500;
+
+    // 스킬 종료 후 공격 상태 해제
+    this.enemy.scene.time.delayedCall(skillDuration, () => {
+      this.isInAttackState = false;
+    });
+
     this.enemy.skillSystem.useSkill(skillName, this.target);
   }
 
