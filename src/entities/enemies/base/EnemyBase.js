@@ -12,7 +12,6 @@ export default class EnemyBase {
     this.scene = scene;
     this.enemyType = enemyType;
 
-    // 1. EnemiesData에서 해당 몬스터의 모든 설정 데이터를 가져옵니다.
     this.data = EnemiesData[enemyType];
     if (!this.data) {
       console.error(`❌ Enemy data not found: ${enemyType}`);
@@ -20,7 +19,7 @@ export default class EnemyBase {
       return;
     }
 
-    // === 스탯 설정 === (EnemiesData.stats 기반)
+    // === 스탯 설정 ===
     const stats = this.data.stats;
     this.maxHP = stats.maxHP;
     this.hp = this.maxHP;
@@ -35,6 +34,9 @@ export default class EnemyBase {
     this.lastDamageTime = 0;
     this.isBeingHit = false;
     this.direction = direction;
+
+    // ✅ 새로 추가: 무적 상태 플래그
+    this.isInvincible = false;
 
     const spriteKey = `${enemyType}_idle`;
     if (!scene.textures.exists(spriteKey)) {
@@ -100,6 +102,7 @@ export default class EnemyBase {
     }
 
     const attackRange = aiConfig.attack?.range || aiConfig.attack?.attackRange || 70;
+
     // 공격 시스템
     if (aiConfig.attack) {
       this.attackSystem = new EnemyAttackSystem(this, this.scene, {
@@ -111,9 +114,8 @@ export default class EnemyBase {
       });
     }
 
-    // 스킬 시스템 (배열 또는 객체 모두 지원)
+    // 스킬 시스템
     if (aiConfig.skills) {
-      // 배열인지 객체인지 확인
       const hasSkills = Array.isArray(aiConfig.skills)
         ? aiConfig.skills.length > 0
         : Object.keys(aiConfig.skills).length > 0;
@@ -123,7 +125,7 @@ export default class EnemyBase {
       }
     }
 
-    // 컨트롤러
+    // ✅ 수정: 컨트롤러 - BossController에 페이즈 설정 추가
     if (aiConfig.type === 'boss') {
       this.controller = new BossController(this, {
         attackRange: attackRange,
@@ -133,6 +135,9 @@ export default class EnemyBase {
         skills: aiConfig.skillNames || [],
         walkRange: aiConfig.attack?.walkRange || 1200,
         runRange: aiConfig.attack?.runRange || 500,
+        // ✅ 새로 추가
+        maxPhase: aiConfig.maxPhase || 1,
+        phaseThresholds: aiConfig.phaseThresholds || [0.5],
       });
     } else if (aiConfig.type === 'aggressive' || aiConfig.type === 'patrol') {
       this.controller = new EnemyController(this, {
@@ -306,13 +311,25 @@ export default class EnemyBase {
    * 데미지 처리
    */
   takeDamage(amount = 1) {
-    if (this.isDead) return false;
+    if (this.isDead) {
+      console.log('⚠️ Enemy already dead');
+      return false;
+    }
+
+    // ✅ 무적 상태 체크
+    if (this.isInvincible) {
+      console.log('🛡️ Boss is invincible during phase transition');
+      return false;
+    }
 
     const currentTime = this.scene.time.now;
-    if (currentTime - this.lastDamageTime < this.damageCooldown) return false;
+    if (currentTime - this.lastDamageTime < this.damageCooldown) {
+      return false;
+    }
     this.lastDamageTime = currentTime;
 
     this.hp -= amount;
+    console.log(`💥 ${this.enemyType} took ${amount} damage. HP: ${this.hp} / ${this.maxHP}`);
 
     // HP바 업데이트
     const hpPercent = Math.max(0, this.hp / this.maxHP);
@@ -328,6 +345,7 @@ export default class EnemyBase {
 
     // 죽음 여부 확인
     if (this.hp <= 0) {
+      console.log(`💀 ${this.enemyType} is dead! Calling playDeath()`);
       this.isDead = true;
       if (this.sprite.body) this.sprite.body.setVelocity(0);
       this.hpBar.visible = false;
@@ -339,7 +357,6 @@ export default class EnemyBase {
       return false;
     }
   }
-
   playHit() {
     const hitKey = `${this.enemyType}_hit`;
     const idleKey = `${this.enemyType}_idle`;
@@ -369,34 +386,148 @@ export default class EnemyBase {
   }
 
   playDeath() {
+    console.log(`🎬 ${this.enemyType} playing death animation`);
+
+    // ✅ semi_boss는 클리어 메시지 없이 바로 처리
+    if (this.enemyType === 'semi_boss') {
+      console.log('🔄 Semi_boss death - special handling');
+
+      const deathKey = `${this.enemyType}_death`;
+
+      if (this.scene.anims.exists(deathKey)) {
+        this.sprite.play(deathKey);
+        this.sprite.once(`animationcomplete-${deathKey}`, () => {
+          console.log('✨ Semi_boss death animation complete');
+          this.handleSemiBossDeath();
+        });
+      } else {
+        this.handleSemiBossDeath();
+      }
+      return;
+    }
+
+    // 일반 적/보스는 기존 로직
     const deathKey = `${this.enemyType}_death`;
 
     if (this.scene.anims.exists(deathKey)) {
       this.sprite.play(deathKey);
       this.sprite.once(`animationcomplete-${deathKey}`, () => {
-        this.spawnSoul(); // 영혼 생성
+        console.log(`✨ ${this.enemyType} death animation complete - spawning soul`);
+        this.spawnSoul();
       });
     } else {
-      this.spawnSoul(); // 영혼 생성
+      console.warn(`⚠️ Death animation not found: ${deathKey}`);
+      this.spawnSoul();
     }
   }
 
+  handleSemiBossDeath() {
+    console.log('👻 Semi_boss handleSemiBossDeath called');
+
+    // 경험치 지급
+    if (this.expReward > 0 && !this.hasGrantedExp) {
+      this.hasGrantedExp = true;
+
+      const currentMapKey = this.scene.currentMapKey;
+      if (currentMapKey) {
+        KillTracker.recordKill(currentMapKey, this.enemyType);
+      }
+
+      if (this.scene?.onExpGained) {
+        const characterType = this.scene.selectedCharacter || 'soul';
+        this.scene.onExpGained(this.expReward, characterType);
+      }
+    }
+
+    // 스프라이트 정리
+    if (this.sprite) this.sprite.destroy();
+    if (this.hpBar) this.hpBar.destroy();
+    if (this.skillSystem) this.skillSystem.destroy();
+
+    // 현재 보스 참조 제거
+    if (this.scene.currentBoss === this) {
+      this.scene.currentBoss = null;
+    }
+
+    // ✅ final_map으로 이동 (클리어 메시지 없이!)
+    console.log('🚪 Transitioning to final_map...');
+    this.scene.transitionToFinalMapAfterSemiBoss();
+  }
+
   spawnSoul() {
+    console.log(`👻 ${this.enemyType} spawning soul...`);
     const player = this.scene.player;
 
     if (player && this.scene.soulAbsorb) {
-      // 적 위치에서 영혼 생성 → 플레이어에게 흡수
       this.scene.soulAbsorb.spawnAndAbsorb(this.sprite.x, this.sprite.y, player, () => {
-        // 흡수 완료 후 실행할 콜백 (선택사항)
-        // 예: 플레이어 이펙트, 사운드 등
+        console.log(`🌟 Soul absorbed - calling destroy()`);
         this.destroy();
       });
     } else {
+      console.log(`❌ No player or soulAbsorb - calling destroy directly`);
       this.destroy();
     }
   }
 
   destroy() {
+    console.log(`🗑️ ${this.enemyType}.destroy() called`);
+    console.log('isDead:', this.isDead);
+    console.log('scene exists:', !!this.scene);
+
+    // ✅ semi_boss 특별 처리
+    if (this.enemyType === 'semi_boss' && this.isDead) {
+      console.log('🔄 Semi_boss destroy - START');
+      console.log(
+        'scene.transitionToFinalMapAfterSemiBoss exists:',
+        typeof this.scene?.transitionToFinalMapAfterSemiBoss,
+      );
+
+      // 경험치 지급
+      if (this.expReward > 0 && !this.hasGrantedExp) {
+        this.hasGrantedExp = true;
+
+        const currentMapKey = this.scene.currentMapKey;
+        if (currentMapKey) {
+          KillTracker.recordKill(currentMapKey, this.enemyType);
+        }
+
+        if (this.scene?.onExpGained) {
+          const characterType = this.scene.selectedCharacter || 'soul';
+          this.scene.onExpGained(this.expReward, characterType);
+        }
+      }
+
+      // 스프라이트 정리
+      if (this.sprite) this.sprite.destroy();
+      if (this.hpBar) this.hpBar.destroy();
+      if (this.skillSystem) this.skillSystem.destroy();
+
+      // 현재 보스 참조 제거
+      if (this.scene.currentBoss === this) {
+        this.scene.currentBoss = null;
+      }
+
+      // ✅ final_map으로 이동
+      console.log('🚪 Calling transitionToFinalMapAfterSemiBoss...');
+
+      if (this.scene && this.scene.transitionToFinalMapAfterSemiBoss) {
+        this.scene
+          .transitionToFinalMapAfterSemiBoss()
+          .then(() => {
+            console.log('✅ Transition complete');
+          })
+          .catch((err) => {
+            console.error('❌ Transition error:', err);
+          });
+      } else {
+        console.error('❌ transitionToFinalMapAfterSemiBoss not found!');
+        console.log('Available scene methods:', Object.keys(this.scene || {}));
+      }
+
+      return;
+    }
+
+    // 일반 적/보스 처리 (기존 코드)
     if (this.isDead && this.expReward > 0 && !this.hasGrantedExp) {
       this.hasGrantedExp = true;
 

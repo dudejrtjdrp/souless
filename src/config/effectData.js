@@ -286,4 +286,38 @@ export const EffectData = {
     offset: { x: 20, y: 80 },
     color: '#f78e51',
   },
+
+  semi_boss_default_attack: {
+    url: 'assets/effects/semi_boss/semi_boss_attack.png',
+    frameWidth: 48,
+    frameHeight: 64,
+    frames: { start: 0, end: 15 },
+    frameRate: 16,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 150, y: 40 },
+    // color: '#f78e51',
+  },
+
+  semi_boss_default_skill: {
+    url: 'assets/effects/semi_boss/semi_boss_skill.png',
+    frameWidth: 40,
+    frameHeight: 32,
+    frames: { start: 0, end: 12 },
+    frameRate: 16,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 150, y: 40 },
+  },
+
+  semi_boss_default_skill_effect: {
+    url: 'assets/effects/semi_boss/semi_boss_skill_effect.png',
+    frameWidth: 128,
+    frameHeight: 128,
+    frames: { start: 0, end: 5 },
+    frameRate: 6,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 0, y: 0 },
+  },
 };

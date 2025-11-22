@@ -223,7 +223,7 @@ export default class MapModel {
   createPortals() {
     if (!this.config.portals) return;
 
-    // collider 윗면 = 맵 높이 - 200(collider 높이)
+    // collider 윗면 = 맵 높이 - 200(collider )
     const collisionTopY = this.mapHeight - 200;
 
     this.config.portals.forEach((portalData) => {

@@ -160,38 +160,25 @@ export const PORTAL_CONNECTIONS = {
     sourcePosition: { x: 200, y: 900 },
     targetPortalId: 'temple_3_to_temple_4',
   },
-  temple_4_to_snow: {
-    id: 'temple_4_to_snow',
-    name: 'Temple 4 to Snow',
+  // 변경: Snow 대신 Dark로 이동
+  temple_4_to_dark: {
+    id: 'temple_4_to_dark',
+    name: 'Temple 4 to Dark',
     sourceMap: 'temple_4',
     sourcePosition: { x: 500, y: 900 },
-    targetPortalId: 'snow_from_temple_4',
+    targetPortalId: 'dark_from_temple_4',
   },
 
-  // ===== Snow 맵 포탈 =====
-  snow_from_temple_4: {
-    id: 'snow_from_temple_4',
-    name: 'Snow (from Temple 4)',
-    sourceMap: 'snow',
-    sourcePosition: { x: 200, y: 1100 },
-    targetPortalId: 'temple_4_to_snow',
-  },
-  snow_to_dark: {
-    id: 'snow_to_dark',
-    name: 'Snow to Dark',
-    sourceMap: 'snow',
-    sourcePosition: { x: 500, y: 1100 },
-    targetPortalId: 'dark_from_snow',
-  },
-
-  // ===== Dark 맵 포탈 =====
-  dark_from_snow: {
-    id: 'dark_from_snow',
-    name: 'Dark (from Snow)',
+  // ===== Dark 맵 포탈 (순서 변경: T4 -> Dark -> Final) =====
+  // 변경: Snow가 아닌 Temple 4에서 옴
+  dark_from_temple_4: {
+    id: 'dark_from_temple_4',
+    name: 'Dark (from Temple 4)',
     sourceMap: 'dark',
     sourcePosition: { x: 200, y: 800 },
-    targetPortalId: 'snow_to_dark',
+    targetPortalId: 'temple_4_to_dark',
   },
+  // Dark -> Final Map 유지
   dark_to_final_map: {
     id: 'dark_to_final_map',
     name: 'Dark to Final Map',
@@ -208,4 +195,23 @@ export const PORTAL_CONNECTIONS = {
     sourcePosition: { x: 200, y: 1000 },
     targetPortalId: 'dark_to_final_map',
   },
+  // 추가: Final Map -> Snow
+  final_map_to_snow: {
+    id: 'final_map_to_snow',
+    name: 'Final Map to Snow',
+    sourceMap: 'final_map',
+    sourcePosition: { x: 500, y: 1000 },
+    targetPortalId: 'snow_from_final_map',
+  },
+
+  // ===== Snow 맵 포탈 (마지막 맵) =====
+  // 변경: Temple 4가 아닌 Final Map에서 옴
+  snow_from_final_map: {
+    id: 'snow_from_final_map',
+    name: 'Snow (from Final Map)',
+    sourceMap: 'snow',
+    sourcePosition: { x: 200, y: 1100 },
+    targetPortalId: 'final_map_to_snow',
+  },
+  // Snow 뒤에는 더 이상 맵이 없으므로 to_dark 제거
 };

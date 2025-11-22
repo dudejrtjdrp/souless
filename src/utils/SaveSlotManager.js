@@ -152,8 +152,10 @@ export default class SaveSlotManager {
     saveData.killTracker = KillTracker.serialize();
     saveData.portalConditions = PortalConditionManager.serialize();
 
+    // ✅ 중요: defeatedBosses → clearedBosses 동기화 (배열로 저장)
+    saveData.clearedBosses = [...PortalConditionManager.defeatedBosses];
+
     await this.save(saveData, currentSlot);
-    console.log('💾 킬/포탈 데이터 저장 완료');
   }
 
   /**
@@ -171,6 +173,13 @@ export default class SaveSlotManager {
     if (saveData?.portalConditions) {
       PortalConditionManager.deserialize(saveData.portalConditions);
       console.log('📂 포탈 조건 로드 완료');
+    }
+
+    // 중요: clearedBosses → defeatedBosses 동기화
+    if (saveData?.clearedBosses && Array.isArray(saveData.clearedBosses)) {
+      saveData.clearedBosses.forEach((bossId) => {
+        PortalConditionManager.defeatedBosses.add(bossId);
+      });
     }
   }
 
@@ -297,8 +306,14 @@ export default class SaveSlotManager {
     if (existingSlotData) {
       const fullData = await this.loadSlotData(slotIndex);
       if (fullData) {
-        // 중요: 킬/포탈 데이터 로드
+        // 킬/포탈 데이터 로드 (clearedBosses 동기화 포함)
         await this.loadKillData(KillTracker, PortalConditionManager);
+
+        // 포탈 조건 재검사
+        await PortalConditionManager.revalidateAllPortals();
+
+        console.log('슬롯 선택 완료 - 기존 데이터 로드됨');
+        console.log('현재 처치한 보스:', [...PortalConditionManager.defeatedBosses]);
         return;
       }
     }
@@ -307,6 +322,7 @@ export default class SaveSlotManager {
     newData.slotIndex = slotIndex;
     newData.currentCharacter = 'soul';
     newData.timestamp = Date.now();
+    newData.clearedBosses = [];
 
     await this.saveSlotData(slotIndex, newData);
 

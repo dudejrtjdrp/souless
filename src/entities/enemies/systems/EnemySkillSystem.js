@@ -342,7 +342,8 @@ export default class EnemySkillSystem {
     if (!skillHitbox) return;
 
     if (config.hitboxSequence) {
-      this.activateSequenceHitboxes(skillHitbox, config);
+      // ✅ SkillHitbox의 activateSequence 사용 (movement 자동 처리)
+      skillHitbox.activateSequence(config.hitboxSequence);
     } else {
       this.activateSingleHitbox(skillHitbox, config);
     }
@@ -369,6 +370,16 @@ export default class EnemySkillSystem {
     const sequenceKey = `${skillHitbox.name}_${Date.now()}_${index}`;
     this.tempSequenceHitboxes.set(sequenceKey, tempHitbox);
 
+    // ✅ step의 movement 처리 (히트박스 이동)
+    if (step.movement) {
+      this.executeHitboxMovement(tempHitbox, step.movement);
+    }
+
+    // ✅ step의 effect 처리
+    if (step.effect && this.effectManager) {
+      this.playSequenceEffect(step.effect, tempHitbox);
+    }
+
     this.scheduleHitboxCleanup(tempHitbox, sequenceKey, stepDuration);
   }
 
@@ -376,12 +387,12 @@ export default class EnemySkillSystem {
     return {
       ...config,
       hitbox: step.hitbox,
-      damage: step.damage || config.damage, // fallback 추가
-      knockback: step.knockback || config.knockback, // fallback 추가
+      damage: step.damage || config.damage,
+      knockback: step.knockback || config.knockback,
       effects: step.effects || config.effects,
-      impactEffect: config.impactEffect, // 원본 config에서 가져오기
-      targetType: config.targetType, // 원본 config에서 가져오기
-      hitstop: config.hitstop, // hitstop도 전달
+      impactEffect: config.impactEffect,
+      targetType: config.targetType,
+      hitstop: config.hitstop,
       hitboxSequence: undefined,
     };
   }
@@ -520,6 +531,42 @@ export default class EnemySkillSystem {
       },
       loop: true,
     });
+  }
+
+  // ✅ hitboxSequence의 movement 처리 (distanceX/Y 방식)
+  executeSequenceMovement(movement) {
+    if (!this.enemy.sprite.body) return;
+
+    const startX = this.enemy.sprite.x;
+    const startY = this.enemy.sprite.y;
+    const duration = movement.duration || 500;
+
+    // 방향 고려한 이동
+    const directionMultiplier = this.enemy.direction || 1;
+    const targetX = startX + movement.distanceX * directionMultiplier;
+    const targetY = startY + movement.distanceY;
+
+    // Tween으로 부드러운 이동
+    this.scene.tweens.add({
+      targets: this.enemy.sprite,
+      x: targetX,
+      y: targetY,
+      duration: duration,
+      ease: 'Power2',
+      onComplete: () => {
+        this.stopEnemyMovement();
+      },
+    });
+  }
+
+  // ✅ hitboxSequence의 effect 재생
+  playSequenceEffect(effectKey) {
+    if (!this.effectManager) return;
+
+    const x = this.enemy.sprite.x;
+    const y = this.enemy.sprite.y;
+
+    this.effectManager.playEffect(effectKey, x, y);
   }
 
   handleVisualEffect(visualEffect, target) {

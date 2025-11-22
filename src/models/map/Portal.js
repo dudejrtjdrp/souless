@@ -127,10 +127,10 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     KillTracker.addListener(this.killListener);
   }
 
-  // 포탈 열림 여부 확인
+  // 포탈 열림 여부 확인 주석 삭제
   isUnlocked() {
-    return PortalConditionManager.isPortalUnlocked(this.portalId);
     return true;
+    // return PortalConditionManager.isPortalUnlocked(this.portalId);
   }
 
   // 시각적 상태 업데이트
@@ -218,7 +218,6 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     this.lockText.setVisible(true);
   }
 
-  // ✅ update도 async로 변경
   async update(player) {
     if (!player || !player.body) return;
 
@@ -243,17 +242,26 @@ export default class Portal extends Phaser.GameObjects.Sprite {
       this.lockText.setVisible(false);
     }
 
-    // 플레이어가 가까이 있고 위 방향키를 눌렀을 때
+    // ✅ 입력 체크 개선 - 더 자세한 디버깅
     if (isNear && this.scene.inputHandler) {
       const input = this.scene.inputHandler.getInputState();
 
-      if (input.isUpPressed && !this.cooldown) {
-        // 잠금 상태면 활성화 차단
-        if (!unlocked) {
-          this.showLockedFeedback();
-          return;
+      // ✅ 매 프레임 상태 확인 (일시적으로)
+      if (isNear && !this.cooldown) {
+        const cursors = this.scene.input.keyboard.createCursorKeys();
+
+        // 직접 키보드 상태 체크
+        if (cursors.up.isDown) {
+          if (unlocked) {
+            this.onPlayerActivate();
+          } else {
+            this.showLockedFeedback();
+            this.cooldown = true;
+            this.scene.time.delayedCall(1000, () => {
+              this.cooldown = false;
+            });
+          }
         }
-        this.onPlayerActivate();
       }
     }
   }

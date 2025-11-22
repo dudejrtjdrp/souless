@@ -6,8 +6,8 @@ export default class BossController extends EnemyController {
 
     this.skillNames = config.skills || [];
 
-    // 감지 범위 설정 (가장 중요!)
-    this.detectRange = config.detectRange || 500; // ⭐ 플레이어를 감지하는 거리
+    // 감지 범위 설정
+    this.detectRange = config.detectRange || 500;
 
     // 이동 설정
     this.walkSpeed = enemy.speed;
@@ -15,19 +15,33 @@ export default class BossController extends EnemyController {
     this.walkRange = config.walkRange || 300;
     this.runRange = config.runRange || 200;
 
-    // 공격 범위 설정 (캐릭터에 붙을 거리)
-    this.attackRange = config.attackRange || 80; // ⭐ 이 값을 조절하세요!
+    // 공격 범위 설정
+    this.attackRange = config.attackRange || 80;
 
     this.currentMoveState = 'idle';
+
+    // ✅ 새로 추가: 페이즈 시스템
+    this.currentPhase = 1;
+    this.maxPhase = config.maxPhase || 1;
+    this.phaseTransitionTriggered = false;
+    this.phaseThresholds = config.phaseThresholds || [0.5];
   }
 
   update(time, delta) {
+    // 기본 유효성 체크
+    if (!this.enemy || !this.enemy.sprite || !this.enemy.sprite.active) {
+      return;
+    }
+
     // 피격 중에는 아무 행동도 하지 않음
     if (this.enemy.isBeingHit) {
       return;
     }
 
-    // 매 프레임 타겟 갱신 (넉백 후에도 추적 재개)
+    // ✅ 새로 추가: 페이즈 전환 체크
+    this.checkPhaseTransition();
+
+    // 매 프레임 타겟 갱신
     this.findTarget();
 
     if (!this.target) {
@@ -41,14 +55,27 @@ export default class BossController extends EnemyController {
       return;
     }
 
+    // 타겟 sprite 체크
+    if (!this.target.sprite || !this.target.sprite.active) {
+      this.target = null;
+      return;
+    }
+
     const targetX = this.target.sprite ? this.target.sprite.x : this.target.x;
     const targetY = this.target.sprite ? this.target.sprite.y : this.target.y;
     const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
     const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
 
-    // 거리 계산 통일
+    // 거리 계산 - body 존재 여부 체크
     const dist = Phaser.Math.Distance.Between(enemyX, enemyY, targetX, targetY);
-    const sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
+
+    let sizeOffset = 0;
+    if (this.enemy.sprite.body && this.target.sprite.body) {
+      sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
+    } else {
+      sizeOffset = 50;
+    }
+
     const realDist = dist - sizeOffset;
 
     // 스킬 사용 중이면 이동 제한
@@ -57,7 +84,8 @@ export default class BossController extends EnemyController {
     }
 
     this.tryAttackOrSkill(time);
-    // 공격 범위 내 (캐릭터에 붙음)
+
+    // 공격 범위 내
     if (dist <= this.attackRange) {
       if (this.enemy.sprite.body) {
         this.enemy.sprite.body.setVelocityX(0);
@@ -68,7 +96,6 @@ export default class BossController extends EnemyController {
         }
       }
     }
-
     // 달리기 범위
     else if (dist <= this.runRange) {
       if (!this.isInAttackState && !this.isUsingSkill()) {
@@ -96,7 +123,88 @@ export default class BossController extends EnemyController {
     }
   }
 
+  // ✅ 새로 추가: 페이즈 전환 체크
+  checkPhaseTransition() {
+    if (this.phaseTransitionTriggered) return;
+    if (this.currentPhase >= this.maxPhase) return;
+    if (!this.enemy || !this.enemy.maxHP) return;
+
+    const hpRatio = this.enemy.hp / this.enemy.maxHP;
+    const threshold = this.phaseThresholds[this.currentPhase - 1];
+
+    if (hpRatio <= threshold) {
+      this.phaseTransitionTriggered = true;
+      this.triggerPhaseTransition();
+    }
+  }
+
+  // ✅ 새로 추가: 페이즈 전환 실행
+  async triggerPhaseTransition() {
+    const nextPhase = this.currentPhase + 1;
+    console.log(`🔄 Boss Phase Transition: ${this.currentPhase} → ${nextPhase}`);
+
+    // 보스 무적 처리
+    this.enemy.isInvincible = true;
+
+    // 이동 정지
+    if (this.enemy.sprite.body) {
+      this.enemy.sprite.body.setVelocityX(0);
+      this.enemy.sprite.body.setVelocityY(0);
+    }
+
+    // 씬의 페이즈 전환 연출 실행
+    await this.enemy.scene.playBossPhaseTransition(this.enemy, this.currentPhase, nextPhase);
+
+    // 페이즈 업데이트
+    this.currentPhase = nextPhase;
+    this.phaseTransitionTriggered = false;
+
+    // 페이즈별 변경사항 적용
+    this.applyPhaseChanges(nextPhase);
+
+    // 무적 해제
+    this.enemy.isInvincible = false;
+
+    console.log(`✅ Now in Phase ${nextPhase}`);
+  }
+
+  // ✅ 새로 추가: 페이즈별 변경사항 적용
+  applyPhaseChanges(phase) {
+    switch (phase) {
+      case 2:
+        // 2페이즈: 속도 증가
+        this.walkSpeed *= 1.3;
+        this.runSpeed *= 1.3;
+        this.attackRange *= 1.2;
+
+        // 스킬 쿨다운 감소
+        if (this.enemy.skillSystem) {
+          this.enemy.skillSystem.globalCooldownMultiplier = 0.7;
+        }
+        break;
+
+      case 3:
+        // 3페이즈: 더욱 강화
+        this.walkSpeed *= 1.5;
+        this.runSpeed *= 1.5;
+        this.attackRange *= 1.3;
+
+        if (this.enemy.skillSystem) {
+          this.enemy.skillSystem.globalCooldownMultiplier = 0.5;
+        }
+        break;
+    }
+
+    console.log(`🎯 Phase ${phase} buffs applied:`, {
+      walkSpeed: this.walkSpeed,
+      runSpeed: this.runSpeed,
+      attackRange: this.attackRange,
+    });
+  }
+
   setMoveState(state) {
+    if (!this.enemy || !this.enemy.sprite) return;
+
     this.currentMoveState = state;
     const animKey = `${this.enemy.enemyType}_${state}`;
     if (this.enemy.scene.anims.exists(animKey)) {
@@ -116,38 +224,23 @@ export default class BossController extends EnemyController {
 
     this.enemy.sprite.body.setVelocityX(Math.cos(angle) * speed);
 
-    // 스킬 사용 중이 아닐 때만 방향 전환
     if (!this.enemy.isLockingDirection) {
       this.enemy.direction = Math.cos(angle) > 0 ? 1 : -1;
     }
   }
 
-  /**
-   * 공격 또는 스킬 사용 시도
-   */
   tryAttackOrSkill(time) {
-    // 피격 중이면 공격/스킬 불가
-    if (this.enemy.isBeingHit) {
-      return;
-    }
-
-    if (this.isInAttackState) {
-      return;
-    }
-
+    if (this.enemy.isBeingHit) return;
+    if (this.isInAttackState) return;
     if (!this.enemy.skillSystem) {
       console.warn('⚠️ No skill system for', this.enemy.enemyType);
       return;
     }
+    if (!this.target || !this.target.sprite || !this.target.sprite.active) return;
 
-    // 사용 가능한 스킬 가져오기 (각 스킬의 cooldown 체크됨)
     const usableSkills = this.enemy.skillSystem.getUsableSkills(this.target);
+    if (usableSkills.length === 0) return;
 
-    if (usableSkills.length === 0) {
-      return; // 로그 제거
-    }
-
-    // skillNames 필터링 (설정된 경우)
     let availableSkills = usableSkills;
     if (this.skillNames.length > 0) {
       availableSkills = usableSkills.filter((skill) => {
@@ -156,30 +249,32 @@ export default class BossController extends EnemyController {
       });
     }
 
-    if (availableSkills.length === 0) {
-      return; // 로그 제거
-    }
+    if (availableSkills.length === 0) return;
 
-    // 현재 거리 계산 (realDist 사용)
     const targetX = this.target.sprite ? this.target.sprite.x : this.target.x;
     const targetY = this.target.sprite ? this.target.sprite.y : this.target.y;
     const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
     const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
     const dist = Phaser.Math.Distance.Between(enemyX, enemyY, targetX, targetY);
-    const sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
+
+    let sizeOffset = 0;
+    if (this.enemy.sprite.body && this.target.sprite.body) {
+      sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
+    } else {
+      sizeOffset = 50;
+    }
+
     const currentDistance = dist - sizeOffset;
 
     availableSkills = availableSkills.filter((skill) => {
       const config = skill.config;
 
-      // 스킬에 range가 설정되어 있으면 체크
       if (config.range !== undefined) {
         if (currentDistance > config.range) {
           return false;
         }
       }
 
-      // movement 스킬은 너무 가까우면 제외
       if (config.type === 'movement') {
         const minDistance = (config.range || 200) * 0.7;
         if (currentDistance < minDistance) {
@@ -190,11 +285,8 @@ export default class BossController extends EnemyController {
       return true;
     });
 
-    if (availableSkills.length === 0) {
-      return;
-    }
+    if (availableSkills.length === 0) return;
 
-    // 우선순위 정렬 (높은 우선순위 먼저)
     availableSkills.sort((a, b) => {
       const priorityA = a.config?.priority || 0;
       const priorityB = b.config?.priority || 0;
@@ -203,15 +295,11 @@ export default class BossController extends EnemyController {
 
     this.isInAttackState = true;
 
-    // 가장 높은 우선순위 스킬 사용
     const selectedSkill = availableSkills[0];
     const skillName = selectedSkill.name || selectedSkill.config?.name;
     this.enemy.skillSystem.useSkill(skillName, this.target);
   }
 
-  /**
-   * 스킬 사용 중 확인
-   */
   isUsingSkill() {
     if (!this.enemy.skillSystem) return false;
 

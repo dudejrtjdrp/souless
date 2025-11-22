@@ -300,12 +300,25 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
-      initialCount: 20,
-      maxCount: 35,
+      types: [],
+      initialCount: 0, // ✅ 일반 몹 없음
+      maxCount: 0,
       respawnInterval: 5000,
       patrolRangeX: 100,
       minPlayerDistance: 100,
+    },
+    boss: {
+      enabled: true,
+      spawnCondition: 'manual', // ✅ 'jobChange' → 'manual'로 변경
+      spawnPosition: {
+        x: 'center',
+        y: 'center',
+        offsetX: 0,
+        offsetY: -100,
+      },
+      jobBossMapping: {
+        assassin: 'semi_boss', // ✅ 단일 보스만 설정
+      },
     },
     portals: generateMapPortals('dark'),
   },
@@ -444,7 +457,6 @@ export const MAPS = {
         monk: 'monk_boss',
         princess: 'princess_boss',
         mauler: 'mauler_boss',
-        final: 'final_boss',
       },
     },
     portals: generateMapPortals('temple_1'),
@@ -496,10 +508,12 @@ export const MAPS = {
         offsetY: -100,
       },
       jobBossMapping: {
-        warrior: 'fireBoss',
-        mage: 'iceBoss',
-        archer: 'windBoss',
-        assassin: 'shadowBoss',
+        assassin: 'assassin_boss',
+        fire_knight: 'fire_boss',
+        bladekeeper: 'bladekeeper_boss',
+        monk: 'monk_boss',
+        princess: 'princess_boss',
+        mauler: 'mauler_boss',
       },
     },
     portals: generateMapPortals('temple_2'),
@@ -551,10 +565,12 @@ export const MAPS = {
         offsetY: -100,
       },
       jobBossMapping: {
-        warrior: 'fireBoss',
-        mage: 'iceBoss',
-        archer: 'windBoss',
-        assassin: 'shadowBoss',
+        assassin: 'assassin_boss',
+        fire_knight: 'fire_boss',
+        bladekeeper: 'bladekeeper_boss',
+        monk: 'monk_boss',
+        princess: 'princess_boss',
+        mauler: 'mauler_boss',
       },
     },
     portals: generateMapPortals('temple_3'),
@@ -606,10 +622,12 @@ export const MAPS = {
         offsetY: -100,
       },
       jobBossMapping: {
-        warrior: 'fireBoss',
-        mage: 'iceBoss',
-        archer: 'windBoss',
-        assassin: 'shadowBoss',
+        assassin: 'assassin_boss',
+        fire_knight: 'fire_boss',
+        bladekeeper: 'bladekeeper_boss',
+        monk: 'monk_boss',
+        princess: 'princess_boss',
+        mauler: 'mauler_boss',
       },
     },
     portals: generateMapPortals('temple_4'),
@@ -623,7 +641,6 @@ export const MAPS = {
     camera: {
       offsetY: -50,
     },
-    // ✅ layers 중복 제거 (마지막 것만 유지)
     layers: [
       { key: 'final_map_layer1', path: '/assets/map/final_map/background1.png' },
       { key: 'final_map_layer2', path: '/assets/map/final_map/background2.png' },
@@ -648,12 +665,25 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
-      initialCount: 20,
-      maxCount: 35,
+      types: [],
+      initialCount: 0, // ✅ 일반 몹 없음
+      maxCount: 0,
       respawnInterval: 5000,
       patrolRangeX: 100,
       minPlayerDistance: 100,
+    },
+    boss: {
+      enabled: true,
+      spawnCondition: 'manual', // ✅ 'jobChange' → 'manual'로 변경
+      spawnPosition: {
+        x: 'center',
+        y: 'center',
+        offsetX: 0,
+        offsetY: -100,
+      },
+      jobBossMapping: {
+        assassin: 'final_boss', // ✅ 단일 보스만 설정
+      },
     },
     portals: generateMapPortals('final_map'),
   },

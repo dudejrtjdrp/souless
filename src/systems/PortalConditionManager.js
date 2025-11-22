@@ -1,6 +1,5 @@
 import { KillTracker } from './KillTracker';
 import { MAPS } from '../config/mapData';
-import { PORTAL_CONNECTIONS } from '../config/portalData';
 
 // 포탈별 열림 조건 정의
 export const PORTAL_CONDITIONS = {
@@ -78,27 +77,30 @@ export const PORTAL_CONDITIONS = {
     sourceMap: 'temple_3',
   },
 
-  // ===== 레벨 조건 =====
+  // ===== 레벨 조건 (순서 변경됨) =====
 
-  // Temple 4 → Snow (총 레벨 60 이상)
-  temple_4_to_snow: {
+  // Temple 4 → Dark (총 레벨 60 이상)
+  // 기존 Snow로 가던 조건을 Dark행으로 변경
+  temple_4_to_dark: {
     type: 'total_level',
     requiredLevel: 60,
     sourceMap: 'temple_4',
   },
 
-  // Snow → Dark (각 캐릭터 10레벨 이상)
-  snow_to_dark: {
-    type: 'character_levels',
-    requiredLevelPerCharacter: 10,
-    sourceMap: 'snow',
-  },
-
   // Dark → Final Map (각 캐릭터 40레벨 이상)
+  // 조건 유지
   dark_to_final_map: {
     type: 'character_levels',
     requiredLevelPerCharacter: 40,
     sourceMap: 'dark',
+  },
+
+  // Final Map → Snow (각 캐릭터 50레벨 이상)
+  // Snow가 마지막 맵이 되었으므로 가장 높은 난이도 조건 부여 (기존 10 -> 50 상향)
+  final_map_to_snow: {
+    type: 'character_levels',
+    requiredLevelPerCharacter: 50,
+    sourceMap: 'final_map',
   },
 };
 
@@ -197,11 +199,12 @@ class PortalConditionManagerClass {
   }
 
   /**
-   * 보스 처치 수 조건 체크 (NEW)
+   * 보스 처치 수 조건 체크
    */
   checkBossCountCondition(condition) {
     const { requiredBossCount } = condition;
     const currentBossCount = this.defeatedBosses.size;
+    console.log(this.defeatedBosses);
 
     return currentBossCount >= requiredBossCount;
   }
@@ -317,12 +320,18 @@ class PortalConditionManagerClass {
    */
   async recordBossDefeat(bossId) {
     this.defeatedBosses.add(bossId);
-    console.log(`👑 Boss defeated: ${bossId} (Total: ${this.defeatedBosses.size})`);
 
-    // 모든 포탈 조건 재검사 (보스 수 기반 포탈들을 위해)
+    // 저장소에도 즉시 동기화
+    const { default: SaveSlotManager } = await import('../utils/SaveSlotManager.js');
+    const saveData = await SaveSlotManager.load();
+    if (saveData) {
+      saveData.clearedBosses = [...this.defeatedBosses];
+      await SaveSlotManager.save(saveData);
+    }
+
+    // 모든 포탈 조건 재검사
     await this.revalidateAllPortals();
   }
-
   /**
    * 포탈이 열렸는지 확인
    */
@@ -468,13 +477,13 @@ class PortalConditionManagerClass {
   deserialize(data) {
     try {
       const parsed = JSON.parse(data);
+      console.log(parsed);
       this.unlockedPortals = new Set(parsed.unlockedPortals || []);
       this.defeatedBosses = new Set(parsed.defeatedBosses || []);
     } catch (e) {
       console.error('Failed to load portal data:', e);
     }
   }
-
   /**
    * 모든 포탈 조건 재검사
    */

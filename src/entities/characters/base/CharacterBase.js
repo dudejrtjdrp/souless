@@ -293,6 +293,7 @@ export default class CharacterBase {
 
     await this.showRespawnPrompt(ghostSprite);
 
+    // ✅ 완전 재시작으로 변경
     await this.handleRespawn(ghostSprite);
   }
 
@@ -450,21 +451,32 @@ export default class CharacterBase {
 
     // ✅ 리스폰 전 상태 초기화
     this.isDying = false;
-    this.scene.isPlayerDead = false; // 씬의 플래그도 초기화
+    this.scene.isPlayerDead = false;
 
     if (this.stateMachine) {
       this.stateMachine.unlock();
     }
 
+    // ✅ 보스 상태도 초기화
+    this.scene.isBossSpawning = false;
+    this.scene.currentBoss = null;
+
+    // ✅ UI Scene도 재시작
+    if (this.scene.scene.isActive('UIScene')) {
+      this.scene.scene.restart('UIScene');
+    }
+
+    // ✅ 리스폰 플래그 추가
     this.scene.scene.restart({
-      respawningCharacter: this.characterType,
-      respawnHealth: this.maxHealth, // 최대 체력으로 리스폰
+      mapKey: this.scene.currentMapKey, // 현재 맵 유지
+      characterType: this.characterType,
+      isRespawn: true, // 🔑 리스폰 플래그
+      respawnHealth: this.maxHealth,
     });
   }
 
   update() {
     const input = this.inputHandler.getInputState();
-
     this.movement.update();
 
     // ✅ 사망 중일 때는 입력 무시
@@ -508,6 +520,17 @@ export default class CharacterBase {
 
   updateMovement(input) {
     if (!this.stateMachine.isStateLocked()) {
+      // ✅ 캐릭터 선택 오버레이 보일 때 이동 멈추기
+      const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
+
+      if (isCharacterSelectVisible) {
+        // 속도를 0으로 설정
+        if (this.sprite.body) {
+          this.sprite.setVelocityX(0);
+        }
+        return;
+      }
+
       this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
     }
   }
@@ -561,7 +584,25 @@ export default class CharacterBase {
     }
 
     const onGround = this.movement.isOnGround();
+    const currentState = this.stateMachine.getCurrentState();
 
+    // 캐릭터 선택 오버레이가 보이면 이동 차단
+    const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
+
+    if (isCharacterSelectVisible) {
+      // UI가 보일 때는 idle 상태만 유지
+      if (currentState !== 'idle') {
+        this.stateMachine.changeState('idle');
+      }
+      return;
+    }
+
+    // 좌우 이동 키 직접 확인
+    const isLeftDown = input.cursors.left.isDown;
+    const isRightDown = input.cursors.right.isDown;
+    const isHorizontalMoving = isLeftDown || isRightDown;
+
+    // 공중 상태 확인
     if (!onGround) {
       const velocityY = this.sprite.body.velocity.y;
 
@@ -570,11 +611,27 @@ export default class CharacterBase {
       } else {
         this.stateMachine.changeState('jump_down');
       }
-    } else if (input.isMoving) {
-      const newState = input.isRunning ? 'run' : 'walk';
-      this.stateMachine.changeState(newState);
-    } else {
-      this.stateMachine.changeState('idle');
+    }
+    // 지면에 있을 때만 walk/run/idle 상태 변환
+    else {
+      if (isHorizontalMoving) {
+        // 현재 상태가 이미 walk/run이면 run 상태만 토글
+        if (currentState === 'walk' || currentState === 'run') {
+          const targetState = input.isRunning ? 'run' : 'walk';
+          if (currentState !== targetState) {
+            this.stateMachine.changeState(targetState);
+          }
+        } else {
+          // idle이나 다른 상태에서 movement 시작
+          const newState = input.isRunning ? 'run' : 'walk';
+          this.stateMachine.changeState(newState);
+        }
+      } else {
+        // 이동 키가 모두 해제됨 - idle로 변환
+        if (currentState !== 'idle') {
+          this.stateMachine.changeState('idle');
+        }
+      }
     }
   }
 

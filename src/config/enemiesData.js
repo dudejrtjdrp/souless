@@ -1125,6 +1125,8 @@ export const EnemiesData = {
       type: 'boss',
       detectRange: 1200,
 
+      maxPhase: 3, // 3페이즈
+      phaseThresholds: [0.7, 0.3], // HP 70%에서 2페이즈, 30%에서 3페이즈
       attack: {
         attackRange: 100, // 멈추고 공격하는 거리
         walkRange: 1200, // 걷기 거리
@@ -1165,6 +1167,199 @@ export const EnemiesData = {
         },
 
         // 단일 히트박스 → hitboxSequence로 변환
+        shadowDash: {
+          type: 'movement',
+          animation: 'dash',
+          range: 350,
+          cooldown: 6000,
+          hitDelay: 100,
+          duration: 300,
+          priority: 1,
+          turnDelay: 200,
+
+          hitboxSequence: [
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 45,
+                offsetY: 40,
+                duration: 100,
+              },
+              damage: 0.2,
+              knockback: { x: 50, y: 0 },
+            },
+          ],
+
+          impactEffect: '',
+          hitstop: 'light',
+          targetType: 'multi',
+
+          movement: {
+            type: 'dash',
+            speed: 500,
+            duration: 500,
+            afterimage: true,
+            afterimageCount: 3,
+          },
+        },
+      },
+    },
+  },
+
+  semi_boss: {
+    type: 'boss',
+
+    sprite: {
+      frameWidth: 250,
+      frameHeight: 250,
+      scale: 1.8,
+      flipX: true,
+    },
+
+    physics: {
+      width: 60,
+      height: 100,
+      collideWorldBounds: true,
+      offsetX: 90,
+      offsetY: 70,
+    },
+
+    stats: {
+      maxHP: 500,
+      speed: { min: 50, max: 50 },
+      runSpeed: 200,
+      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      expReward: 100,
+      damageCooldown: 300,
+    },
+
+    assets: {
+      idle: '/assets/boss/semi_boss/semi_boss.png',
+      walk: '/assets/boss/semi_boss/semi_boss.png',
+      run: '/assets/boss/semi_boss/semi_boss.png',
+      dash: '/assets/boss/semi_boss/semi_boss.png',
+      hit: '/assets/boss/semi_boss/semi_boss.png',
+      death: '/assets/boss/semi_boss/semi_boss.png',
+      attack: '/assets/boss/semi_boss/semi_boss.png',
+      skill: '/assets/boss/semi_boss/semi_boss.png',
+    },
+
+    animations: {
+      idle: { start: 0, end: 7, frameRate: 6, repeat: -1 },
+      walk: { start: 8, end: 15, frameRate: 8, repeat: -1 },
+      run: { start: 8, end: 15, frameRate: 16, repeat: -1 },
+      dash: { start: 8, end: 15, frameRate: 16, repeat: 0 },
+      hit: { start: 32, end: 34, frameRate: 6, repeat: 0 },
+      death: { start: 40, end: 46, frameRate: 7, repeat: 0 },
+      attack: { start: 24, end: 31, frameRate: 10, repeat: 0 },
+      skill: { start: 16, end: 23, frameRate: 10, repeat: 0 },
+    },
+
+    ai: {
+      type: 'boss',
+      detectRange: 1200,
+
+      attack: {
+        attackRange: 150, // 멈추고 공격하는 거리
+        walkRange: 1200, // 걷기 거리
+        runRange: 1050, // 달리기 거리
+      },
+
+      maxPhase: 2, // 2페이즈
+      phaseThresholds: [0.5], // HP 50%에서 2페이즈 시작
+
+      skillNames: ['attack', 'soulBall', 'shadowDash'],
+
+      skills: {
+        attack: {
+          type: 'melee',
+          animation: 'attack',
+          range: 150,
+          cooldown: 1000,
+          hitDelay: 100,
+          duration: 500,
+          priority: 2,
+          turnDelay: 200,
+
+          hitboxSequence: [
+            {
+              delay: 200,
+              hitbox: {
+                width: 200,
+                height: 200,
+                offsetX: 175,
+                offsetY: 20,
+                duration: 500,
+              },
+              damage: 25,
+              knockback: { x: 30, y: 150 },
+            },
+            {
+              delay: 400,
+              hitbox: {
+                width: 80,
+                height: 140,
+                offsetX: 155,
+                offsetY: 20,
+                duration: 400,
+              },
+              damage: 15,
+              knockback: { x: 30, y: 150 },
+            },
+          ],
+
+          impactEffect: 'semi_boss_default_attack',
+          hitstop: 'BOSS_HEAVY',
+          targetType: 'single',
+        },
+
+        soulBall: {
+          type: 'instant',
+          animation: 'skill',
+          range: 850,
+          cooldown: 3000,
+          hitDelay: 100,
+          duration: 300,
+          priority: 1,
+          turnDelay: 200,
+
+          hitboxSequence: [
+            {
+              delay: 100,
+              hitbox: {
+                width: 200,
+                height: 150,
+                offsetX: 45,
+                offsetY: 40,
+                duration: 700,
+                effect: 'semi_boss_default_skill',
+              },
+              movement: { distanceX: 500, distanceY: 0, duration: 700 },
+              damage: 0.5,
+              knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 700,
+              hitbox: {
+                width: 200,
+                height: 200,
+                offsetX: 545,
+                offsetY: 40,
+                duration: 400,
+                effect: 'semi_boss_default_skill_effect',
+              },
+              damage: 20,
+              knockback: { x: 50, y: 50 },
+            },
+          ],
+
+          impactEffect: '',
+          hitstop: 'light',
+          targetType: 'multi',
+        },
+
         shadowDash: {
           type: 'movement',
           animation: 'dash',
