@@ -158,10 +158,10 @@ export class SkillHitbox {
           effectKey: step.effect || step.hitbox.effect,
           isMoving: false,
           isSequence: true,
-          effectSprite: null, // ✅ 이펙트 스프라이트 추가
+          effectSprite: null, // 이펙트 스프라이트 추가
         };
 
-        // ✅ step에 effect가 있으면 히트박스 위치에 생성
+        // step에 effect가 있으면 히트박스 위치에 생성
         if ((step.effect || step.hitbox.effect) && this.effectManager) {
           const effectKey = step.effect || step.hitbox.effect;
           try {
@@ -199,7 +199,7 @@ export class SkillHitbox {
 
           temp.body.setVelocity(vx, vy);
 
-          // ✅ 이펙트가 있으면 히트박스를 따라다니게 함
+          // 이펙트가 있으면 히트박스를 따라다니게 함
           if (tempHitboxData.effectSprite) {
             const followTimer = this.scene.time.addEvent({
               delay: 16,
@@ -244,7 +244,7 @@ export class SkillHitbox {
             temp.setVisible(false);
           }
 
-          // ✅ 이펙트 스프라이트도 제거
+          // 이펙트 스프라이트도 제거
           if (tempHitboxData.effectSprite && tempHitboxData.effectSprite.scene) {
             tempHitboxData.effectSprite.destroy();
             tempHitboxData.effectSprite = null;
@@ -330,7 +330,7 @@ export class SkillHitbox {
     if (!this.active || this.hitboxes.length === 0 || !target) return false;
     const targetSprite = target.sprite || target;
 
-    // ❌ 기존: 이미지 전체 영역을 가져옴 (여백 포함)
+    // 기존: 이미지 전체 영역을 가져옴 (여백 포함)
     // const targetBounds = targetSprite.getBounds();
 
     // 수정: 물리 바디(초록색 박스) 영역을 가져옴

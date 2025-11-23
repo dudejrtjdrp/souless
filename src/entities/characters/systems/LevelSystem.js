@@ -3,22 +3,117 @@ import SaveSlotManager from '../../../utils/SaveSlotManager.js';
 export default class LevelSystem {
   constructor(scene) {
     this.scene = scene;
+
+    // 전체 레벨 (기존)
     this.level = 1;
     this.experience = 0;
     this.experienceToNext = 100;
     this.totalExperience = 0;
+
+    // ✅ 캐릭터별 레벨 - Map으로 변경!
+    this.characterLevels = new Map();
+
+    // 레벨 커브 정의
+    this.LEVEL_CURVE = this.buildLevelCurve();
+  }
+
+  // 레벨 커브 생성
+  buildLevelCurve() {
+    const curve = { 1: 100 };
+    let required = 100;
+
+    for (let lvl = 2; lvl <= 100; lvl++) {
+      if ((lvl - 1) % 10 === 0) {
+        required = Math.floor(required * 1.5);
+      } else {
+        required = Math.floor(required * 1.1);
+      }
+      curve[lvl] = required;
+    }
+
+    return curve;
+  }
+
+  // 캐릭터 레벨 초기화 메서드
+  initializeCharacterLevel(characterType) {
+    if (!this.characterLevels.has(characterType)) {
+      this.characterLevels.set(characterType, {
+        level: 1,
+        experience: 0,
+        experienceToNext: this.LEVEL_CURVE[1] || 100,
+      });
+    }
   }
 
   /**
-   * 경험치 추가
-   * @param {number} amount - 획득 경험치
-   * @returns {boolean} - 레벨업 발생 여부
+   * ✨ 특정 캐릭터의 레벨 가져오기
+   */
+  getCharacterLevel(characterType) {
+    if (!this.characterLevels) {
+      console.warn('⚠️ characterLevels not initialized!');
+      return 1;
+    }
+
+    const charData = this.characterLevels.get(characterType);
+
+    if (!charData) {
+      console.warn(`⚠️ Character data not found for: ${characterType}`);
+      return 1;
+    }
+
+    const level = charData.level || 1;
+
+    return level;
+  }
+
+  // 특정 캐릭터의 경험치 정보 가져오기
+  getCharacterExpInfo(characterType) {
+    if (!this.characterLevels.has(characterType)) {
+      this.initializeCharacterLevel(characterType);
+    }
+    return this.characterLevels.get(characterType);
+  }
+
+  /**
+   * 경험치 추가 (전체 레벨)
    */
   async addExperience(amount) {
     return this.addExperienceSync(amount);
   }
 
-  // 레벨업 처리
+  /**
+   * ✨ 특정 캐릭터에게 경험치 추가
+   */
+  addCharacterExperience(characterType, amount) {
+    if (!this.characterLevels.has(characterType)) {
+      this.initializeCharacterLevel(characterType);
+    }
+
+    const charData = this.characterLevels.get(characterType);
+    charData.experience += amount;
+
+    let leveledUp = false;
+
+    while (charData.experience >= charData.experienceToNext) {
+      charData.experience -= charData.experienceToNext;
+      charData.level++;
+      charData.experienceToNext = this.calculateNextLevelExp(charData.level);
+
+      // 캐릭터별 레벨업 이벤트 발생
+      this.scene.events.emit('character-level-up', {
+        characterType,
+        level: charData.level,
+      });
+
+      leveledUp = true;
+    }
+
+    return leveledUp;
+  }
+
+  /**
+   * 레벨업 처리 (전체)
+   */
   async levelUp() {
     this.experience -= this.experienceToNext;
     this.level++;
@@ -36,20 +131,15 @@ export default class LevelSystem {
   calculateNextLevelExp(nextLevel) {
     if (nextLevel <= 1) return 100;
 
-    // 10레벨 단위로 구간 계산
-    const completeTiers = Math.floor((nextLevel - 1) / 10); // 완료된 10레벨 구간
-    const levelsInCurrentTier = (nextLevel - 1) % 10; // 현재 구간에서의 레벨
+    const completeTiers = Math.floor((nextLevel - 1) / 10);
+    const levelsInCurrentTier = (nextLevel - 1) % 10;
 
-    // 각 구간의 시작 경험치
-    // 0구간: 100, 1구간: 100*1.1^9*1.5, 2구간: 위*1.1^9*1.5 ...
     let baseExp = 100;
 
-    // 완료된 구간만큼 1.5 곱하기
     for (let tier = 0; tier < completeTiers; tier++) {
       baseExp = Math.floor(baseExp * Math.pow(1.1, 9) * 1.5);
     }
 
-    // 현재 구간 내에서 1.1씩 증가
     baseExp = Math.floor(baseExp * Math.pow(1.1, levelsInCurrentTier));
 
     return baseExp;
@@ -80,6 +170,14 @@ export default class LevelSystem {
    */
   getProgressPercent() {
     return (this.experience / this.experienceToNext) * 100;
+  }
+
+  /**
+   * ✨ 특정 캐릭터의 레벨 진행도 퍼센트
+   */
+  getCharacterProgressPercent(characterType) {
+    const charData = this.getCharacterExpInfo(characterType);
+    return (charData.experience / charData.experienceToNext) * 100;
   }
 
   /**
@@ -170,19 +268,26 @@ export default class LevelSystem {
   }
 
   /**
-   * 직렬화
+   * 직렬화 - Map을 객체로 변환
    */
   serialize() {
+    // Map을 일반 객체로 변환
+    const characterLevelsObj = {};
+    for (const [key, value] of this.characterLevels.entries()) {
+      characterLevelsObj[key] = value;
+    }
+
     return {
       level: this.level,
       experience: this.experience,
       experienceToNext: this.experienceToNext,
       totalExperience: this.totalExperience,
+      characterLevels: characterLevelsObj, // ✨ 객체로 저장
     };
   }
 
   /**
-   * 역직렬화
+   * 역직렬화 - 객체를 Map으로 변환
    */
   deserialize(data) {
     if (data) {
@@ -190,6 +295,14 @@ export default class LevelSystem {
       this.experience = data.experience || 0;
       this.experienceToNext = data.experienceToNext || 100;
       this.totalExperience = data.totalExperience || 0;
+
+      // ✅ 객체를 Map으로 변환
+      this.characterLevels = new Map();
+      if (data.characterLevels) {
+        for (const [key, value] of Object.entries(data.characterLevels)) {
+          this.characterLevels.set(key, value);
+        }
+      }
     }
   }
 
@@ -212,6 +325,6 @@ export default class LevelSystem {
   }
 
   destroy() {
-    // 정리할 것이 있으면 여기서 처리
+    this.characterLevels.clear();
   }
 }

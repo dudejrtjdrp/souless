@@ -133,7 +133,7 @@ export default class MapTestScene extends Phaser.Scene {
 
   setupEnemies() {
     if (!this.player) {
-      console.error('❌ Player not found when creating enemies!');
+      console.error('Player not found when creating enemies!');
       return;
     }
 

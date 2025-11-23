@@ -71,10 +71,8 @@ export default class MainMenuScene extends Phaser.Scene {
   async loadSaveSlots() {
     try {
       this.saveSlots = await SaveSlotManager.loadAllSlots();
-
-      console.log('슬롯 정보:', this.saveSlots);
     } catch (error) {
-      console.error('❌ Error loading save slots:', error);
+      console.error('Error loading save slots:', error);
       this.saveSlots = new Array(SaveSlotManager.MAX_SLOTS).fill(null);
     }
   }
@@ -380,7 +378,7 @@ export default class MainMenuScene extends Phaser.Scene {
           slotIndex: slotIndex, // 슬롯 인덱스 전달
         });
       } catch (error) {
-        console.error('❌ 새 게임 시작 실패:', error);
+        console.error('새 게임 시작 실패:', error);
       }
     });
   }
@@ -414,7 +412,7 @@ export default class MainMenuScene extends Phaser.Scene {
           slotIndex: slotIndex, // 슬롯 인덱스 전달
         });
       } catch (error) {
-        console.error('❌ 슬롯 로드 실패:', error);
+        console.error('슬롯 로드 실패:', error);
       }
     });
   }

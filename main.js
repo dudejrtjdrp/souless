@@ -105,7 +105,7 @@ ipcMain.handle('load-save', async () => {
       // 파일이 없으면 null 반환
       return null;
     }
-    console.error('❌ Load save error:', error);
+    console.error('Load save error:', error);
     throw error;
   }
 });
@@ -119,7 +119,7 @@ ipcMain.handle('save-save', async (event, data) => {
     await fs.writeFile(savePath, JSON.stringify(data, null, 2), 'utf-8');
     return true;
   } catch (error) {
-    console.error('❌ Save save error:', error);
+    console.error('Save save error:', error);
     throw error;
   }
 });
@@ -137,7 +137,7 @@ ipcMain.handle('clear-save', async () => {
       // 파일이 없으면 성공으로 처리
       return true;
     }
-    console.error('❌ Clear save error:', error);
+    console.error('Clear save error:', error);
     throw error;
   }
 });

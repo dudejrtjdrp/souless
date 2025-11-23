@@ -17,7 +17,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     this.connectionInfo = PortalManager.getPortalConnection(id);
 
     if (!this.connectionInfo) {
-      console.error(`❌ Portal connection not found for ID: ${id}`);
+      console.error(`Portal connection not found for ID: ${id}`);
     }
 
     scene.add.existing(this);
@@ -44,7 +44,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     // 초기 상태 업데이트
     this.updateVisualState();
 
-    // ✅ 초기 잠금 UI 업데이트 (async)
+    // 초기 잠금 UI 업데이트 (async)
     this.updateLockUI();
   }
 
@@ -98,7 +98,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     };
     PortalConditionManager.addListener(this.conditionListener);
 
-    // ✅ KillTracker 변경사항 실시간 반영을 위한 리스너 추가
+    // KillTracker 변경사항 실시간 반영을 위한 리스너 추가
     this.killListener = async () => {
       // 1. 현재 플레이어가 근처에 없다면 UI 갱신 불필요
       if (!this.isPlayerNear) return;
@@ -116,7 +116,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
         this.updateVisualState();
       } else {
         // [아직 잠겨있음]
-        // ✅ await 추가
+        // await 추가
         await this.updateLockUI();
 
         // 만약 포탈 텍스트가 켜져있다면 끔
@@ -173,7 +173,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
     });
   }
 
-  // ✅ 잠금 상태 UI 업데이트 (async로 변경)
+  // 잠금 상태 UI 업데이트 (async로 변경)
   async updateLockUI() {
     const progress = await PortalConditionManager.getPortalProgress(this.portalId);
 
@@ -242,11 +242,11 @@ export default class Portal extends Phaser.GameObjects.Sprite {
       this.lockText.setVisible(false);
     }
 
-    // ✅ 입력 체크 개선 - 더 자세한 디버깅
+    // 입력 체크 개선 - 더 자세한 디버깅
     if (isNear && this.scene.inputHandler) {
       const input = this.scene.inputHandler.getInputState();
 
-      // ✅ 매 프레임 상태 확인 (일시적으로)
+      // 매 프레임 상태 확인 (일시적으로)
       if (isNear && !this.cooldown) {
         const cursors = this.scene.input.keyboard.createCursorKeys();
 
@@ -297,7 +297,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
 
       this.scene.onPortalEnter(this.connectionInfo.targetMap, this.targetPortalId);
     } else {
-      console.error('❌ scene.onPortalEnter is not defined!');
+      console.error('scene.onPortalEnter is not defined!');
     }
   }
 

@@ -73,7 +73,7 @@ export default class UIHealthMana {
     this.mpY = mpY;
   }
 
-  // ✅ null 체크 추가
+  // null 체크 추가
   update(player) {
     if (!player) return;
 

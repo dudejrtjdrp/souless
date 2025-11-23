@@ -27,14 +27,12 @@ export default class BossEventHandler {
   }
 
   async onBossDefeated(bossType) {
-    // ✅ semi_boss는 무시 (안전장치)
+    // semi_boss는 무시 (안전장치)
     if (bossType === 'semi_boss') {
-      console.log('Semi boss event received but ignored');
       return;
     }
 
     const jobKey = JobUnlockManager.getJobKeyFromBoss(bossType);
-
     this.startSlowMotion(1500);
     this.showBossClearEffect(bossType);
 
@@ -53,6 +51,7 @@ export default class BossEventHandler {
 
           this.scene.time.delayedCall(1000, () => {
             this.scene.scene.start('GameScene', {
+              mapKey: this.scene.currentMapKey,
               characterType: jobKey,
               skipSaveCheck: true,
               showJobUnlock: jobKey,

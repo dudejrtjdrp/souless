@@ -13,7 +13,7 @@ export default class CharacterSwitchHandler {
     const nextType = this.getNextCharacterType(direction);
 
     if (!nextType) {
-      console.error('❌ No next character type found');
+      console.error('No next character type found');
       return;
     }
 

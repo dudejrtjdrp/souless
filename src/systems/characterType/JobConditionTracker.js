@@ -283,8 +283,6 @@ export default class JobConditionTracker {
 
     // 이벤트 발생
     this.scene.events.emit('job-condition-completed', jobKey);
-
-    console.log(`${jobKey} 조건 달성! (보스 도전 가능)`);
   }
 
   async addToAvailableBoss(jobKey) {
@@ -298,7 +296,6 @@ export default class JobConditionTracker {
     if (!saveData.availableBoss.includes(jobKey)) {
       saveData.availableBoss.push(jobKey);
       await SaveSlotManager.save(saveData);
-      console.log(`📋 ${jobKey}이 availableBoss에 추가됨`);
     }
   }
 

@@ -17,7 +17,7 @@ export default class GameSceneInitializer {
     const mapConfig = MAPS[scene.currentMapKey];
 
     if (!mapConfig) {
-      console.error(`❌ Map config not found: "${scene.currentMapKey}"`);
+      console.error(`Map config not found: "${scene.currentMapKey}"`);
       return MAPS[scene.currentMapKey];
     }
 

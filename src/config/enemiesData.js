@@ -1172,13 +1172,13 @@ export const EnemiesData = {
 
         // 단일 히트박스 → hitboxSequence로 변환
         explosion: {
-          type: 'movement',
+          type: 'melee',
           animation: 'dash',
           range: 350,
           cooldown: 6000,
           hitDelay: 100,
-          duration: 300,
-          priority: 1,
+          duration: 500,
+          priority: 3,
           turnDelay: 200,
 
           hitboxSequence: [
@@ -1187,26 +1187,67 @@ export const EnemiesData = {
               hitbox: {
                 width: 80,
                 height: 150,
-                offsetX: 45,
-                offsetY: 40,
-                duration: 100,
+                offsetX: -500,
+                offsetY: 340,
+                duration: 500,
+              },
+              damage: 0.001,
+              knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: -200,
+                offsetY: 340,
+                duration: 500,
+              },
+              damage: 0.001,
+              knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 100,
+                offsetY: 340,
+                duration: 500,
+              },
+              damage: 0.001,
+              knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 300,
+                offsetY: 340,
+                duration: 500,
               },
               damage: 0.2,
               knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 0,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 300,
+                offsetY: 340,
+                duration: 500,
+              },
+              damage: 0.2,
+              knockback: { x: 50, y: 0 },
+              effect: '',
             },
           ],
 
           impactEffect: '',
           hitstop: 'light',
           targetType: 'multi',
-
-          movement: {
-            type: 'dash',
-            speed: 500,
-            duration: 500,
-            afterimage: true,
-            afterimageCount: 3,
-          },
         },
       },
     },

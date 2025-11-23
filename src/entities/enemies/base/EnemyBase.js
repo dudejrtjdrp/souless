@@ -14,7 +14,7 @@ export default class EnemyBase {
 
     this.data = EnemiesData[enemyType];
     if (!this.data) {
-      console.error(`❌ Enemy data not found: ${enemyType}`);
+      console.error(`Enemy data not found: ${enemyType}`);
       this.sprite = scene.add.sprite(x, y, 'MISSING');
       return;
     }
@@ -51,7 +51,7 @@ export default class EnemyBase {
     this.direction = direction;
     this.isInvincible = false;
 
-    // ✅ 보스/고정 플래그
+    // 보스/고정 플래그
     this.isBoss = this.data.ai?.type === 'boss';
     this.isStationary = enemyType === 'final_boss';
 
@@ -83,7 +83,7 @@ export default class EnemyBase {
     }
     this.sprite.body.setOffset(offsetX, offsetY);
 
-    // ✅ final_boss는 상단 중앙에 고정
+    // final_boss는 상단 중앙에 고정
     if (this.isStationary) {
       const centerX = scene.physics.world.bounds.width / 2;
       const topY = 650;
@@ -103,7 +103,7 @@ export default class EnemyBase {
       this.sprite.y = spriteY;
     }
 
-    // ✅ HP바 생성 (여기서만 호출!)
+    // HP바 생성 (여기서만 호출!)
     this.createHPBar(physics);
 
     // 애니메이션 & AI
@@ -117,7 +117,7 @@ export default class EnemyBase {
     const aiConfig = this.data.ai;
 
     if (!aiConfig) {
-      console.error(`❌ No AI config for ${this.enemyType}`);
+      console.error(`No AI config for ${this.enemyType}`);
       return;
     }
 
@@ -145,7 +145,7 @@ export default class EnemyBase {
       }
     }
 
-    // ✅ 수정: 컨트롤러 - BossController에 페이즈 설정 추가
+    // 수정: 컨트롤러 - BossController에 페이즈 설정 추가
     if (aiConfig.type === 'boss') {
       this.controller = new BossController(this, {
         attackRange: attackRange,
@@ -155,7 +155,7 @@ export default class EnemyBase {
         skills: aiConfig.skillNames || [],
         walkRange: aiConfig.attack?.walkRange || 1200,
         runRange: aiConfig.attack?.runRange || 500,
-        // ✅ 새로 추가
+        // 새로 추가
         maxPhase: aiConfig.maxPhase || 1,
         phaseThresholds: aiConfig.phaseThresholds || [0.5],
       });
@@ -197,7 +197,7 @@ export default class EnemyBase {
         .setScrollFactor(0)
         .setDepth(-1);
 
-      // ✅ HP바 본체 (페이즈 1의 색상으로 시작)
+      // HP바 본체 (페이즈 1의 색상으로 시작)
       this.hpBar = scene.add
         .rectangle(centerX, barY, barWidth, barHeight, this.phaseColors[1])
         .setOrigin(0.5, 0.5)
@@ -245,7 +245,7 @@ export default class EnemyBase {
         .setScrollFactor(0)
         .setDepth(-1);
     } else {
-      // ✅ 일반 적만 머리 위에 HP바 생성
+      // 일반 적만 머리 위에 HP바 생성
       const hpBarWidth = physics.width;
       this.hpBar = scene.add
         .rectangle(this.sprite.x, this.sprite.y - physics.height / 2 - 10, hpBarWidth, 5, 0x00ff00)
@@ -255,8 +255,6 @@ export default class EnemyBase {
   }
 
   onPhaseChange(newPhase) {
-    console.log(`🔄 ${this.enemyType} Phase changed to ${newPhase}`);
-
     this.currentPhase = newPhase;
 
     // 페이즈별 최대 체력 (직접 설정값 사용)
@@ -323,7 +321,7 @@ export default class EnemyBase {
   static preload(scene, enemyType) {
     const data = EnemiesData[enemyType];
     if (!data) {
-      console.error(`❌ Enemy data not found: ${enemyType}`);
+      console.error(`Enemy data not found: ${enemyType}`);
       return;
     }
 
@@ -339,7 +337,7 @@ export default class EnemyBase {
 
     // 로드 에러
     scene.load.on('loaderror', (file) => {
-      console.error(`❌ Load error: ${file.key} from ${file.url}`);
+      console.error(`Load error: ${file.key} from ${file.url}`);
     });
   }
 
@@ -372,7 +370,7 @@ export default class EnemyBase {
       this.sprite.setFlipX(this.direction > 0 ? !baseFlip : baseFlip);
     }
 
-    // ✅ HP바 위치 (보스는 화면 고정이라 업데이트 불필요)
+    // HP바 위치 (보스는 화면 고정이라 업데이트 불필요)
     if (!this.isBoss) {
       this.hpBar.x = this.sprite.x;
       this.hpBar.y = this.sprite.y - this.sprite.height / 2 - 10;
@@ -458,19 +456,13 @@ export default class EnemyBase {
 
     this.hp -= amount;
 
-    // ✅ 현재 페이즈 기준 HP 퍼센트 (0 ~ 1 사이의 값)
+    // 현재 페이즈 기준 HP 퍼센트 (0 ~ 1 사이의 값)
     const hpPercent = Math.max(0, Math.min(1, this.hp / this.currentPhaseMaxHP));
-
-    console.log(
-      `💥 ${this.enemyType} took ${amount} damage. HP: ${Math.ceil(this.hp)} / ${Math.ceil(
-        this.currentPhaseMaxHP,
-      )} (${(hpPercent * 100).toFixed(1)}%)`,
-    );
 
     // HP바 너비 업데이트 (0 ~ maxWidth 사이)
     this.hpBar.width = this.hpBarMaxWidth * hpPercent;
 
-    // ✅ 보스는 페이즈 색상 유지 (HP%에 따라 색 안 바뀜)
+    // 보스는 페이즈 색상 유지 (HP%에 따라 색 안 바뀜)
     if (!this.isBoss) {
       // 일반 적만 HP%에 따라 색상 변경
       if (hpPercent > 0.6) {
@@ -489,13 +481,10 @@ export default class EnemyBase {
       );
     }
 
-    // ✅ 페이즈 클리어 체크
+    // 페이즈 클리어 체크
     if (this.hp <= 0) {
       // 보스인 경우, 현재 페이즈가 마지막 페이즈가 아닌지 확인
       if (this.isBoss && this.currentPhase < this.maxPhase) {
-        console.log(
-          `⚡ Phase ${this.currentPhase} cleared! Moving to Phase ${this.currentPhase + 1}`,
-        );
         this.onPhaseChange(this.currentPhase + 1);
         return false; // 아직 살아있음 (다음 페이즈로 진행)
       }
@@ -504,7 +493,7 @@ export default class EnemyBase {
       this.isDead = true;
       if (this.sprite.body) this.sprite.body.setVelocity(0);
 
-      // ✅ 보스 HP바는 죽을 때 숨김
+      // 보스 HP바는 죽을 때 숨김
       if (this.isBoss) {
         this.hpBar.visible = false;
         if (this.hpBarBg) this.hpBarBg.visible = false;
@@ -553,18 +542,13 @@ export default class EnemyBase {
   }
 
   playDeath() {
-    console.log(`🎬 ${this.enemyType} playing death animation`);
-
-    // ✅ semi_boss는 클리어 메시지 없이 바로 처리
+    // semi_boss는 클리어 메시지 없이 바로 처리
     if (this.enemyType === 'semi_boss') {
-      console.log('🔄 Semi_boss death - special handling');
-
       const deathKey = `${this.enemyType}_death`;
 
       if (this.scene.anims.exists(deathKey)) {
         this.sprite.play(deathKey);
         this.sprite.once(`animationcomplete-${deathKey}`, () => {
-          console.log('✨ Semi_boss death animation complete');
           this.handleSemiBossDeath();
         });
       } else {
@@ -579,7 +563,6 @@ export default class EnemyBase {
     if (this.scene.anims.exists(deathKey)) {
       this.sprite.play(deathKey);
       this.sprite.once(`animationcomplete-${deathKey}`, () => {
-        console.log(`✨ ${this.enemyType} death animation complete - spawning soul`);
         this.spawnSoul();
       });
     } else {
@@ -589,8 +572,6 @@ export default class EnemyBase {
   }
 
   handleSemiBossDeath() {
-    console.log('👻 Semi_boss handleSemiBossDeath called');
-
     // 경험치 지급
     if (this.expReward > 0 && !this.hasGrantedExp) {
       this.hasGrantedExp = true;
@@ -616,39 +597,25 @@ export default class EnemyBase {
       this.scene.currentBoss = null;
     }
 
-    // ✅ final_map으로 이동 (클리어 메시지 없이!)
-    console.log('🚪 Transitioning to final_map...');
+    // final_map으로 이동 (클리어 메시지 없이!)
     this.scene.transitionToFinalMapAfterSemiBoss();
   }
 
   spawnSoul() {
-    console.log(`👻 ${this.enemyType} spawning soul...`);
     const player = this.scene.player;
 
     if (player && this.scene.soulAbsorb) {
       this.scene.soulAbsorb.spawnAndAbsorb(this.sprite.x, this.sprite.y, player, () => {
-        console.log(`🌟 Soul absorbed - calling destroy()`);
         this.destroy();
       });
     } else {
-      console.log(`❌ No player or soulAbsorb - calling destroy directly`);
       this.destroy();
     }
   }
 
   destroy() {
-    console.log(`🗑️ ${this.enemyType}.destroy() called`);
-    console.log('isDead:', this.isDead);
-    console.log('scene exists:', !!this.scene);
-
-    // ✅ semi_boss 특별 처리
+    // semi_boss 특별 처리
     if (this.enemyType === 'semi_boss' && this.isDead) {
-      console.log('🔄 Semi_boss destroy - START');
-      console.log(
-        'scene.transitionToFinalMapAfterSemiBoss exists:',
-        typeof this.scene?.transitionToFinalMapAfterSemiBoss,
-      );
-
       // 경험치 지급
       if (this.expReward > 0 && !this.hasGrantedExp) {
         this.hasGrantedExp = true;
@@ -674,21 +641,16 @@ export default class EnemyBase {
         this.scene.currentBoss = null;
       }
 
-      // ✅ final_map으로 이동
-      console.log('🚪 Calling transitionToFinalMapAfterSemiBoss...');
-
+      // final_map으로 이동
       if (this.scene && this.scene.transitionToFinalMapAfterSemiBoss) {
         this.scene
           .transitionToFinalMapAfterSemiBoss()
-          .then(() => {
-            console.log('✅ Transition complete');
-          })
+          .then(() => {})
           .catch((err) => {
-            console.error('❌ Transition error:', err);
+            console.error('Transition error:', err);
           });
       } else {
-        console.error('❌ transitionToFinalMapAfterSemiBoss not found!');
-        console.log('Available scene methods:', Object.keys(this.scene || {}));
+        console.error('transitionToFinalMapAfterSemiBoss not found!');
       }
 
       return;

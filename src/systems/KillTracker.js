@@ -19,10 +19,6 @@ class KillTrackerClass {
 
     this.kills[mapKey][enemyType]++;
 
-    console.log(
-      `🗡️ Kill recorded: ${enemyType} in ${mapKey} (Total: ${this.kills[mapKey][enemyType]})`,
-    );
-
     // 리스너들에게 알림 (포탈 조건 체크 등)
     this.notifyListeners(mapKey, enemyType);
   }
@@ -67,7 +63,6 @@ class KillTrackerClass {
    */
   reset() {
     this.kills = {};
-    console.log('🔄 Kill tracker reset');
   }
 
   /**
@@ -81,8 +76,6 @@ class KillTrackerClass {
     try {
       const parsed = JSON.parse(data);
       this.kills = parsed || {};
-      console.log('📂 KillTracker 데이터 로드 완료:', this.kills);
-
       this.notifyListeners('all', 'all', this.kills);
     } catch (e) {
       console.error('Failed to load kill data:', e);

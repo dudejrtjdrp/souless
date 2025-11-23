@@ -301,7 +301,7 @@ export const MAPS = {
     },
     enemies: {
       types: [],
-      initialCount: 0, // ✅ 일반 몹 없음
+      initialCount: 0, // 일반 몹 없음
       maxCount: 0,
       respawnInterval: 5000,
       patrolRangeX: 100,
@@ -309,7 +309,7 @@ export const MAPS = {
     },
     boss: {
       enabled: true,
-      spawnCondition: 'manual', // ✅ 'jobChange' → 'manual'로 변경
+      spawnCondition: 'manual', // 'jobChange' → 'manual'로 변경
       spawnPosition: {
         x: 'center',
         y: 'center',
@@ -317,7 +317,7 @@ export const MAPS = {
         offsetY: -100,
       },
       jobBossMapping: {
-        assassin: 'semi_boss', // ✅ 단일 보스만 설정
+        assassin: 'semi_boss', // 단일 보스만 설정
       },
     },
     portals: generateMapPortals('dark'),
@@ -403,7 +403,7 @@ export const MAPS = {
     portals: generateMapPortals('temple_way'),
   },
 
-  // ✅ temple_1: 보스 맵이므로 일반 적 없음
+  // temple_1: 보스 맵이므로 일반 적 없음
   temple_1: {
     key: 'temple_1',
     name: 'Temple1',
@@ -432,11 +432,11 @@ export const MAPS = {
       boss: 95,
       ui: 1000,
     },
-    // ✅ 적 스폰 비활성화
+    // 적 스폰 비활성화
     enemies: {
       types: [], // 빈 배열 유지
-      initialCount: 0, // ✅ 0으로 변경
-      maxCount: 0, // ✅ 0으로 변경
+      initialCount: 0, // 0으로 변경
+      maxCount: 0, // 0으로 변경
       respawnInterval: 5000,
       patrolRangeX: 100,
       minPlayerDistance: 100,
@@ -666,7 +666,7 @@ export const MAPS = {
     },
     enemies: {
       types: [],
-      initialCount: 0, // ✅ 일반 몹 없음
+      initialCount: 0, // 일반 몹 없음
       maxCount: 0,
       respawnInterval: 5000,
       patrolRangeX: 100,
@@ -674,7 +674,7 @@ export const MAPS = {
     },
     boss: {
       enabled: true,
-      spawnCondition: 'manual', // ✅ 'jobChange' → 'manual'로 변경
+      spawnCondition: 'manual', // 'jobChange' → 'manual'로 변경
       spawnPosition: {
         x: 'center',
         y: 'center',
@@ -682,7 +682,7 @@ export const MAPS = {
         offsetY: -100,
       },
       jobBossMapping: {
-        assassin: 'final_boss', // ✅ 단일 보스만 설정
+        assassin: 'final_boss', // 단일 보스만 설정
       },
     },
     portals: generateMapPortals('final_map'),

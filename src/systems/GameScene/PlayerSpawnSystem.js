@@ -132,10 +132,10 @@ export default class PlayerSpawnSystem {
     const body = sprite?.body;
     if (!body) return;
 
-    // ✅ Y축 기준 1: Collider의 윗면
+    // Y축 기준 1: Collider의 윗면
     const colliderTop = this.getColliderTopY();
 
-    // ✅ Y축 기준 2: 캐릭터 기준점 (캐릭터 offset 고려)
+    // Y축 기준 2: 캐릭터 기준점 (캐릭터 offset 고려)
     const characterOffset = player.config?.bodyOffset?.y || 0;
     const characterBaseY = this.getCharacterBaseY(characterOffset);
 
@@ -152,7 +152,7 @@ export default class PlayerSpawnSystem {
   // 스폰 이펙트
   // ═══════════════════════════════════════════
 
-  applySpawnEffects(player, duration = 3000) {
+  applySpawnEffects(player, duration = 1000) {
     // 무적
     player.setInvincible?.(duration);
 

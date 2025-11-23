@@ -204,8 +204,6 @@ class PortalConditionManagerClass {
   checkBossCountCondition(condition) {
     const { requiredBossCount } = condition;
     const currentBossCount = this.defeatedBosses.size;
-    console.log(this.defeatedBosses);
-
     return currentBossCount >= requiredBossCount;
   }
 
@@ -309,8 +307,6 @@ class PortalConditionManagerClass {
    */
   unlockPortal(portalId) {
     this.unlockedPortals.add(portalId);
-    console.log(`🌀 Portal unlocked: ${portalId}`);
-
     // 리스너들에게 알림 (UI 업데이트, 이펙트 등)
     this.notifyListeners('portal_unlocked', portalId);
   }
@@ -477,7 +473,6 @@ class PortalConditionManagerClass {
   deserialize(data) {
     try {
       const parsed = JSON.parse(data);
-      console.log(parsed);
       this.unlockedPortals = new Set(parsed.unlockedPortals || []);
       this.defeatedBosses = new Set(parsed.defeatedBosses || []);
     } catch (e) {
@@ -488,8 +483,6 @@ class PortalConditionManagerClass {
    * 모든 포탈 조건 재검사
    */
   async revalidateAllPortals() {
-    console.log('🔄 모든 포탈 조건 재검사 중...');
-
     for (const [portalId, condition] of Object.entries(PORTAL_CONDITIONS)) {
       // 이미 열린 포탈은 스킵
       if (this.unlockedPortals.has(portalId)) {
@@ -499,11 +492,8 @@ class PortalConditionManagerClass {
       // 조건 체크 (async 지원)
       if (await this.checkCondition(portalId, condition)) {
         this.unlockPortal(portalId);
-        console.log(`포탈 자동 해제: ${portalId}`);
       }
     }
-
-    console.log('재검사 완료. 열린 포탈:', [...this.unlockedPortals]);
   }
 
   reset() {

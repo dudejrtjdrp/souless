@@ -49,30 +49,45 @@ export default class UIScene extends Phaser.Scene {
     this.setupEventListeners();
 
     await this.updateExpBars();
-
     this.events.emit('ui-ready');
 
     const gameScene = this.scene.get('GameScene');
-    if (gameScene && gameScene.player && gameScene.selectedCharacter) {
-      this.time.delayedCall(0, () => {
+
+    // ✅ 0.5초 후 초기 설정 (모든 시스템이 준비된 후)
+    this.time.delayedCall(500, () => {
+      const gameScene = this.scene.get('GameScene');
+
+      if (gameScene && gameScene.player && gameScene.selectedCharacter) {
+        console.log(`🎬 UIScene 초기화 완료 - 스킬 설정 시작`);
+
+        // 스킬 아이콘 업데이트
         SkillIconLoader.updateAllIcons(
           this,
           this.skillCooldown,
           gameScene.selectedCharacter,
           this.skillCooldown.container,
         );
-      });
-    }
+
+        // 스킬 잠금 시스템 설정
+        if (gameScene.skillUnlockSystem) {
+          this.skillCooldown.setUnlockSystem(gameScene.skillUnlockSystem);
+          this.skillCooldown.updateLockStates();
+
+          console.log(`✅ 초기 잠금 상태 설정 완료`);
+        }
+      }
+    });
   }
 
   setupEventListeners() {
     const gameScene = this.scene.get('GameScene');
     if (!gameScene) {
-      console.warn('⚠️ GameScene not found, retrying...');
+      console.warn('GameScene not found');
       this.time.delayedCall(100, () => this.setupEventListeners());
       return;
     }
 
+    // 기존 이벤트 리스너들
     gameScene.events.off('character-switching', this.handleCharacterSwitching, this);
     gameScene.events.on('character-switching', this.handleCharacterSwitching, this);
 
@@ -87,6 +102,62 @@ export default class UIScene extends Phaser.Scene {
 
     gameScene.events.off('skill-cooldowns-updated', this.handleSkillCooldownsUpdated, this);
     gameScene.events.on('skill-cooldowns-updated', this.handleSkillCooldownsUpdated, this);
+
+    // ✨ 캐릭터별 레벨업 이벤트 추가
+    gameScene.events.off('character-level-up', this.handleCharacterLevelUp, this);
+    gameScene.events.on('character-level-up', this.handleCharacterLevelUp, this);
+  }
+
+  handleCharacterLevelUp(data) {
+    const { characterType, level } = data;
+
+    console.log(`🎊 UI: Character level up - ${characterType} Lv.${level}`);
+
+    // 현재 플레이 중인 캐릭터면 알림 표시
+    if (characterType === this.currentCharacterType) {
+      this.addLog(`레벨 업! Lv.${level}`, '#FFD700');
+
+      // ✅ 스킬 잠금 상태 즉시 업데이트
+      const gameScene = this.scene.get('GameScene');
+      if (this.skillCooldown && gameScene?.skillUnlockSystem) {
+        // 캐릭터 타입 재설정 (레벨 데이터 갱신)
+        gameScene.skillUnlockSystem.setCurrentCharacter(characterType);
+
+        // UI 업데이트
+        this.skillCooldown.updateLockStates();
+
+        // 새로 해금된 스킬 체크 및 알림
+        const unlockedSkills = this.checkNewlyUnlockedSkills(level);
+        if (unlockedSkills.length > 0) {
+          this.time.delayedCall(500, () => {
+            unlockedSkills.forEach((skill) => {
+              this.addLog(`🔓 ${skill} 스킬이 해금되었습니다!`, '#51cf66');
+            });
+          });
+        }
+      }
+    }
+
+    // 경험치 바 즉시 업데이트
+    this.scheduleExpUpdate();
+  }
+
+  checkNewlyUnlockedSkills(level) {
+    const skillLevels = {
+      Q: 10,
+      W: 20,
+      E: 30,
+      R: 40,
+    };
+
+    const unlocked = [];
+    Object.entries(skillLevels).forEach(([skill, reqLevel]) => {
+      if (level === reqLevel) {
+        unlocked.push(skill);
+      }
+    });
+
+    return unlocked;
   }
 
   async handleCharacterSwitching(data) {
@@ -101,6 +172,20 @@ export default class UIScene extends Phaser.Scene {
     const { characterType, player } = data;
     this.currentCharacterType = characterType;
 
+    const gameScene = this.scene.get('GameScene');
+
+    console.log(`🔄 캐릭터 변경: ${characterType}`);
+
+    // ✅ 1. 스킬 잠금 시스템 먼저 설정
+    if (gameScene?.skillUnlockSystem) {
+      gameScene.skillUnlockSystem.setCurrentCharacter(characterType);
+      console.log(`🎯 SkillUnlockSystem 캐릭터 설정: ${characterType}`);
+
+      this.skillCooldown.setUnlockSystem(gameScene.skillUnlockSystem);
+      console.log(`✅ UISkillCooldown에 UnlockSystem 설정 완료`);
+    }
+
+    // ✅ 2. 스킬 아이콘 업데이트
     if (player && player.skillSystem) {
       SkillIconLoader.updateAllIcons(
         this,
@@ -108,36 +193,83 @@ export default class UIScene extends Phaser.Scene {
         characterType,
         this.skillCooldown.container,
       );
-      await this.restoreSkillCooldowns(characterType, player);
+      console.log(`🖼️ 스킬 아이콘 업데이트 완료`);
     }
 
+    // ✅ 3. 쿨다운 복원
+    await this.restoreSkillCooldowns(characterType, player);
+
+    // ✅ 4. 경험치 바 업데이트
     await this.updatePlayerExp(characterType);
 
+    // ✅ 5. 체력/마나 UI 업데이트
     if (player) {
       this.updateUI(player);
       this.handleSkillCooldownsUpdated(data);
+    }
+
+    // ✅ 6. 잠금 상태 강제 업데이트 (여러 번 시도)
+    if (gameScene?.skillUnlockSystem) {
+      console.log(`🔒 잠금 상태 업데이트 시작...`);
+
+      // 즉시 업데이트
+      this.skillCooldown.updateLockStates();
+
+      // 0.1초 후 재시도
+      this.time.delayedCall(100, () => {
+        console.log(`🔒 잠금 상태 재업데이트 (0.1초 후)`);
+        this.skillCooldown.updateLockStates();
+      });
+
+      // 0.3초 후 재시도
+      this.time.delayedCall(300, () => {
+        console.log(`🔒 잠금 상태 재업데이트 (0.3초 후)`);
+        this.skillCooldown.updateLockStates();
+
+        // 스킬 쿨다운도 함께 업데이트
+        if (player?.skillSystem) {
+          this.skillCooldown.updateFromSkills(player, player.skillSystem.skills);
+        }
+      });
     }
 
     this.addLog(`${characterType} 활성화`, '#51cf66');
   }
 
   handleExpGained(data) {
-    const { amount, characterType, levelInfo, characterExp } = data;
+    const { amount, characterType, levelInfo, characterLevelInfo, characterExp } = data;
 
     if (!levelInfo || characterExp === undefined) return;
 
     // 로그
     this.addLog(`+${amount} EXP`, '#ffd43b');
 
-    // 즉시 업데이트 (동기 처리)
+    // 전체 레벨 즉시 업데이트
     this.updateTotalExpDirectSync(levelInfo);
-    this.updatePlayerExpDirectSync(characterType, characterExp);
+
+    // 캐릭터 레벨 즉시 업데이트 (레벨 정보 포함)
+    if (characterLevelInfo) {
+      this.updateCharacterExpDirectSync(characterType, characterLevelInfo);
+    } else {
+      // fallback: 기존 방식
+      this.updatePlayerExpDirectSync(characterType, characterExp);
+    }
+  }
+
+  updateCharacterExpDirectSync(characterType, charLevelInfo) {
+    if (!this.expBar) {
+      console.warn('⚠️ ExpBar not initialized');
+      return;
+    }
+
+    // ExpBar의 updatePlayerExpSync가 자동으로 레벨 정보를 가져옴
+    this.expBar.updatePlayerExpSync(characterType, 0);
   }
 
   updateTotalExpDirectSync(levelInfo) {
     if (!levelInfo) return;
 
-    // ✅ null 체크 추가
+    // null 체크 추가
     if (!this.expBar || !this.expBar.totalExpBar || !this.expBar.totalExpText) {
       console.warn('⚠️ ExpBar not ready');
       return;
@@ -170,7 +302,7 @@ export default class UIScene extends Phaser.Scene {
   }
 
   updatePlayerExpDirectSync(characterType, exp) {
-    // ✅ null 체크 추가
+    // null 체크 추가
     if (!this.expBar) {
       console.warn('⚠️ ExpBar not initialized');
       return;
@@ -235,11 +367,17 @@ export default class UIScene extends Phaser.Scene {
       // UI 업데이트
       await this.expBar.updateTotalExp();
 
+      // 스킬 잠금 상태 업데이트
+      const gameScene = this.scene.get('GameScene');
+      if (this.skillCooldown && gameScene?.player?.skillSystem) {
+        this.skillCooldown.updateFromSkills(gameScene.player, gameScene.player.skillSystem.skills);
+      }
+
       if (this.currentCharacterType) {
         await this.updatePlayerExp(this.currentCharacterType);
       }
     } catch (error) {
-      console.error('❌ 경험치 업데이트 실패:', error);
+      console.error('경험치 업데이트 실패:', error);
     } finally {
       this.isUpdatingExp = false;
 
@@ -279,6 +417,11 @@ export default class UIScene extends Phaser.Scene {
         });
       }
     }
+
+    if (gameScene?.player?.skillSystem && gameScene?.skillUnlockSystem && this.skillCooldown) {
+      // 스킬 쿨다운 업데이트
+      this.skillCooldown.updateFromSkills(gameScene.player, gameScene.player.skillSystem.skills);
+    }
   }
 
   updateUI(player) {
@@ -317,7 +460,7 @@ export default class UIScene extends Phaser.Scene {
         await this.updatePlayerExp(this.currentCharacterType);
       }
     } catch (error) {
-      console.error('❌ 경험치 바 업데이트 실패:', error);
+      console.error('경험치 바 업데이트 실패:', error);
     }
   }
 
@@ -333,12 +476,12 @@ export default class UIScene extends Phaser.Scene {
         this.expBar.updatePlayerExp(characterType, exp);
       }
     } catch (error) {
-      console.error('❌ 캐릭터 경험치 업데이트 실패:', error);
+      console.error('캐릭터 경험치 업데이트 실패:', error);
     }
   }
 
   addLog(message, color = '#ffffff') {
-    // ✅ null 체크 추가
+    // null 체크 추가
     if (!this.logText) {
       console.warn('⚠️ LogText not initialized');
       return;

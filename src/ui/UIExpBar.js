@@ -77,7 +77,7 @@ export default class UIExpBar {
     this.playerExpBar = scene.add.graphics();
 
     this.playerExpText = scene.add
-      .text(barWidth / 2, barHeight / 2, 'SOUL: 0', {
+      .text(barWidth / 2, barHeight / 2, 'SOUL: Lv.1 | 0 / 100', {
         fontSize: '13px',
         color: '#ffffff',
         fontStyle: 'bold',
@@ -98,47 +98,75 @@ export default class UIExpBar {
     this.barHeight = barHeight;
   }
 
-  // ✅ null 체크 추가
+  /**
+   * ✨ 캐릭터 표시 이름 가져오기
+   */
+  getCharacterDisplayName(characterType) {
+    const names = {
+      soul: 'SOUL',
+      knight: 'KNIGHT',
+      warrior: 'WARRIOR',
+      wizard: 'WIZARD',
+      mage: 'MAGE',
+      archer: 'ARCHER',
+      rogue: 'ROGUE',
+      reaper: 'REAPER',
+    };
+    return names[characterType] || characterType.toUpperCase();
+  }
+
+  /**
+   * ✨ 캐릭터별 레벨 포함 업데이트 (동기)
+   */
   updatePlayerExpSync(characterType, exp) {
-    // null 체크
     if (!this.playerExpBar || !this.playerExpText) {
       console.warn('⚠️ Player exp bar not initialized');
       return;
     }
 
-    const characterNames = {
-      soul: 'SOUL',
-      warrior: 'WARRIOR',
-      mage: 'MAGE',
-      archer: 'ARCHER',
-      rogue: 'ROGUE',
-    };
+    const gameScene = this.scene.scene.get('GameScene');
+    const levelSystem = gameScene?.levelSystem;
 
-    const name = characterNames[characterType] || characterType.toUpperCase();
-    const validExp = typeof exp === 'number' && exp >= 0 ? exp : 0;
+    if (!levelSystem) {
+      // 레벨 시스템이 없으면 기본 표시
+      const name = this.getCharacterDisplayName(characterType);
+      const validExp = typeof exp === 'number' && exp >= 0 ? exp : 0;
+      this.playerExpText.setText(`${name}: ${validExp} EXP`);
+      return;
+    }
 
-    // 게이지
-    this.playerExpBar.clear();
+    // ✨ 캐릭터 레벨 정보 가져오기
+    const charLevelInfo = levelSystem.getCharacterExpInfo(characterType);
+    const charLevel = charLevelInfo.level;
+    const charExp = charLevelInfo.experience;
+    const charExpToNext = charLevelInfo.experienceToNext;
 
-    const maxDisplay = 1000;
-    const displayExp = Math.min(validExp, maxDisplay);
-    const percent = displayExp / maxDisplay;
+    // 게이지 그리기
+    const percent = Math.min(charExp / charExpToNext, 1);
     const width = this.barWidth * percent;
 
-    this.drawExpGradient(this.playerExpBar, 0, 0, width, this.barHeight, 0x4dabf7, 0x339af0);
+    this.playerExpBar.clear();
+    this.drawExpGradient(this.playerExpBar, 0, 0, width, this.barHeight, 0x4dabf7, 0x1971c2);
 
-    // 텍스트
-    this.playerExpText.setText(`${name}: ${validExp} EXP`);
+    // ✨ 텍스트에 레벨 정보 포함
+    const name = this.getCharacterDisplayName(characterType);
+    this.playerExpText.setText(`${name} Lv.${charLevel} | ${charExp} / ${charExpToNext}`);
+
+    // 레벨업 효과
+    if (percent >= 1) {
+      this.playLevelUpEffect(this.playerExpContainer);
+    }
   }
 
   updatePlayerExp(characterType, exp) {
     this.updatePlayerExpSync(characterType, exp);
   }
 
-  // ✅ null 체크 추가
+  /**
+   * ✨ 전체 레벨 업데이트
+   */
   async updateTotalExp() {
     try {
-      // null 체크
       if (!this.totalExpBar || !this.totalExpText) {
         console.warn('⚠️ Total exp bar not initialized');
         return;
@@ -160,15 +188,15 @@ export default class UIExpBar {
 
       this.drawExpGradient(this.totalExpBar, 0, 0, width, this.barHeight, 0xffd43b, 0xf59f00);
 
-      // 텍스트 업데이트
-      this.totalExpText.setText(`Lv.${level} | ${experience} / ${experienceToNext}`);
+      // ✨ 전체 레벨 텍스트
+      this.totalExpText.setText(`Total Lv.${level} | ${experience} / ${experienceToNext}`);
 
       // 레벨업 효과
       if (percent >= 1) {
         this.playLevelUpEffect(this.totalExpContainer);
       }
     } catch (error) {
-      console.error('❌ [ExpBar] updateTotalExp 실패:', error);
+      console.error('[ExpBar] updateTotalExp 실패:', error);
     }
   }
 

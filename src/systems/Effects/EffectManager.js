@@ -169,13 +169,13 @@ export class EffectManager {
 
     // 텍스처 확인 (이미 preload에서 로드됨)
     if (!this.scene.textures.exists(key)) {
-      console.error(`❌ Effect texture not found: ${key} - Did you call initializeEffects()?`);
+      console.error(`Effect texture not found: ${key} - Did you call initializeEffects()?`);
       return null;
     }
 
     // 애니메이션 확인 (이미 create에서 생성됨)
     if (!this.scene.anims.exists(key)) {
-      console.error(`❌ Effect animation not found: ${key} - Did you call initializeEffects()?`);
+      console.error(`Effect animation not found: ${key} - Did you call initializeEffects()?`);
       // 비상용으로 생성 시도
       this.createEffectAnimation(key);
       if (!this.scene.anims.exists(key)) {

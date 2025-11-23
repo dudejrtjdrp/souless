@@ -83,7 +83,7 @@ export default class SaveSlotManager {
 
       return null;
     } catch (error) {
-      console.error('❌ Load error:', error);
+      console.error('Load error:', error);
       return null;
     }
   }
@@ -124,7 +124,7 @@ export default class SaveSlotManager {
         localStorage.setItem(`${this.SLOT_PREFIX}${lastSave.slot}`, JSON.stringify(lastSave.data));
       }
     } catch (error) {
-      console.error('❌ Save error:', error);
+      console.error('Save error:', error);
     }
 
     if (this._saveQueue.length > 0) {
@@ -152,7 +152,7 @@ export default class SaveSlotManager {
     saveData.killTracker = KillTracker.serialize();
     saveData.portalConditions = PortalConditionManager.serialize();
 
-    // ✅ 중요: defeatedBosses → clearedBosses 동기화 (배열로 저장)
+    // 중요: defeatedBosses → clearedBosses 동기화 (배열로 저장)
     saveData.clearedBosses = [...PortalConditionManager.defeatedBosses];
 
     await this.save(saveData, currentSlot);
@@ -167,12 +167,10 @@ export default class SaveSlotManager {
 
     if (saveData?.killTracker) {
       KillTracker.deserialize(saveData.killTracker);
-      console.log('📂 킬 데이터 로드 완료:', KillTracker.kills);
     }
 
     if (saveData?.portalConditions) {
       PortalConditionManager.deserialize(saveData.portalConditions);
-      console.log('📂 포탈 조건 로드 완료');
     }
 
     // 중요: clearedBosses → defeatedBosses 동기화
@@ -189,7 +187,6 @@ export default class SaveSlotManager {
   static resetKillData(KillTracker, PortalConditionManager) {
     KillTracker.reset();
     PortalConditionManager.reset();
-    console.log('🔄 킬/포탈 데이터 리셋');
   }
 
   // ============================================
@@ -212,7 +209,7 @@ export default class SaveSlotManager {
         this._cachedData = null;
       }
     } catch (error) {
-      console.error('❌ Clear error:', error);
+      console.error('Clear error:', error);
     }
   }
 
@@ -279,7 +276,7 @@ export default class SaveSlotManager {
 
       return await this.save(payload, slotIndex);
     } catch (err) {
-      console.error(`❌ Error saving slot ${slotIndex}:`, err);
+      console.error(`Error saving slot ${slotIndex}:`, err);
       return false;
     }
   }
@@ -311,9 +308,6 @@ export default class SaveSlotManager {
 
         // 포탈 조건 재검사
         await PortalConditionManager.revalidateAllPortals();
-
-        console.log('슬롯 선택 완료 - 기존 데이터 로드됨');
-        console.log('현재 처치한 보스:', [...PortalConditionManager.defeatedBosses]);
         return;
       }
     }

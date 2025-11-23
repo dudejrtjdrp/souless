@@ -108,7 +108,7 @@ export default class EffectTestScene extends Phaser.Scene {
 
     // 타이틀
     this.add
-      .text(width / 2, 30, '🎮 Multi-Floor Effect Test', {
+      .text(width / 2, 30, 'Multi-Floor Effect Test', {
         fontSize: '32px',
         fontFamily: 'Arial',
         color: '#ffffff',

@@ -50,7 +50,6 @@ export default class JobUnlockManager {
 
     // 이미 처치한 보스면 중복 방지
     if (saveData.clearedBosses && saveData.clearedBosses.includes(jobKey)) {
-      console.log(`⚠️ ${jobKey} 보스는 이미 처치했습니다.`);
       return false;
     }
 
@@ -75,8 +74,6 @@ export default class JobUnlockManager {
     }
 
     await SaveSlotManager.save(saveData);
-
-    console.log(`🎉 ${jobKey} 캐릭터 해금! (보스 처치 완료)`);
     return true;
   }
 
@@ -89,7 +86,6 @@ export default class JobUnlockManager {
 
     // 이미 처치한 보스면 추가 안 함
     if (saveData.clearedBosses && saveData.clearedBosses.includes(jobKey)) {
-      console.log(`⚠️ ${jobKey} 보스는 이미 처치했으므로 다시 추가하지 않음`);
       return false;
     }
 
@@ -101,8 +97,6 @@ export default class JobUnlockManager {
     if (!saveData.availableBoss.includes(jobKey)) {
       saveData.availableBoss.push(jobKey);
       await SaveSlotManager.save(saveData);
-
-      console.log(`📋 ${jobKey} 보스 도전 가능!`);
       return true;
     }
 
@@ -150,22 +144,65 @@ export default class JobUnlockManager {
     console.warn('⚠️ removeBossFromAvailable()는 deprecated - unlockCharacter() 사용');
   }
 
-  /**
-   * 전직 가능 여부 체크
-   */
+  // 전직 가능 여부 체크
   static async canJobChange(jobKey) {
+    // null 또는 유효하지 않은 jobKey 체크
+    if (!jobKey) {
+      return false;
+    }
+
     const isBossAvailable = await this.isBossAvailable(jobKey);
     const isAlreadyUnlocked = await this.isCharacterUnlocked(jobKey);
 
-    return isBossAvailable && !isAlreadyUnlocked;
+    // 보스가 없거나 이미 획득한 캐릭터면 false
+    if (!isBossAvailable || isAlreadyUnlocked) {
+      return false;
+    }
+
+    return true;
+  }
+
+  //  모든 사용 가능한 보스 중에서 아직 획득하지 않은 보스만 필터링
+  static async getAvailableUnlockedBosses() {
+    const allBosses = await this.getAvailableBosses();
+    const unlockedCharacters = await this.getAvailableCharacters();
+
+    // 이미 획득하지 않은 보스만 반환
+    return allBosses.filter((boss) => !unlockedCharacters.includes(boss));
+  }
+
+  //  전체 보스 도전 현황 확인
+  static async getBossProgressStats() {
+    const allBosses = await this.getAvailableBosses();
+    const unlockedCharacters = await this.getAvailableCharacters();
+    const completedBosses = allBosses.filter((boss) => unlockedCharacters.includes(boss));
+
+    return {
+      totalBosses: allBosses.length,
+      completedBosses: completedBosses.length,
+      remainingBosses: allBosses.length - completedBosses.length,
+      nextBoss: allBosses.find((boss) => !unlockedCharacters.includes(boss)) || null,
+      allBossesDefeated: completedBosses.length === allBosses.length,
+    };
   }
 
   /**
    * 다음 전직 가능한 보스 선택 (availableBoss의 첫 번째)
    */
   static async getNextJobBoss() {
-    const bosses = await this.getAvailableBosses();
-    return bosses.length > 0 ? bosses[0] : null;
+    const availableBosses = await this.getAvailableBosses();
+    const unlockedCharacters = await this.getAvailableCharacters();
+
+    // 이미 획득한 캐릭터의 보스를 제외
+    const nextBosses = availableBosses.filter((boss) => !unlockedCharacters.includes(boss));
+
+    if (nextBosses.length === 0) {
+      console.warn('⚠️ 모든 보스를 이미 도전했습니다!');
+      return null;
+    }
+
+    // 첫 번째 사용 가능한 보스 반환
+    return nextBosses[0];
   }
 
   /**

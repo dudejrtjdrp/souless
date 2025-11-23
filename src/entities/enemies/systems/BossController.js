@@ -20,7 +20,7 @@ export default class BossController extends EnemyController {
 
     this.currentMoveState = 'idle';
 
-    // ✅ 새로 추가: 페이즈 시스템
+    // 새로 추가: 페이즈 시스템
     this.currentPhase = 1;
     this.maxPhase = config.maxPhase || 1;
     this.phaseTransitionTriggered = false;
@@ -38,7 +38,7 @@ export default class BossController extends EnemyController {
       return;
     }
 
-    // ✅ 고정 보스 (final_boss)는 이동 없이 스킬만 사용
+    // 고정 보스 (final_boss)는 이동 없이 스킬만 사용
     if (this.enemy.isStationary) {
       // 속도 강제로 0 유지
       if (this.enemy.sprite.body) {
@@ -59,7 +59,7 @@ export default class BossController extends EnemyController {
       return; // 이동 로직 건너뛰기
     }
 
-    // ✅ 일반 보스는 기존 로직
+    // 일반 보스는 기존 로직
     this.checkPhaseTransition();
     this.findTarget();
 
@@ -139,7 +139,7 @@ export default class BossController extends EnemyController {
     }
   }
 
-  // ✅ 새로 추가: 페이즈 전환 체크
+  // 새로 추가: 페이즈 전환 체크
   checkPhaseTransition() {
     if (this.phaseTransitionTriggered) return;
     if (this.currentPhase >= this.maxPhase) return;
@@ -154,11 +154,9 @@ export default class BossController extends EnemyController {
     }
   }
 
-  // ✅ 새로 추가: 페이즈 전환 실행
+  // 새로 추가: 페이즈 전환 실행
   async triggerPhaseTransition() {
     const nextPhase = this.currentPhase + 1;
-    console.log(`🔄 Boss Phase Transition: ${this.currentPhase} → ${nextPhase}`);
-
     // 보스 무적 처리
     this.enemy.isInvincible = true;
 
@@ -180,11 +178,9 @@ export default class BossController extends EnemyController {
 
     // 무적 해제
     this.enemy.isInvincible = false;
-
-    console.log(`✅ Now in Phase ${nextPhase}`);
   }
 
-  // ✅ 새로 추가: 페이즈별 변경사항 적용
+  // 새로 추가: 페이즈별 변경사항 적용
   applyPhaseChanges(phase) {
     switch (phase) {
       case 2:
@@ -210,12 +206,6 @@ export default class BossController extends EnemyController {
         }
         break;
     }
-
-    console.log(`🎯 Phase ${phase} buffs applied:`, {
-      walkSpeed: this.walkSpeed,
-      runSpeed: this.runSpeed,
-      attackRange: this.attackRange,
-    });
   }
 
   setMoveState(state) {
@@ -229,7 +219,7 @@ export default class BossController extends EnemyController {
   }
 
   moveTowardTarget(targetX, targetY, speed) {
-    // ✅ 고정 보스는 이동 안 함
+    // 고정 보스는 이동 안 함
     if (this.enemy.isStationary) return;
 
     if (this.enemy.isDead || !this.enemy.sprite.body) return;
@@ -258,7 +248,6 @@ export default class BossController extends EnemyController {
 
     const usableSkills = this.enemy.skillSystem.getUsableSkills(this.target);
     if (usableSkills.length === 0) {
-      console.log('📌 No usable skills available');
       return;
     }
 
@@ -321,7 +310,7 @@ export default class BossController extends EnemyController {
     const selectedSkill = availableSkills[0];
     const skillName = selectedSkill.name || selectedSkill.config?.name;
 
-    // ✅ 수정: 스킬 사용 후 isInAttackState 설정 (스킬 duration만큼 지속)
+    // 수정: 스킬 사용 후 isInAttackState 설정 (스킬 duration만큼 지속)
     this.isInAttackState = true;
     const skillDuration = selectedSkill.config?.duration || 500;
 

@@ -39,7 +39,7 @@ export default class EnemyManager {
   createInitial() {
     const { types, initialCount, patrolRangeX } = this.mapConfig.enemies;
 
-    // ✅ types 배열 검증
+    // types 배열 검증
     if (!types || !Array.isArray(types) || types.length === 0) {
       console.warn('⚠️ No enemy types defined in map config');
       return;
@@ -74,7 +74,7 @@ export default class EnemyManager {
     // 스폰 체크
     if (this.isSpawningPaused) return;
 
-    // ✅ types 배열 검증 추가
+    // types 배열 검증 추가
     if (!types || !Array.isArray(types) || types.length === 0) {
       return;
     }
@@ -95,7 +95,7 @@ export default class EnemyManager {
   }
 
   spawnRandomEnemy(types, patrolRangeX) {
-    // ✅ 유효성 검사
+    // 유효성 검사
     if (!types || types.length === 0) {
       console.warn('⚠️ Cannot spawn: no enemy types available');
       return;
@@ -106,7 +106,7 @@ export default class EnemyManager {
   }
 
   spawnRandomEnemyNearPlayer(types, patrolRangeX, minDistance = 200) {
-    // ✅ 유효성 검사
+    // 유효성 검사
     if (!types || types.length === 0) {
       console.warn('⚠️ Cannot spawn: no enemy types available');
       return;
@@ -128,7 +128,7 @@ export default class EnemyManager {
   }
 
   createEnemy(types, x, patrolRangeX) {
-    // ✅ types 배열 검증 및 undefined 필터링
+    // types 배열 검증 및 undefined 필터링
     if (!types || !Array.isArray(types) || types.length === 0) {
       console.warn('⚠️ Cannot create enemy: invalid types array');
       return;
@@ -145,7 +145,7 @@ export default class EnemyManager {
     // 랜덤 타입 선택
     const type = validTypes[Phaser.Math.Between(0, validTypes.length - 1)];
 
-    // ✅ 추가 검증
+    // 추가 검증
     if (!type) {
       console.warn('⚠️ Selected enemy type is invalid:', type);
       return;
@@ -154,7 +154,7 @@ export default class EnemyManager {
     const EnemyClass = enemyClassMap[type];
 
     if (!EnemyClass) {
-      console.warn(`❌ Enemy class not found: ${type}`);
+      console.warn(`Enemy class not found: ${type}`);
       console.warn('Available classes:', Object.keys(enemyClassMap));
       console.warn('Provided types:', types);
       return;
@@ -171,7 +171,7 @@ export default class EnemyManager {
       });
 
       if (!enemy || !enemy.sprite) {
-        console.error('❌ Enemy creation failed: sprite not created');
+        console.error('Enemy creation failed: sprite not created');
         return;
       }
 
@@ -190,7 +190,7 @@ export default class EnemyManager {
         console.warn('⚠️ MapModel not available or addEnemy method missing');
       }
     } catch (error) {
-      console.error('❌ Error creating enemy:', error);
+      console.error('Error creating enemy:', error);
     }
   }
 

@@ -60,7 +60,7 @@ export default class MapModel {
    */
   autoScaleLayers() {
     if (!this.config.layers || this.config.layers.length === 0) {
-      console.error('❌ No layers defined');
+      console.error('No layers defined');
       return;
     }
 
@@ -68,7 +68,7 @@ export default class MapModel {
     const firstLayerTexture = this.scene.textures.get(firstLayerKey);
 
     if (!firstLayerTexture || !firstLayerTexture.source[0]) {
-      console.error(`❌ Cannot find texture: ${firstLayerKey}`);
+      console.error(`Cannot find texture: ${firstLayerKey}`);
       return;
     }
 
@@ -92,7 +92,7 @@ export default class MapModel {
       scaledHeight = screenHeight;
     }
 
-    // 🔄 반복 횟수만큼 맵 너비 확장
+    // 반복 횟수만큼 맵 너비 확장
     const totalWidth = scaledWidth * this.repeatCount;
 
     // 맵 크기 저장
@@ -285,7 +285,7 @@ export default class MapModel {
 
   addPlayer(playerSprite) {
     if (!playerSprite || !playerSprite.body) {
-      console.error('❌ Player sprite has no physics body');
+      console.error('Player sprite has no physics body');
       return false;
     }
 
@@ -300,7 +300,7 @@ export default class MapModel {
 
   addEnemy(enemySprite) {
     if (!enemySprite) {
-      console.warn('❌ Enemy sprite is null');
+      console.warn('Enemy sprite is null');
       return false;
     }
 
@@ -309,7 +309,7 @@ export default class MapModel {
     }
 
     if (!enemySprite.body) {
-      console.error('❌ Failed to create physics body for enemy');
+      console.error('Failed to create physics body for enemy');
       return false;
     }
 
@@ -328,7 +328,7 @@ export default class MapModel {
 
   addEntityCollision(entitySprite, entityType = 'Entity') {
     if (!this.collisionGround) {
-      console.error('❌ No collision ground available');
+      console.error('No collision ground available');
       return false;
     }
 

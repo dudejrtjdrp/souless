@@ -23,9 +23,8 @@ export class SkillSystem {
     this.channelingManager = new ChannelingManager(this.inputHandler);
     this.animationController = new AnimationController(character.sprite, this.stateLockManager);
 
-    //  GameScene의 EffectManager 사용 (없으면 경고)
+    // GameScene의 EffectManager 사용
     this.effectManager = scene.effectManager;
-
     if (!this.effectManager) {
       console.warn('⚠️ scene.effectManager not found! Effects will not work.');
     }
@@ -42,13 +41,25 @@ export class SkillSystem {
     this.hitstopManager = new HitstopManager(scene);
     this.isSkillActive = false;
 
+    // ✨ 스킬 키 매핑 (스킬 이름 → UI 키)
+    this.skillKeyMapping = {
+      q_skill: 'Q',
+      dash: 'Q',
+      w_skill: 'W',
+      e_skill: 'E',
+      r_skill: 'R',
+      s_skill: 'S',
+      attack: 'A',
+      basic_attack: 'A',
+      melee_attack: 'A',
+    };
+
     this.initializeSkills(skillsData);
     this.setupAnimationCompleteListener();
   }
 
   /**
    * 스킬 데이터에서 사용되는 모든 이펙트 미리 로드
-   * (필요시 사용 - 현재는 GameScene에서 일괄 로드)
    */
   preloadEffects(skillsData) {
     if (!this.effectManager) {
@@ -59,7 +70,6 @@ export class SkillSystem {
     const effectKeys = new Set();
 
     for (const config of Object.values(skillsData)) {
-      // 단일 히트박스의 이펙트
       if (config.hitbox) {
         const hitboxArray = Array.isArray(config.hitbox) ? config.hitbox : [config.hitbox];
         hitboxArray.forEach((hb) => {
@@ -67,7 +77,6 @@ export class SkillSystem {
         });
       }
 
-      // 시퀀스 히트박스의 이펙트
       if (config.hitboxSequence) {
         config.hitboxSequence.forEach((step) => {
           if (step.effect) effectKeys.add(step.effect);
@@ -75,12 +84,10 @@ export class SkillSystem {
         });
       }
 
-      // 임팩트 이펙트
       if (config.impactEffect) {
         effectKeys.add(config.impactEffect);
       }
 
-      // 대시/힐 이펙트
       if (config.dashEffect) {
         effectKeys.add(config.dashEffect);
       }
@@ -91,12 +98,10 @@ export class SkillSystem {
 
     if (effectKeys.size === 0) return;
 
-    // 모든 이펙트 로드
     effectKeys.forEach((key) => {
       this.effectManager.preloadEffect(key);
     });
 
-    // 로드 완료 후 애니메이션 생성
     const loadCompleteHandler = () => {
       effectKeys.forEach((key) => {
         this.effectManager.createEffectAnimation(key);
@@ -106,7 +111,6 @@ export class SkillSystem {
 
     this.scene.load.on('complete', loadCompleteHandler);
 
-    // 로드가 이미 진행 중이 아니면 시작
     if (!this.scene.load.isLoading()) {
       this.scene.load.start();
     }
@@ -144,7 +148,6 @@ export class SkillSystem {
       this.skills.set(name, new Skill(name, config));
 
       if (this.needsHitbox(config)) {
-        // EffectManager를 히트박스에 전달
         const hitbox = new SkillHitbox(
           this.scene,
           this.character.sprite,
@@ -175,6 +178,62 @@ export class SkillSystem {
     return anim ? anim.frameRate : 10;
   }
 
+  /**
+   * ✨ 스킬 잠금 체크 (개선됨)
+   */
+  isSkillLocked(skillName) {
+    const skillUnlockSystem = this.scene.skillUnlockSystem;
+    if (!skillUnlockSystem) return false;
+
+    const skillKey = this.skillKeyMapping[skillName];
+    if (!skillKey) return false;
+
+    const isUnlocked = skillUnlockSystem.isSkillUnlocked(skillKey);
+    return !isUnlocked;
+  }
+
+  /**
+   * ✨ 스킬 사용 가능 여부 확인 (통합)
+   */
+  canUseSkill(skillName) {
+    const skill = this.skills.get(skillName);
+    if (!skill) return false;
+
+    // 1️⃣ 스킬 잠금 체크 최우선
+    if (this.isSkillLocked(skillName)) {
+      this.showSkillLockedMessage(skillName);
+      return false;
+    }
+
+    // 2️⃣ 기존 검증 로직 (쿨타임, 마나, 체력 등)
+    return SkillValidator.canUseSkill(this.character, skill, skillName);
+  }
+
+  /**
+   * ✨ 스킬 잠금 메시지 표시
+   */
+  showSkillLockedMessage(skillName) {
+    const skillKey = this.skillKeyMapping[skillName];
+    if (!skillKey) return;
+
+    const skillUnlockSystem = this.scene.skillUnlockSystem;
+    if (!skillUnlockSystem) return;
+
+    const requiredLevel = skillUnlockSystem.getRequiredLevel(skillKey);
+    const currentLevel = skillUnlockSystem.getCharacterLevel();
+
+    const uiScene = this.scene.scene?.get('UIScene');
+    if (uiScene) {
+      uiScene.addLog(
+        `${skillKey} 스킬은 ${requiredLevel}레벨부터 사용 가능합니다. (현재: Lv.${currentLevel})`,
+        '#ff6b6b',
+      );
+    }
+  }
+
+  /**
+   * ✨ 스킬 사용 (개선됨)
+   */
   useSkill(skillName) {
     const skill = this.skills.get(skillName);
     if (!skill) {
@@ -182,19 +241,28 @@ export class SkillSystem {
       return false;
     }
 
-    if (!SkillValidator.canUseSkill(this.character, skill, skillName)) {
+    // ✅ 1. 통합 체크 (잠금 + 쿨타임 + 마나 등)
+    if (!this.canUseSkill(skillName)) {
       return false;
     }
 
+    // ✅ 2. 스킬 사용 처리
     if (!skill.use(this.character)) {
       return false;
     }
 
+    // ✅ 3. 스킬 실행
     this.executeSkill(skillName, skill.config);
     return true;
   }
 
+  /**
+   * ✨ 스킬 실행 (중복 체크 제거)
+   */
   executeSkill(skillName, config) {
+    // ✅ useSkill()에서 이미 체크했으므로 여기서는 제거
+
+    // 이동 스킬이 아니면 캐릭터 정지
     if (config.type !== 'movement') {
       this.stopCharacterMovement();
     }
@@ -245,9 +313,6 @@ export class SkillSystem {
     this.updateSkills(delta);
     this.updateChanneling();
     this.inputHandler.updatePrevState();
-
-    //  EffectManager.update()는 GameScene에서 한 번만 호출되므로
-    // 여기서는 호출하지 않음 (중복 방지)
   }
 
   updateSkills(delta) {
@@ -288,7 +353,6 @@ export class SkillSystem {
           const skillName = hitbox.name;
           const skill = this.skills.get(skillName);
 
-          // strength 적용된 데미지 계산
           if (result.damage !== undefined) {
             result.damage = this.character.calculateDamage(result.damage);
           }
@@ -322,6 +386,22 @@ export class SkillSystem {
 
   getAllSkills() {
     return Array.from(this.skills.values());
+  }
+
+  /**
+   * ✨ 스킬 잠금 상태 정보 반환 (디버깅용)
+   */
+  getSkillLockInfo(skillName) {
+    const skillKey = this.skillKeyMapping[skillName];
+    if (!skillKey || !this.scene.skillUnlockSystem) {
+      return { locked: false, requiredLevel: 1 };
+    }
+
+    return {
+      locked: this.isSkillLocked(skillName),
+      requiredLevel: this.scene.skillUnlockSystem.getRequiredLevel(skillKey),
+      currentLevel: this.scene.skillUnlockSystem.getCharacterLevel(),
+    };
   }
 
   destroy() {

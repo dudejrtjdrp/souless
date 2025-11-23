@@ -30,9 +30,9 @@ export default class Soul extends CharacterBase {
     return CharacterDataAdapter.getAnimationConfig('soul');
   }
 
-  // ✅ updateMovement 오버라이드 - 오버레이 체크 추가
+  // updateMovement 오버라이드 - 오버레이 체크 추가
   updateMovement(input) {
-    // ✅ 캐릭터 선택 오버레이 보일 때 이동 멈추기
+    // 캐릭터 선택 오버레이 보일 때 이동 멈추기
     const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
 
     if (isCharacterSelectVisible) {
@@ -81,7 +81,7 @@ export default class Soul extends CharacterBase {
       this.scene.time.delayedCall(300, () => {
         this.isDashing = false;
 
-        // ✅ 대시 끝날 때 오버레이 체크 추가
+        // 대시 끝날 때 오버레이 체크 추가
         const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
 
         if (isCharacterSelectVisible) {

@@ -178,7 +178,7 @@ export default class EnemySkillSystem {
   useSkill(skillName, target) {
     const skill = this.skills.get(skillName);
     if (!skill) {
-      console.warn(`❌ Skill not found: ${skillName}`);
+      console.warn(`Skill not found: ${skillName}`);
       return false;
     }
 
@@ -342,7 +342,7 @@ export default class EnemySkillSystem {
     if (!skillHitbox) return;
 
     if (config.hitboxSequence) {
-      // ✅ SkillHitbox의 activateSequence 사용 (movement 자동 처리)
+      // SkillHitbox의 activateSequence 사용 (movement 자동 처리)
       skillHitbox.activateSequence(config.hitboxSequence);
     } else {
       this.activateSingleHitbox(skillHitbox, config);
@@ -370,12 +370,12 @@ export default class EnemySkillSystem {
     const sequenceKey = `${skillHitbox.name}_${Date.now()}_${index}`;
     this.tempSequenceHitboxes.set(sequenceKey, tempHitbox);
 
-    // ✅ step의 movement 처리 (히트박스 이동)
+    // step의 movement 처리 (히트박스 이동)
     if (step.movement) {
       this.executeHitboxMovement(tempHitbox, step.movement);
     }
 
-    // ✅ step의 effect 처리
+    // step의 effect 처리
     if (step.effect && this.effectManager) {
       this.playSequenceEffect(step.effect, tempHitbox);
     }
@@ -533,7 +533,7 @@ export default class EnemySkillSystem {
     });
   }
 
-  // ✅ hitboxSequence의 movement 처리 (distanceX/Y 방식)
+  // hitboxSequence의 movement 처리 (distanceX/Y 방식)
   executeSequenceMovement(movement) {
     if (!this.enemy.sprite.body) return;
 
@@ -559,7 +559,7 @@ export default class EnemySkillSystem {
     });
   }
 
-  // ✅ hitboxSequence의 effect 재생
+  // hitboxSequence의 effect 재생
   playSequenceEffect(effectKey) {
     if (!this.effectManager) return;
 
