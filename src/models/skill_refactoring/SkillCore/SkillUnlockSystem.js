@@ -38,8 +38,6 @@ export default class SkillUnlockSystem {
    * 현재 캐릭터 타입 설정
    */
   setCurrentCharacter(characterType, currentLevel = null) {
-    console.log(`🎯 캐릭터 설정: ${characterType}, 레벨: ${currentLevel}`);
-
     this.currentCharacterType = characterType;
 
     if (currentLevel !== null) {
@@ -80,7 +78,6 @@ export default class SkillUnlockSystem {
       if (this.levelSystem) {
         const level = this.levelSystem.getCharacterLevel(charType);
         if (level && level > 0) {
-          console.log(`📊 LevelSystem에서 ${charType} 레벨: ${level}`);
           return level;
         }
       }
@@ -89,7 +86,6 @@ export default class SkillUnlockSystem {
       if (this.scene?.levelSystem) {
         const level = this.scene.levelSystem.getCharacterLevel(charType);
         if (level && level > 0) {
-          console.log(`📊 Scene.levelSystem에서 ${charType} 레벨: ${level}`);
           return level;
         }
       }
@@ -119,12 +115,6 @@ export default class SkillUnlockSystem {
 
     const characterLevel = this.getCharacterLevel(this.currentCharacterType);
     const isUnlocked = characterLevel >= requiredLevel;
-
-    console.log(
-      `🔓 ${skillKey}: Lv.${characterLevel} ${isUnlocked ? '>=' : '<'} Lv.${requiredLevel} = ${
-        isUnlocked ? '해금' : '잠김'
-      }`,
-    );
 
     return isUnlocked;
   }
@@ -175,7 +165,6 @@ export default class SkillUnlockSystem {
     Object.entries(this.requiredLevels).forEach(([skillKey, reqLevel]) => {
       if (newLevel === reqLevel) {
         newlyUnlocked.push(skillKey);
-        console.log(`🔓 스킬 해금: ${skillKey}`);
       }
     });
 

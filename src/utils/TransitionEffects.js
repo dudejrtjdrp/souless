@@ -48,11 +48,12 @@ export default class TransitionEffects {
           vhsLines.fillRect(0, lineY, canvas.width * 2, lineHeight);
         }
 
-        const glitchColor = Phaser.Math.RandRange(0, 1) > 0.5 ? 0xff0000 : 0x00ff00;
-        glitchOverlay.setFillStyle(glitchColor, Phaser.Math.RandRange(0.05, 0.15));
+        // ✅ RandRange → FloatBetween 수정
+        const glitchColor = Phaser.Math.FloatBetween(0, 1) > 0.5 ? 0xff0000 : 0x00ff00;
+        glitchOverlay.setFillStyle(glitchColor, Phaser.Math.FloatBetween(0.05, 0.15));
 
-        if (Phaser.Math.RandRange(0, 1) > 0.7) {
-          camera.flash(100, 255, 255, 255, false, 0.3);
+        if (Phaser.Math.FloatBetween(0, 1) > 0.7) {
+          camera.flash(100, 255, 255, 255);
         }
       },
       repeat: Math.floor(duration / 50),
@@ -74,7 +75,7 @@ export default class TransitionEffects {
     const canvas = this.scene.game.canvas;
     const startTime = this.scene.time.now;
 
-    const noiseGraphics = this.scene.make.graphics({ x: 0, y: 0, add: false }, false);
+    const noiseGraphics = this.scene.add.graphics();
     noiseGraphics.setDepth(50000).setScrollFactor(0);
 
     const redOverlay = this.scene.add
@@ -118,11 +119,12 @@ export default class TransitionEffects {
         redOverlay.setAlpha(intensity * 0.8);
         blueOverlay.setAlpha(intensity * 0.5);
 
-        if (Phaser.Math.RandRange(0, 1) > 0.6) {
-          camera.flash(50, 255, 100, 100, false, 0.5);
+        // ✅ RandRange → FloatBetween 수정
+        if (Phaser.Math.FloatBetween(0, 1) > 0.6) {
+          camera.flash(50, 255, 100, 100);
         }
 
-        if (Phaser.Math.RandRange(0, 1) > 0.75) {
+        if (Phaser.Math.FloatBetween(0, 1) > 0.75) {
           const scanX = Phaser.Math.Between(-50, 50);
           noiseGraphics.fillStyle(0xffffff, 0.2);
           noiseGraphics.fillRect(scanX, 0, canvas.width, canvas.height * 3);

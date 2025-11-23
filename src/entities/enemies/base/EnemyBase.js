@@ -5,6 +5,7 @@ import EnemyAttackSystem from '../systems/EnemyAttackSystem.js';
 import EnemySkillSystem from '../systems/EnemySkillSystem.js';
 import BossController from '../systems/BossController.js';
 import { KillTracker } from '../../../systems/KillTracker';
+import SaveSlotManager from '../../../utils/SaveSlotManager.js';
 import SoulAbsorb from '../../../systems/SoulAbsorb.js';
 
 export default class EnemyBase {
@@ -542,16 +543,29 @@ export default class EnemyBase {
   }
 
   playDeath() {
-    // semi_boss는 클리어 메시지 없이 바로 처리
+    // semi_boss 특별 처리
     if (this.enemyType === 'semi_boss') {
       const deathKey = `${this.enemyType}_death`;
 
       if (this.scene.anims.exists(deathKey)) {
+        console.log(`[playDeath] ${deathKey} 애니메이션 시작`);
         this.sprite.play(deathKey);
-        this.sprite.once(`animationcomplete-${deathKey}`, () => {
+
+        // ✅ 애니메이션 완료 이벤트 리스너 추가 (더 안정적)
+        this.sprite.once('animationcomplete', () => {
+          console.log(`[playDeath] ${deathKey} 애니메이션 완료`);
           this.handleSemiBossDeath();
         });
+
+        // ✅ 타임아웃 안전장치 (애니메이션이 완료 이벤트를 발생시키지 않을 경우)
+        this.scene.time.delayedCall(3000, () => {
+          if (this.sprite && this.sprite.active && !this.deathHandled) {
+            console.warn(`[playDeath] 애니메이션 타임아웃, 강제 호출`);
+            this.handleSemiBossDeath();
+          }
+        });
       } else {
+        console.warn(`⚠️ Death animation not found: ${deathKey}`);
         this.handleSemiBossDeath();
       }
       return;
@@ -562,7 +576,7 @@ export default class EnemyBase {
 
     if (this.scene.anims.exists(deathKey)) {
       this.sprite.play(deathKey);
-      this.sprite.once(`animationcomplete-${deathKey}`, () => {
+      this.sprite.once('animationcomplete', () => {
         this.spawnSoul();
       });
     } else {
@@ -572,6 +586,8 @@ export default class EnemyBase {
   }
 
   handleSemiBossDeath() {
+    console.log('[handleSemiBossDeath 시작]');
+
     // 경험치 지급
     if (this.expReward > 0 && !this.hasGrantedExp) {
       this.hasGrantedExp = true;
@@ -587,6 +603,9 @@ export default class EnemyBase {
       }
     }
 
+    // ✅ semi_boss 처치 기록 저장 (비동기)
+    this.recordSemiBossDefeat();
+
     // 스프라이트 정리
     if (this.sprite) this.sprite.destroy();
     if (this.hpBar) this.hpBar.destroy();
@@ -597,8 +616,48 @@ export default class EnemyBase {
       this.scene.currentBoss = null;
     }
 
-    // final_map으로 이동 (클리어 메시지 없이!)
-    this.scene.transitionToFinalMapAfterSemiBoss();
+    console.log('[handleSemiBossDeath] 스프라이트 정리 완료 - 씬 전환 예약');
+
+    // ✅ 약간의 딜레이 후 final_map으로 이동 (다음 프레임)
+    if (this.scene && this.scene.time) {
+      this.scene.time.delayedCall(500, () => {
+        console.log('[handleSemiBossDeath] final_map 전환 시작');
+        if (this.scene && this.scene.transitionToFinalMapAfterSemiBoss) {
+          this.scene
+            .transitionToFinalMapAfterSemiBoss()
+            .catch((err) => console.error('Transition error:', err));
+        }
+      });
+    }
+  }
+
+  async recordSemiBossDefeat() {
+    try {
+      console.log('[recordSemiBossDefeat 시작] semi_boss');
+
+      const saveData = await SaveSlotManager.load();
+      if (!saveData) {
+        console.error('[recordSemiBossDefeat] saveData 로드 실패');
+        return;
+      }
+
+      // semi_boss 기록 초기화
+      if (!saveData.defeatedSemiBosses) {
+        saveData.defeatedSemiBosses = [];
+      }
+
+      // semi_boss 추가
+      if (!saveData.defeatedSemiBosses.includes('semi_boss')) {
+        saveData.defeatedSemiBosses.push('semi_boss');
+        console.log('[recordSemiBossDefeat] defeatedSemiBosses에 추가');
+      }
+
+      // 저장
+      await SaveSlotManager.save(saveData);
+      console.log('[recordSemiBossDefeat] 저장 완료');
+    } catch (error) {
+      console.error('[recordSemiBossDefeat] 오류:', error);
+    }
   }
 
   spawnSoul() {
@@ -616,6 +675,8 @@ export default class EnemyBase {
   destroy() {
     // semi_boss 특별 처리
     if (this.enemyType === 'semi_boss' && this.isDead) {
+      console.log('[destroy] semi_boss 특별 처리 시작');
+
       // 경험치 지급
       if (this.expReward > 0 && !this.hasGrantedExp) {
         this.hasGrantedExp = true;
@@ -631,6 +692,9 @@ export default class EnemyBase {
         }
       }
 
+      // ✅ semi_boss 처치 기록 저장
+      this.recordSemiBossDefeat();
+
       // 스프라이트 정리
       if (this.sprite) this.sprite.destroy();
       if (this.hpBar) this.hpBar.destroy();
@@ -641,16 +705,18 @@ export default class EnemyBase {
         this.scene.currentBoss = null;
       }
 
-      // final_map으로 이동
-      if (this.scene && this.scene.transitionToFinalMapAfterSemiBoss) {
-        this.scene
-          .transitionToFinalMapAfterSemiBoss()
-          .then(() => {})
-          .catch((err) => {
-            console.error('Transition error:', err);
-          });
-      } else {
-        console.error('transitionToFinalMapAfterSemiBoss not found!');
+      console.log('[destroy] semi_boss 정리 완료 - final_map 전환 예약');
+
+      // ✅ 안전한 씬 전환
+      if (this.scene && this.scene.time) {
+        this.scene.time.delayedCall(500, () => {
+          console.log('[destroy] final_map 전환 시작');
+          if (this.scene && this.scene.transitionToFinalMapAfterSemiBoss) {
+            this.scene
+              .transitionToFinalMapAfterSemiBoss()
+              .catch((err) => console.error('Transition error:', err));
+          }
+        });
       }
 
       return;
