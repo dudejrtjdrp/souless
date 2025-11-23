@@ -253,6 +253,8 @@ export default class IntroScene extends Phaser.Scene {
           mapKey: 'other_cave',
           characterType: 'soul',
           skipSaveCheck: true,
+          isTutorial: true,
+          isNewGame: true,
         });
       });
     } else if (action === 'witch_death') {
@@ -538,6 +540,8 @@ export default class IntroScene extends Phaser.Scene {
         mapKey: 'other_cave',
         characterType: 'soul',
         skipSaveCheck: true,
+        isTutorial: true,
+        isNewGame: true,
       });
     });
   }

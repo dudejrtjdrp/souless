@@ -35,6 +35,8 @@ import SkillUnlockSystem from '../models/skill_refactoring/SkillCore/SkillUnlock
 
 import { BossDefeatAnimations } from '../systems/animation/BossDefeatAnimations.js';
 
+import TutorialSystem from '../systems/Tutorial.js';
+
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -48,12 +50,17 @@ export default class GameScene extends Phaser.Scene {
     this.transitionEffects = null;
     this.skillUnlockSystem = null;
     this.isInputLocked = false;
+    this.tutorialSystem = null;
   }
 
   async init(data = {}) {
     console.log('🎮 GameScene init() 호출됨 - 받은 데이터:', JSON.stringify(data, null, 2));
 
     this.sceneData = data;
+
+    // ✅ 튜토리얼 플래그 추가
+    this.isTutorial = data.isTutorial || false;
+    this.isNewGame = data.isNewGame || false;
 
     // ✅ 리스폰 플래그 추가
     this.wasRespawned = false;
@@ -71,16 +78,14 @@ export default class GameScene extends Phaser.Scene {
       this.currentBoss = null;
       this.respawningCharacter = data.respawningCharacter || data.characterType;
       this.respawnHealth = data.respawnHealth || 100;
-      this.wasRespawned = true; // ✅ 리스폰 플래그 설정
+      this.wasRespawned = true;
 
       this.savedSpawnData = null;
     } else {
-      // ✅ 리스폰이 아닐 때는 null로 초기화
       this.respawningCharacter = null;
       this.respawnHealth = null;
     }
 
-    //  전환 플래그 초기화
     this.isTransitioningToFinalMap = false;
 
     console.log(
@@ -221,15 +226,21 @@ export default class GameScene extends Phaser.Scene {
       await SaveSlotManager.immediateBackup();
     });
 
-    // ✅ 디버깅 로그 추가
     console.log('🔍 디버깅 정보:', {
       'sceneData.respawningCharacter': this.sceneData.respawningCharacter,
       'sceneData.isRespawn': this.sceneData.isRespawn,
-      'this.respawningCharacter': this.respawningCharacter, // ✅ init()에서 설정한 값
-      'this.isRespawn': this.isRespawn, // ✅ 이것도 체크
+      'this.respawningCharacter': this.respawningCharacter,
+      'this.isRespawn': this.isRespawn,
       currentMapKey: this.currentMapKey,
       fromSemiBossVictory: this.sceneData.fromSemiBossVictory,
     });
+
+    // ✅ 튜토리얼 시작 (other_cave에서만)
+    if (this.isTutorial && this.currentMapKey === 'other_cave') {
+      console.log('📚 튜토리얼 시작');
+      this.tutorialSystem = new TutorialSystem(this);
+      this.tutorialSystem.start();
+    }
 
     if (this.currentMapKey === 'final_map') {
       console.log('🔥 final_map 진입 감지 - 보스 상태 확인');
@@ -502,7 +513,6 @@ export default class GameScene extends Phaser.Scene {
 
     const isRespawn = !!(this.respawningCharacter || this.sceneData.isRespawn);
 
-    // ✅ IntroScene에서 other_cave로 진입 시 X값을 200으로 설정
     let spawnOptions = {
       isRespawn: isRespawn,
       respawnHealth: this.respawnHealth || 100,
@@ -516,7 +526,7 @@ export default class GameScene extends Phaser.Scene {
     this.player = this.spawnSystem.createPlayer(this.selectedCharacter, spawnOptions);
 
     if (isRespawn) {
-      // ✅ 리스폰 시 모든 상태 완전 초기화
+      // 리스폰 시 모든 상태 완전 초기화
       this.player.isDying = false;
       this.isPlayerDead = false;
       this.player.health = this.respawnHealth || this.player.maxHealth;
