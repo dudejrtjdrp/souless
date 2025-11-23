@@ -104,6 +104,8 @@ export default class GameScene extends Phaser.Scene {
     this.loadCharacterAssets();
     this.loadPortalAssets();
     this.loadBossAssets();
+    this.characterSelectOverlay = new CharacterSelectOverlay(this);
+    this.characterSelectOverlay.preload();
   }
 
   loadMapAssets() {
@@ -572,7 +574,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupCharacterSelectUI() {
-    this.characterSelectOverlay = new CharacterSelectOverlay(this);
     this.isBackQuoteHeld = false;
     this.backQuoteHoldStartTime = 0;
   }

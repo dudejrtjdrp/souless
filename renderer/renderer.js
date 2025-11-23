@@ -33,6 +33,7 @@ import PauseMenuScene from '../src/scenes/PauseMenuScene ';
 import BossTestScene from '../src/scenes/BossTestScene';
 import EndingScene from '../src/scenes/EndingScene';
 import IntroScene from '../src/scenes/IntroScene';
+import UITestScene from '../src/scenes/UITestScene';
 
 const config = {
   type: Phaser.AUTO,
@@ -45,9 +46,10 @@ const config = {
     arcade: { debug: true },
   },
   scene: [
+    GameScene,
+    UITestScene,
     MainMenuScene,
     IntroScene,
-    GameScene,
     EndingScene,
     BossTestScene,
     PauseMenuScene,
