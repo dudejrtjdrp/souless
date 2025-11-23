@@ -2047,6 +2047,7 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // ✅ 최종 보스 처리
+    // ✅ 최종 보스 처리
     if (bossType === 'final_boss') {
       console.log('🎉 최종 보스 처치 - 엔딩 시작');
       await this.delay(2000);
@@ -2060,15 +2061,10 @@ export default class GameScene extends Phaser.Scene {
 
       console.log('✅ 게임 클리어!');
 
-      // ✅ snow 맵으로 이동 (이 부분 추가!)
+      // ✅ EndingScene으로 이동
       this.cleanupBeforeTransition();
 
-      this.scene.start('GameScene', {
-        mapKey: 'snow',
-        characterType: this.selectedCharacter,
-        skipSaveCheck: true,
-        fromGameClear: true,
-      });
+      this.scene.start('EndingScene');
 
       return;
     }

@@ -1,28 +1,28 @@
-(() => {
-  const originalError = console.error;
-  const originalWarn = console.warn;
+// (() => {
+//   const originalError = console.error;
+//   const originalWarn = console.warn;
 
-  function shouldIgnore(message) {
-    // 🔍 Phaser가 파일 처리 실패 메시지를 찍을 때 공통적으로 포함되는 키워드
-    return message.includes('Failed to process file') && message.includes('image');
-  }
+//   function shouldIgnore(message) {
+//     // 🔍 Phaser가 파일 처리 실패 메시지를 찍을 때 공통적으로 포함되는 키워드
+//     return message.includes('Failed to process file') && message.includes('image');
+//   }
 
-  console.error = function (...args) {
-    const message = args.join(' ');
-    if (shouldIgnore(message)) {
-      return;
-    }
-    originalError.apply(console, args);
-  };
+//   console.error = function (...args) {
+//     const message = args.join(' ');
+//     if (shouldIgnore(message)) {
+//       return;
+//     }
+//     originalError.apply(console, args);
+//   };
 
-  console.warn = function (...args) {
-    const message = args.join(' ');
-    if (shouldIgnore(message)) {
-      return;
-    }
-    originalWarn.apply(console, args);
-  };
-})();
+//   console.warn = function (...args) {
+//     const message = args.join(' ');
+//     if (shouldIgnore(message)) {
+//       return;
+//     }
+//     originalWarn.apply(console, args);
+//   };
+// })();
 
 import Phaser from 'phaser';
 import GameScene from '../src/scenes/GameScene';
@@ -33,6 +33,7 @@ import MainMenuScene from '../src/scenes/MainMenuScene';
 import PauseMenuScene from '../src/scenes/PauseMenuScene ';
 import MapTestScene from '../src/scenes/MapTestScene';
 import BossTestScene from '../src/scenes/BossTestScene';
+import EndingScene from '../src/scenes/EndingScene';
 
 const config = {
   type: Phaser.AUTO,
@@ -45,6 +46,7 @@ const config = {
     arcade: { debug: true },
   },
   scene: [
+    EndingScene,
     GameScene,
     MainMenuScene,
     BossTestScene,
