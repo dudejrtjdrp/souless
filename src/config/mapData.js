@@ -309,16 +309,13 @@ export const MAPS = {
     },
     boss: {
       enabled: true,
-      spawnCondition: 'manual', // 'jobChange' → 'manual'로 변경
       spawnPosition: {
         x: 'center',
         y: 'center',
         offsetX: 0,
         offsetY: -100,
       },
-      jobBossMapping: {
-        assassin: 'semi_boss', // 단일 보스만 설정
-      },
+      spawnCondition: 'semi_boss',
     },
     portals: generateMapPortals('dark'),
   },
@@ -491,7 +488,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
+      types: [],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -548,7 +545,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
+      types: [],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -605,7 +602,7 @@ export const MAPS = {
       ui: 1000,
     },
     enemies: {
-      types: ['Slime', 'Bat', 'Monkey', 'Canine'],
+      types: [],
       initialCount: 20,
       maxCount: 35,
       respawnInterval: 5000,
@@ -674,16 +671,7 @@ export const MAPS = {
     },
     boss: {
       enabled: true,
-      spawnCondition: 'manual', // 'jobChange' → 'manual'로 변경
-      spawnPosition: {
-        x: 'center',
-        y: 'center',
-        offsetX: 0,
-        offsetY: -100,
-      },
-      jobBossMapping: {
-        assassin: 'final_boss', // 단일 보스만 설정
-      },
+      spawnCondition: 'final_boss',
     },
     portals: generateMapPortals('final_map'),
   },

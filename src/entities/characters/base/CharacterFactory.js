@@ -1,6 +1,4 @@
 import Soul from '../playable/Soul.js';
-import Soldier from '../playable/Soldier.js';
-import Magician from '../playable/Magician.js';
 import Monk from '../playable/Monk.js';
 import Assassin from '../playable/Assassin.js';
 import Bladekeeper from '../playable/Bladekeeper.js';
@@ -17,8 +15,6 @@ export default class CharacterFactory {
   // 모든 캐릭터 매핑
   static CHARACTER_MAP = {
     soul: Soul,
-    soldier: Soldier,
-    magician: Magician,
     monk: Monk,
     assassin: Assassin,
     bladekeeper: Bladekeeper,

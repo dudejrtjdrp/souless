@@ -184,7 +184,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
 
     let lockTextContent = '🔒 Locked\n';
 
-    // 킬 카운트 조건
+    // 1. 킬 카운트
     if (progress.type === 'kill_count') {
       const lines = progress.progress.map((p) => {
         const icon = p.completed ? '✓' : '✗';
@@ -192,24 +192,39 @@ export default class Portal extends Phaser.GameObjects.Sprite {
       });
       lockTextContent += lines.join('\n');
     }
-    // 보스 처치 수 조건
+    // 2. 보스 처치 수
     else if (progress.type === 'boss_count') {
       lockTextContent += `👑 Bosses: ${progress.current}/${progress.required}`;
     }
-    // 특정 보스 처치 조건
+    // 3. 특정 보스 처치
     else if (progress.type === 'boss_defeat') {
-      lockTextContent += '👑 Defeat the Boss';
+      lockTextContent += `👑 Defeat ${progress.bossId.toUpperCase()}`;
     }
-    // 총 레벨 조건
+    // 4. 총 레벨
     else if (progress.type === 'total_level') {
       const icon = progress.isComplete ? '✓' : '✗';
       lockTextContent += `${icon} Total Level: ${progress.current}/${progress.required}`;
     }
-    // 각 캐릭터 레벨 조건
+    // 5. 캐릭터별 레벨
     else if (progress.type === 'character_levels') {
       const lines = progress.progress.map((p) => {
         const icon = p.completed ? '✓' : '✗';
-        return `${icon} ${p.characterType}: Lv.${p.level}/${p.required}`;
+        return `${icon} ${p.characterType.toUpperCase()}: Lv.${p.level}/${p.required}`;
+      });
+      lockTextContent += lines.join('\n');
+    }
+    // ✅ 6. 레벨 + 보스 (복합 조건)
+    else if (progress.type === 'level_and_boss') {
+      // 보스 상태
+      const bossIcon = progress.isBossComplete ? '✓' : '✗';
+      lockTextContent += `${bossIcon} Defeat ${progress.bossId.toUpperCase()}\n`;
+
+      lockTextContent += '--- Levels ---\n';
+
+      // 레벨 상태
+      const lines = progress.levelProgress.map((p) => {
+        const icon = p.completed ? '✓' : '✗';
+        return `${icon} ${p.characterType.toUpperCase()}: Lv.${p.level}/${p.required}`;
       });
       lockTextContent += lines.join('\n');
     }

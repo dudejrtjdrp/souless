@@ -87,11 +87,11 @@ export const PORTAL_CONDITIONS = {
     sourceMap: 'temple_4',
   },
 
-  // Dark → Final Map (각 캐릭터 40레벨 이상)
-  // 조건 유지
+  // Dark → Final Map (레벨 40 + 세미 보스 처치)
   dark_to_final_map: {
-    type: 'character_levels',
+    type: 'level_and_boss', // 새로운 복합 타입
     requiredLevelPerCharacter: 40,
+    bossId: 'semi_boss', // 잡아야 할 보스 ID
     sourceMap: 'dark',
   },
 
@@ -106,32 +106,21 @@ export const PORTAL_CONDITIONS = {
 
 class PortalConditionManagerClass {
   constructor() {
-    this.unlockedPortals = new Set(); // 열린 포탈 ID 저장
-    this.defeatedBosses = new Set(); // 처치한 보스 ID
+    this.unlockedPortals = new Set();
+    this.defeatedBosses = new Set();
     this.listeners = [];
-
-    // KillTracker 이벤트 구독
     KillTracker.addListener(this.onKillRecorded.bind(this));
   }
 
-  /**
-   * SaveSlotManager 동적 import (순환 참조 방지)
-   */
   async getSaveSlotManager() {
     const { default: SaveSlotManager } = await import('../utils/SaveSlotManager.js');
     return SaveSlotManager;
   }
 
-  /**
-   * 킬 기록 시 호출 - 포탈 조건 체크
-   */
   onKillRecorded(mapKey, enemyType, allKills) {
     this.checkMapPortals(mapKey);
   }
 
-  /**
-   * 특정 맵의 모든 포탈 조건 체크
-   */
   async checkMapPortals(mapKey) {
     for (const [portalId, condition] of Object.entries(PORTAL_CONDITIONS)) {
       if (condition.sourceMap === mapKey && !this.unlockedPortals.has(portalId)) {
@@ -142,223 +131,147 @@ class PortalConditionManagerClass {
     }
   }
 
-  /**
-   * 개별 조건 체크
-   */
   async checkCondition(portalId, condition) {
     switch (condition.type) {
       case 'kill_count':
         return this.checkKillCondition(condition);
-
       case 'boss_count':
         return this.checkBossCountCondition(condition);
-
       case 'boss_defeat':
         return this.checkBossCondition(condition);
-
       case 'total_level':
         return await this.checkTotalLevelCondition(condition);
-
       case 'character_levels':
         return await this.checkCharacterLevelsCondition(condition);
-
+      // ✅ [추가] 복합 조건 (레벨 + 보스)
+      case 'level_and_boss':
+        return await this.checkLevelAndBossCondition(condition);
       case 'custom':
         return this.checkCustomCondition(portalId, condition);
-
       default:
         return false;
     }
   }
 
-  /**
-   * 킬 카운트 조건 체크
-   */
   checkKillCondition(condition) {
     const { sourceMap, requiredKills } = condition;
     const mapConfig = MAPS[sourceMap];
-
-    if (!mapConfig?.enemies?.types) {
-      console.warn(`No enemy types defined for map: ${sourceMap}`);
-      return false;
-    }
-
+    if (!mapConfig?.enemies?.types) return false;
     const enemyTypes = mapConfig.enemies.types;
     const mapKills = KillTracker.getMapKills(sourceMap);
 
-    // 모든 몹 종류가 requiredKills 이상인지 체크
     for (const enemyType of enemyTypes) {
       const normalizedKey = enemyType.toLowerCase();
       const kills = mapKills[normalizedKey] || 0;
-
-      if (kills < requiredKills) {
-        return false;
-      }
+      if (kills < requiredKills) return false;
     }
-
     return true;
   }
 
-  /**
-   * 보스 처치 수 조건 체크
-   */
   checkBossCountCondition(condition) {
-    const { requiredBossCount } = condition;
-    const currentBossCount = this.defeatedBosses.size;
-    return currentBossCount >= requiredBossCount;
+    return this.defeatedBosses.size >= condition.requiredBossCount;
   }
 
-  /**
-   * 특정 보스 처치 조건 체크
-   */
   checkBossCondition(condition) {
     if (!condition.bossId) return false;
     return this.defeatedBosses.has(condition.bossId);
   }
 
-  /**
-   * 총 레벨 조건 체크 (NEW)
-   */
   async checkTotalLevelCondition(condition) {
     try {
       const SaveSlotManager = await this.getSaveSlotManager();
       const levelSystem = await SaveSlotManager.getLevelSystem();
-
       const currentLevel = levelSystem?.level || 1;
       return currentLevel >= condition.requiredLevel;
     } catch (error) {
-      console.error('총 레벨 체크 실패:', error);
       return false;
     }
   }
 
-  /**
-   * 각 캐릭터 레벨 조건 체크 (NEW)
-   */
   async checkCharacterLevelsCondition(condition) {
     try {
       const SaveSlotManager = await this.getSaveSlotManager();
       const saveData = await SaveSlotManager.load();
-
-      if (!saveData?.characterExp) {
-        return false;
-      }
+      if (!saveData?.characterExp) return false;
 
       const { requiredLevelPerCharacter } = condition;
       const characterExp = saveData.characterExp;
-
-      // 모든 캐릭터가 해당 레벨 이상인지 체크
-      // 캐릭터 목록은 CharacterData에서 가져오거나 하드코딩
       const characterTypes = Object.keys(characterExp);
 
-      if (characterTypes.length === 0) {
-        return false;
-      }
+      if (characterTypes.length === 0) return false;
 
-      // 각 캐릭터의 경험치를 레벨로 변환하여 체크
       for (const charType of characterTypes) {
         const exp = characterExp[charType] || 0;
         const level = this.calculateLevelFromExp(exp);
-
-        if (level < requiredLevelPerCharacter) {
-          return false;
-        }
+        if (level < requiredLevelPerCharacter) return false;
       }
-
       return true;
     } catch (error) {
-      console.error('캐릭터 레벨 체크 실패:', error);
       return false;
     }
   }
 
-  /**
-   * 경험치로부터 레벨 계산 (LevelSystem과 동일한 로직)
-   */
+  // ✅ [추가] 레벨 + 보스 복합 조건 체크 로직
+  async checkLevelAndBossCondition(condition) {
+    const levelConditionMet = await this.checkCharacterLevelsCondition(condition);
+    const bossConditionMet = this.checkBossCondition(condition);
+    return levelConditionMet && bossConditionMet;
+  }
+
   calculateLevelFromExp(totalExp) {
     let level = 1;
     let accumulated = 0;
     let required = 100;
-
     while (accumulated + required <= totalExp) {
       accumulated += required;
       level++;
-
-      // 10레벨마다 1.5배, 그 외는 1.1배
-      if (level % 10 === 0) {
-        required = Math.floor(required * 1.5);
-      } else {
-        required = Math.floor(required * 1.1);
-      }
+      if (level % 10 === 0) required = Math.floor(required * 1.5);
+      else required = Math.floor(required * 1.1);
     }
-
     return level;
   }
 
-  /**
-   * 커스텀 조건 체크
-   */
   checkCustomCondition(portalId, condition) {
-    // 퀘스트, 아이템 등 특수 조건
     return false;
   }
 
-  /**
-   * 포탈 열기
-   */
   unlockPortal(portalId) {
     this.unlockedPortals.add(portalId);
-    // 리스너들에게 알림 (UI 업데이트, 이펙트 등)
     this.notifyListeners('portal_unlocked', portalId);
   }
 
-  /**
-   * 보스 처치 기록 (외부에서 호출)
-   */
   async recordBossDefeat(bossId) {
     this.defeatedBosses.add(bossId);
-
-    // 저장소에도 즉시 동기화
     const { default: SaveSlotManager } = await import('../utils/SaveSlotManager.js');
     const saveData = await SaveSlotManager.load();
     if (saveData) {
       saveData.clearedBosses = [...this.defeatedBosses];
       await SaveSlotManager.save(saveData);
     }
-
-    // 모든 포탈 조건 재검사
     await this.revalidateAllPortals();
   }
-  /**
-   * 포탈이 열렸는지 확인
-   */
+
   isPortalUnlocked(portalId) {
-    // 뒤로 가는 포탈(from_xxx)은 항상 열림
-    if (portalId.includes('_from_')) {
-      return true;
-    }
+    if (portalId.includes('_from_')) return true;
     return this.unlockedPortals.has(portalId);
   }
 
-  /**
-   * 포탈 진행도 조회 (UI 표시용)
-   */
   async getPortalProgress(portalId) {
     const condition = PORTAL_CONDITIONS[portalId];
     if (!condition) return null;
 
-    // 킬 카운트 조건
+    // ... (기존 kill_count, boss_count 등은 동일) ...
+
     if (condition.type === 'kill_count') {
+      // ... (기존 코드)
       const mapConfig = MAPS[condition.sourceMap];
       if (!mapConfig?.enemies?.types) return null;
-
       const enemyTypes = mapConfig.enemies.types;
       const mapKills = KillTracker.getMapKills(condition.sourceMap);
       const required = condition.requiredKills;
-
       const progress = enemyTypes.map((type) => {
         const normalizedKey = type.toLowerCase();
         const current = mapKills[normalizedKey] || 0;
-
         return {
           enemyType: type,
           displayName: normalizedKey,
@@ -367,7 +280,6 @@ class PortalConditionManagerClass {
           completed: current >= required,
         };
       });
-
       return {
         type: 'kill_count',
         progress,
@@ -375,11 +287,9 @@ class PortalConditionManagerClass {
       };
     }
 
-    // 보스 카운트 조건
     if (condition.type === 'boss_count') {
       const current = this.defeatedBosses.size;
       const required = condition.requiredBossCount;
-
       return {
         type: 'boss_count',
         current,
@@ -388,7 +298,6 @@ class PortalConditionManagerClass {
       };
     }
 
-    // 특정 보스 처치 조건
     if (condition.type === 'boss_defeat') {
       return {
         type: 'boss_defeat',
@@ -397,14 +306,12 @@ class PortalConditionManagerClass {
       };
     }
 
-    // 총 레벨 조건
     if (condition.type === 'total_level') {
       try {
         const SaveSlotManager = await this.getSaveSlotManager();
         const levelSystem = await SaveSlotManager.getLevelSystem();
         const currentLevel = levelSystem?.level || 1;
         const required = condition.requiredLevel;
-
         return {
           type: 'total_level',
           current: currentLevel,
@@ -412,19 +319,16 @@ class PortalConditionManagerClass {
           isComplete: currentLevel >= required,
         };
       } catch (error) {
-        console.error('총 레벨 진행도 조회 실패:', error);
         return null;
       }
     }
 
-    // 각 캐릭터 레벨 조건
     if (condition.type === 'character_levels') {
       try {
         const SaveSlotManager = await this.getSaveSlotManager();
         const saveData = await SaveSlotManager.load();
         const characterExp = saveData?.characterExp || {};
         const required = condition.requiredLevelPerCharacter;
-
         const characterProgress = Object.entries(characterExp).map(([charType, exp]) => {
           const level = this.calculateLevelFromExp(exp);
           return {
@@ -434,14 +338,49 @@ class PortalConditionManagerClass {
             completed: level >= required,
           };
         });
-
         return {
           type: 'character_levels',
           progress: characterProgress,
           isComplete: characterProgress.every((p) => p.completed),
         };
       } catch (error) {
-        console.error('캐릭터 레벨 진행도 조회 실패:', error);
+        return null;
+      }
+    }
+
+    // ✅ [추가] 복합 조건 UI 데이터 반환
+    if (condition.type === 'level_and_boss') {
+      try {
+        // 1. 레벨 데이터 확인
+        const SaveSlotManager = await this.getSaveSlotManager();
+        const saveData = await SaveSlotManager.load();
+        const characterExp = saveData?.characterExp || {};
+        const requiredLevel = condition.requiredLevelPerCharacter;
+
+        const levelProgress = Object.entries(characterExp).map(([charType, exp]) => {
+          const level = this.calculateLevelFromExp(exp);
+          return {
+            characterType: charType,
+            level,
+            required: requiredLevel,
+            completed: level >= requiredLevel,
+          };
+        });
+        const isLevelsComplete = levelProgress.every((p) => p.completed);
+
+        // 2. 보스 데이터 확인
+        const isBossComplete = this.defeatedBosses.has(condition.bossId);
+
+        return {
+          type: 'level_and_boss',
+          levelProgress: levelProgress,
+          bossId: condition.bossId,
+          isLevelsComplete: isLevelsComplete,
+          isBossComplete: isBossComplete,
+          isComplete: isLevelsComplete && isBossComplete,
+        };
+      } catch (error) {
+        console.error('레벨+보스 진행도 조회 실패:', error);
         return null;
       }
     }
@@ -449,20 +388,16 @@ class PortalConditionManagerClass {
     return null;
   }
 
-  // === 리스너 관리 ===
   addListener(callback) {
     this.listeners.push(callback);
   }
-
   removeListener(callback) {
     this.listeners = this.listeners.filter((l) => l !== callback);
   }
-
   notifyListeners(event, data) {
     this.listeners.forEach((cb) => cb(event, data));
   }
 
-  // === 저장/불러오기 ===
   serialize() {
     return JSON.stringify({
       unlockedPortals: [...this.unlockedPortals],
@@ -479,17 +414,10 @@ class PortalConditionManagerClass {
       console.error('Failed to load portal data:', e);
     }
   }
-  /**
-   * 모든 포탈 조건 재검사
-   */
+
   async revalidateAllPortals() {
     for (const [portalId, condition] of Object.entries(PORTAL_CONDITIONS)) {
-      // 이미 열린 포탈은 스킵
-      if (this.unlockedPortals.has(portalId)) {
-        continue;
-      }
-
-      // 조건 체크 (async 지원)
+      if (this.unlockedPortals.has(portalId)) continue;
       if (await this.checkCondition(portalId, condition)) {
         this.unlockPortal(portalId);
       }
