@@ -51,8 +51,8 @@ export default class MainMenuScene extends Phaser.Scene {
     }
   }
   /**
-   * 슬롯 요약 데이터가 실제로 비어있는지 (초기값인지) 확인합니다. (⭐로직 강화)
-   * SaveManager.load()가 데이터가 없어도 기본 객체를 반환하므로, '실제 플레이 이력'을 기준으로 체크합니다.
+   * 슬롯 요약 데이터가 실제로 비어있는지 (초기값인지) 확인
+   * SaveManager.load()가 데이터가 없어도 기본 객체를 반환하므로, '실제 플레이 이력'을 기준으로 체크
    * @param {object | null} slotSummary - SaveSlotManager에서 로드된 슬롯 요약 데이터
    * @returns {boolean}
    */
@@ -64,18 +64,60 @@ export default class MainMenuScene extends Phaser.Scene {
     return SaveSlotManager.isSlotReallyEmpty(slotSummary);
   }
 
-  /**
-   * 모든 슬롯의 요약 정보를 SaveSlotManager를 통해 로드하고 비어있는지 검사합니다.
-   */
-
+  // 모든 슬롯의 요약 정보를 SaveSlotManager를 통해 로드하고 비어있는지 검사
   async loadSaveSlots() {
     try {
       this.saveSlots = await SaveSlotManager.loadAllSlots();
+      console.log(this.saveSlots);
     } catch (error) {
       console.error('Error loading save slots:', error);
       this.saveSlots = new Array(SaveSlotManager.MAX_SLOTS).fill(null);
     }
   }
+
+  /**
+   * 게임 클리어 퍼센트를 계산
+   * @param {object} slotSummary - 슬롯 요약 데이터
+   * @returns {number} 클리어 퍼센트 (0-100)
+   */
+  calculateClearPercentage(slotSummary) {
+    console.log(slotSummary);
+    // final_boss를 잡았으면 무조건 100%
+    if (slotSummary.clearedBosses && slotSummary.clearedBosses.includes('final_boss')) {
+      return 100;
+    }
+
+    let totalPercentage = 0;
+
+    // 1. 보스 처치 점수 (50%)
+    const totalBosses = 8;
+    const defeatedBosses = slotSummary.clearedBosses ? slotSummary.clearedBosses.length : 0;
+    const bossPercentage = (defeatedBosses / totalBosses) * 50;
+    totalPercentage += bossPercentage;
+
+    // 2. 캐릭터 레벨 점수 (50%)
+    const maxLevel = 40;
+    const totalCharacters = 7;
+    let totalLevelScore = 0;
+
+    if (slotSummary.levelSystem && slotSummary.levelSystem.characterLevels) {
+      const characterLevels = slotSummary.levelSystem.characterLevels;
+
+      Object.keys(characterLevels).forEach((charType) => {
+        const charLevel = characterLevels[charType].level || 0;
+        const levelScore = Math.min(charLevel / maxLevel, 1); // 최대 1 (100%)
+        totalLevelScore += levelScore;
+      });
+
+      // 전체 캐릭터 수로 나눠서 평균 구하기
+      const avgLevelScore = totalLevelScore / totalCharacters;
+      const levelPercentage = avgLevelScore * 50;
+      totalPercentage += levelPercentage;
+    }
+
+    return Math.min(Math.round(totalPercentage), 100);
+  }
+
   /**
    * 슬롯 요약 데이터를 기반으로 카드에 내용을 채웁니다.
    */
@@ -93,12 +135,27 @@ export default class MainMenuScene extends Phaser.Scene {
       minute: '2-digit',
     });
 
+    // 현재 캐릭터 레벨 가져오기
+    let currentLevel = 1;
+    if (slotSummary.levelSystem && slotSummary.levelSystem.characterLevels) {
+      const currentChar = slotSummary.currentCharacter || 'soul';
+      if (slotSummary.levelSystem.characterLevels[currentChar]) {
+        currentLevel = slotSummary.levelSystem.characterLevels[currentChar].level || 1;
+      }
+    }
+
     // level 정보 추가
     const content = [
-      { key: 'Level:', value: `${slotSummary.level || 1}` },
-      { key: 'Character:', value: slotSummary.characterType.toUpperCase() },
-      { key: 'Location:', value: slotSummary.mapKey },
-      { key: 'Total EXP:', value: (slotSummary.totalExp || 0).toLocaleString() },
+      { key: 'Level:', value: `${currentLevel}` },
+      {
+        key: 'Character:',
+        value: (slotSummary.currentCharacter || slotSummary.characterType || 'soul').toUpperCase(),
+      },
+      {
+        key: 'Location:',
+        value: slotSummary.mapKey || slotSummary.lastPosition?.mapKey || 'Unknown',
+      },
+      { key: 'Bosses:', value: `${(slotSummary.clearedBosses || []).length}/8` },
       { key: 'Last Save:', value: `${dateString} ${timeString}` },
     ];
 
@@ -126,6 +183,75 @@ export default class MainMenuScene extends Phaser.Scene {
       container.add([keyText, valueText]);
       yOffset += 20;
     });
+
+    // 클리어 퍼센트 계산
+    const clearPercentage = this.calculateClearPercentage(slotSummary);
+
+    // 하단에 클리어 퍼센트 표시
+    yOffset += 5; // 약간의 간격
+
+    const progressBarWidth = width - padding * 2;
+    const progressBarHeight = 20;
+    const progressBarY = height / 2 - 40;
+
+    // 프로그레스 바 배경
+    const progressBg = this.add.rectangle(
+      0,
+      progressBarY,
+      progressBarWidth,
+      progressBarHeight,
+      0x1a1a2e,
+      0.8,
+    );
+    progressBg.setStrokeStyle(2, 0x444466);
+
+    // 프로그레스 바 채우기
+    const fillWidth = (progressBarWidth - 4) * (clearPercentage / 100);
+    const progressFill = this.add.rectangle(
+      -progressBarWidth / 2 + 2 + fillWidth / 2,
+      progressBarY,
+      fillWidth,
+      progressBarHeight - 4,
+      clearPercentage >= 100 ? 0x00ff88 : 0x4a9eff,
+      1,
+    );
+
+    // 퍼센트 텍스트
+    const percentText = this.add
+      .text(0, progressBarY, `${clearPercentage}%`, {
+        fontSize: '14px',
+        fontStyle: 'bold',
+        fontFamily: 'monospace',
+        fill: '#ffffff',
+      })
+      .setOrigin(0.5);
+
+    container.add([progressBg, progressFill, percentText]);
+
+    // 100% 달성 시 CLEAR 표시
+    if (clearPercentage >= 100) {
+      const clearText = this.add
+        .text(0, progressBarY + 20, '★ CLEAR ★', {
+          fontSize: '16px',
+          fontStyle: 'bold',
+          fontFamily: 'RoundedFixedsys',
+          fill: '#00ff88',
+          stroke: '#004422',
+          strokeThickness: 3,
+        })
+        .setOrigin(0.5);
+
+      container.add(clearText);
+
+      // CLEAR 텍스트 반짝임 효과
+      this.tweens.add({
+        targets: clearText,
+        alpha: 0.6,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+      });
+    }
   }
 
   showMainMenu() {
@@ -362,7 +488,6 @@ export default class MainMenuScene extends Phaser.Scene {
   async startNewGame(slotIndex) {
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
-    // 페이드아웃 완료 후 실행
     this.cameras.main.once('camerafadeoutcomplete', async () => {
       try {
         // 슬롯 선택 및 초기 데이터 생성
@@ -371,17 +496,16 @@ export default class MainMenuScene extends Phaser.Scene {
         // 슬롯이 제대로 생성되었는지 확인
         const createdData = await SaveSlotManager.load(slotIndex);
 
-        // 게임 시작
-        this.scene.start('GameScene', {
-          mapKey: 'other_cave',
-          characterType: 'soul',
-          slotIndex: slotIndex, // 슬롯 인덱스 전달
+        // ✅ IntroScene으로 이동 (게임 시작 시에만)
+        this.scene.start('IntroScene', {
+          slotIndex: slotIndex,
         });
       } catch (error) {
         console.error('새 게임 시작 실패:', error);
       }
     });
   }
+
   /**
    * 저장된 게임을 로드하고 해당 슬롯을 활성화합니다.
    * @param {number} slotIndex - 선택된 슬롯 인덱스
@@ -405,9 +529,9 @@ export default class MainMenuScene extends Phaser.Scene {
 
         // 로드된 데이터 확인
         const loadedData = await SaveSlotManager.load(slotIndex);
-
+        console.log(slotSummary);
         this.scene.start('GameScene', {
-          mapKey: slotSummary.mapKey || 'map1',
+          mapKey: slotSummary.mapKey || 'other_cave',
           characterType: slotSummary.characterType || 'soul',
           slotIndex: slotIndex, // 슬롯 인덱스 전달
         });

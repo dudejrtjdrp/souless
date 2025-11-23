@@ -502,10 +502,18 @@ export default class GameScene extends Phaser.Scene {
 
     const isRespawn = !!(this.respawningCharacter || this.sceneData.isRespawn);
 
-    this.player = this.spawnSystem.createPlayer(this.selectedCharacter, {
+    // ✅ IntroScene에서 other_cave로 진입 시 X값을 200으로 설정
+    let spawnOptions = {
       isRespawn: isRespawn,
       respawnHealth: this.respawnHealth || 100,
-    });
+    };
+
+    // IntroScene → other_cave 진입 시 스폰 X값을 200으로 설정
+    if (this.currentMapKey === 'other_cave' && this.sceneData.skipSaveCheck) {
+      spawnOptions.forceSpawnX = 200;
+    }
+
+    this.player = this.spawnSystem.createPlayer(this.selectedCharacter, spawnOptions);
 
     if (isRespawn) {
       // ✅ 리스폰 시 모든 상태 완전 초기화

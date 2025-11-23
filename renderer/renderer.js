@@ -26,14 +26,13 @@
 
 import Phaser from 'phaser';
 import GameScene from '../src/scenes/GameScene';
-import SoulScene from '../src/scenes/SoulScene';
 import UIScene from '../src/scenes/UIScene';
 import EffectTestScene from '../src/scenes/TestScene';
 import MainMenuScene from '../src/scenes/MainMenuScene';
 import PauseMenuScene from '../src/scenes/PauseMenuScene ';
-import MapTestScene from '../src/scenes/MapTestScene';
 import BossTestScene from '../src/scenes/BossTestScene';
 import EndingScene from '../src/scenes/EndingScene';
+import IntroScene from '../src/scenes/IntroScene';
 
 const config = {
   type: Phaser.AUTO,
@@ -46,13 +45,13 @@ const config = {
     arcade: { debug: true },
   },
   scene: [
-    EndingScene,
-    GameScene,
     MainMenuScene,
+    IntroScene,
+    GameScene,
+    EndingScene,
     BossTestScene,
     PauseMenuScene,
     EffectTestScene,
-    SoulScene,
     UIScene,
   ],
   scale: {

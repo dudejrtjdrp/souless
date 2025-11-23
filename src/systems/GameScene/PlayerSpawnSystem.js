@@ -18,10 +18,10 @@ export default class PlayerSpawnSystem {
    * 메인 스폰 메서드
    */
   createPlayer(characterType, options = {}) {
-    const { isRespawn = false, respawnHealth = 100 } = options;
+    const { isRespawn = false, respawnHealth = 100, forceSpawnX = undefined } = options;
 
     // 1. 스폰 위치 결정 (X축만)
-    const spawnX = this.resolveSpawnPositionX(isRespawn);
+    const spawnX = forceSpawnX !== undefined ? forceSpawnX : this.resolveSpawnPositionX(isRespawn);
     const spawnY = this.FIXED_SPAWN_Y;
 
     // 2. 플레이어 생성

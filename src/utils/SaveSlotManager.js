@@ -223,11 +223,22 @@ export default class SaveSlotManager {
 
     return {
       characterType,
+      currentCharacter: saveData.currentCharacter || 'soul',
       mapKey: saveData.lastPosition?.mapKey || 'map1',
       timestamp: saveData.timestamp || Date.now(),
       totalExp,
       level,
       slotIndex: saveData.slotIndex,
+
+      // 클리어 퍼센트 계산에 필요한 데이터 추가
+      clearedBosses: saveData.clearedBosses || [],
+      levelSystem: saveData.levelSystem || {
+        level: 1,
+        experience: 0,
+        experienceToNext: 100,
+        totalExperience: 0,
+        characterLevels: {},
+      },
     };
   }
 

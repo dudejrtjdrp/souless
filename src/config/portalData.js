@@ -4,7 +4,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'other_cave_to_scary_cave',
     name: 'Other Cave to Scary Cave',
     sourceMap: 'other_cave',
-    sourcePosition: { x: 200, y: 780 },
+    sourcePosition: { x: 2000, y: 780 },
     targetPortalId: 'scary_cave_from_other_cave',
   },
 
@@ -20,7 +20,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'scary_cave_to_cave',
     name: 'Scary Cave to Cave',
     sourceMap: 'scary_cave',
-    sourcePosition: { x: 500, y: 780 },
+    sourcePosition: { x: 2600, y: 780 },
     targetPortalId: 'cave_from_scary_cave',
   },
 
@@ -36,7 +36,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'cave_to_dark_cave',
     name: 'Cave to Dark Cave',
     sourceMap: 'cave',
-    sourcePosition: { x: 500, y: 1100 },
+    sourcePosition: { x: 2600, y: 1100 },
     targetPortalId: 'dark_cave_from_cave',
   },
 
@@ -52,7 +52,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'dark_cave_to_forest',
     name: 'Dark Cave to Forest',
     sourceMap: 'dark_cave',
-    sourcePosition: { x: 500, y: 780 },
+    sourcePosition: { x: 1900, y: 780 },
     targetPortalId: 'forest_from_dark_cave',
   },
 
@@ -68,7 +68,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'forest_to_oakwood',
     name: 'Forest to Oakwood',
     sourceMap: 'forest',
-    sourcePosition: { x: 500, y: 2164 },
+    sourcePosition: { x: 2500, y: 2164 },
     targetPortalId: 'oakwood_from_forest',
   },
 
@@ -84,7 +84,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'oakwood_to_temple_way',
     name: 'Oakwood to Temple Way',
     sourceMap: 'oakwood',
-    sourcePosition: { x: 500, y: 1500 },
+    sourcePosition: { x: 3600, y: 1500 },
     targetPortalId: 'temple_way_from_oakwood',
   },
 
@@ -100,7 +100,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'temple_way_to_temple_1',
     name: 'Temple Way to Temple 1',
     sourceMap: 'temple_way',
-    sourcePosition: { x: 500, y: 1200 },
+    sourcePosition: { x: 1480, y: 1200 },
     targetPortalId: 'temple_1_from_temple_way',
   },
 
@@ -116,7 +116,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'temple_1_to_temple_2',
     name: 'Temple 1 to Temple 2',
     sourceMap: 'temple_1',
-    sourcePosition: { x: 500, y: 900 },
+    sourcePosition: { x: 1880, y: 900 },
     targetPortalId: 'temple_2_from_temple_1',
   },
 
@@ -132,7 +132,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'temple_2_to_temple_3',
     name: 'Temple 2 to Temple 3',
     sourceMap: 'temple_2',
-    sourcePosition: { x: 500, y: 900 },
+    sourcePosition: { x: 1880, y: 900 },
     targetPortalId: 'temple_3_from_temple_2',
   },
 
@@ -148,7 +148,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'temple_3_to_temple_4',
     name: 'Temple 3 to Temple 4',
     sourceMap: 'temple_3',
-    sourcePosition: { x: 500, y: 900 },
+    sourcePosition: { x: 1880, y: 900 },
     targetPortalId: 'temple_4_from_temple_3',
   },
 
@@ -165,7 +165,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'temple_4_to_dark',
     name: 'Temple 4 to Dark',
     sourceMap: 'temple_4',
-    sourcePosition: { x: 500, y: 900 },
+    sourcePosition: { x: 1880, y: 900 },
     targetPortalId: 'dark_from_temple_4',
   },
 
@@ -183,7 +183,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'dark_to_final_map',
     name: 'Dark to Final Map',
     sourceMap: 'dark',
-    sourcePosition: { x: 500, y: 800 },
+    sourcePosition: { x: 3300, y: 800 },
     targetPortalId: 'final_map_from_dark',
   },
 
@@ -200,7 +200,7 @@ export const PORTAL_CONNECTIONS = {
     id: 'final_map_to_snow',
     name: 'Final Map to Snow',
     sourceMap: 'final_map',
-    sourcePosition: { x: 500, y: 1000 },
+    sourcePosition: { x: 1800, y: 1000 },
     targetPortalId: 'snow_from_final_map',
   },
 
