@@ -3,7 +3,6 @@ import CharacterSelectOverlay from '../systems/GameScene/CharacterSelectOverlay.
 import UISkillCooldown from '../ui/UISkillCooldown.js';
 import SkillIconLoader from '../utils/SkillIconLoader.js';
 
-// 캐릭터 타입 목록을 전역 상수로 유지
 const CHARACTER_TYPES = [
   'soul',
   'assassin',
@@ -14,9 +13,6 @@ const CHARACTER_TYPES = [
   'princess',
 ];
 
-// 캐릭터 아이콘의 크기를 상수로 정의합니다.
-// 이 값은 PNG 파일의 실제 크기와 일치해야 합니다.
-// (예: 모든 아이콘 파일이 64x64 픽셀이라고 가정)
 const ICON_PNG_SIZE = 32;
 
 export default class UITestScene extends Phaser.Scene {
@@ -28,16 +24,12 @@ export default class UITestScene extends Phaser.Scene {
   }
 
   preload() {
-    // UI 에셋 로드 (쿨다운 UI)
     this.load.spritesheet('ui_skill', 'assets/ui/skill_ui.png', {
       frameWidth: 32,
       frameHeight: 32,
     });
 
-    // 👇 1. 캐릭터 아이콘 에셋을 개별 스프라이트시트로 로드 (반복문 사용)
     CHARACTER_TYPES.forEach((charType) => {
-      // 키: 캐릭터 타입 (예: 'soul')
-      // 경로: assets/characters/icons 폴더에 있다고 가정
       this.load.spritesheet(charType, `assets/ui/character/${charType}.png`, {
         frameWidth: ICON_PNG_SIZE,
         frameHeight: ICON_PNG_SIZE,
@@ -48,20 +40,14 @@ export default class UITestScene extends Phaser.Scene {
     SkillIconLoader.preload(this);
   }
 
-  // ----------------------------------------------------------------------
-  // create, createTestUnlockSystem, createTestPlayer 등은 이전과 동일하므로 생략
-  // ----------------------------------------------------------------------
-
   create() {
     const { width, height } = this.cameras.main;
 
-    // 배경
     this.add
       .rectangle(width / 2, height / 2, width, height, 0x1a1a1a)
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 타이틀
     this.add
       .text(width / 2, 30, 'UI Test Scene - Character Select & Skill Cooldown', {
         fontSize: '24px',
@@ -72,7 +58,6 @@ export default class UITestScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
-    // 컨트롤 안내
     const controlsText = [
       '🎮 CONTROLS:',
       '` (Backtick) - Character Select UI 열기 (300ms 이상 누르기)',
@@ -94,7 +79,6 @@ export default class UITestScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
-    // 캐릭터 정보 표시
     this.characterInfoText = this.add
       .text(20, 320, '', {
         fontSize: '14px',
@@ -104,37 +88,40 @@ export default class UITestScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
-    // CharacterSelectOverlay 생성
     this.characterSelectOverlay = new CharacterSelectOverlay(this);
     this.isBackQuoteHeld = false;
     this.backQuoteHoldStartTime = 0;
 
-    // 모든 캐릭터 설정
     this.characterSelectOverlay.characters = CHARACTER_TYPES;
 
-    // UISkillCooldown 생성
     const skillBarHeight = 80;
     const skillY = height - skillBarHeight;
     this.skillCooldown = new UISkillCooldown(this, width / 2, skillY);
 
-    // 테스트용 스킬 언락 시스템 생성
     this.createTestUnlockSystem();
-
-    // 테스트용 플레이어 객체 생성
     this.createTestPlayer();
 
-    // 초기 UI 업데이트
     this.updateCharacterInfo();
-
-    // CharacterSelectOverlay 컨테이너 즉시 생성
     this.createCharacterSelectContainer();
 
-    // 입력 핸들러 설정 (컨테이너 생성 후)
     this.time.delayedCall(100, () => {
       this.setupInputHandlers();
+      // ✅ 초기 아이콘 로드 추가
+      this.applyInitialSkillIcons();
     });
 
     console.log('🎨 UITestScene 생성 완료');
+  }
+
+  // ✅ 초기 스킬 아이콘 적용 메서드 추가
+  applyInitialSkillIcons() {
+    console.log(`🎯 초기 스킬 아이콘 적용: ${this.selectedCharacter}`);
+    SkillIconLoader.updateAllIcons(
+      this,
+      this.skillCooldown,
+      this.selectedCharacter,
+      this.skillCooldown.container,
+    );
   }
 
   createTestUnlockSystem() {
@@ -276,8 +263,6 @@ export default class UITestScene extends Phaser.Scene {
     container.setDepth(10000);
     container.setVisible(false);
 
-    // --- 컨테이너 내부 요소 배치 (중앙 (0, 0) 기준 상대 좌표 사용) ---
-
     const iconSpacing = 100;
     const charCount = this.characterSelectOverlay.characters.length;
     const bgWidth = Math.max(400, charCount * iconSpacing + 50);
@@ -285,13 +270,11 @@ export default class UITestScene extends Phaser.Scene {
     const iconY = 15;
 
     const ICON_BG_SIZE = 80;
-    const ICON_IMAGE_SIZE = ICON_BG_SIZE - 4; // 76px
+    const ICON_IMAGE_SIZE = ICON_BG_SIZE - 4;
 
-    // 반투명 배경
     const bg = this.add.rectangle(0, 0, bgWidth, bgHeight, 0x000000, 0.8);
     container.add(bg);
 
-    // 타이틀
     const title = this.add
       .text(0, -bgHeight / 2 + 30, 'Select Character', {
         fontSize: '20px',
@@ -301,7 +284,6 @@ export default class UITestScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add(title);
 
-    // 캐릭터 아이콘들 생성
     const startX = -((charCount - 1) * iconSpacing) / 2;
 
     this.characterSelectOverlay.icons = [];
@@ -309,15 +291,12 @@ export default class UITestScene extends Phaser.Scene {
     this.characterSelectOverlay.characters.forEach((charType, index) => {
       const x = startX + index * iconSpacing;
 
-      // 아이콘 배경
       const iconBg = this.add.rectangle(x, iconY, ICON_BG_SIZE, ICON_BG_SIZE, 0x333333);
 
-      // 👇 스프라이트시트 키 (캐릭터 타입)와 프레임 인덱스 0을 사용하여 이미지 생성
       const iconImage = this.add
-        .image(x, iconY, charType, 0) // 키: charType, 프레임: 0
-        .setDisplaySize(ICON_IMAGE_SIZE, ICON_IMAGE_SIZE); // 76x76 크기로 설정
+        .image(x, iconY, charType, 0)
+        .setDisplaySize(ICON_IMAGE_SIZE, ICON_IMAGE_SIZE);
 
-      // 캐릭터 이름 텍스트
       const nameText = this.add
         .text(x, iconY + 50, this.getCharacterName(charType), {
           fontSize: '12px',
@@ -325,7 +304,6 @@ export default class UITestScene extends Phaser.Scene {
         })
         .setOrigin(0.5);
 
-      // 선택 표시
       const selector = this.add.rectangle(x, iconY, 88, 88, 0xffff00, 0);
       selector.setStrokeStyle(3, 0xffff00);
 
@@ -337,11 +315,9 @@ export default class UITestScene extends Phaser.Scene {
         characterType: charType,
       });
 
-      // 컨테이너에 모든 요소 추가
       container.add([iconBg, iconImage, nameText, selector]);
     });
 
-    // 힌트 텍스트
     const hint = this.add
       .text(0, bgHeight / 2 - 10, 'Use ← → to select, release ` to confirm', {
         fontSize: '12px',
@@ -350,10 +326,7 @@ export default class UITestScene extends Phaser.Scene {
       .setOrigin(0.5);
     container.add(hint);
 
-    // 컨테이너 저장
     this.characterSelectOverlay.container = container;
-
-    // 현재 캐릭터로 초기 인덱스 설정
     this.characterSelectOverlay.updateSelection();
   }
 
@@ -457,9 +430,19 @@ export default class UITestScene extends Phaser.Scene {
   }
 
   switchCharacter(characterType) {
+    console.log(`🔄 캐릭터 전환: ${characterType}`);
     this.selectedCharacter = characterType;
     this.testSkillUnlockSystem.setCurrentCharacter(characterType);
     this.skillCooldown.setUnlockSystem(this.testSkillUnlockSystem);
+
+    // ✅ 스킬 아이콘 업데이트 추가
+    SkillIconLoader.updateAllIcons(
+      this,
+      this.skillCooldown,
+      characterType,
+      this.skillCooldown.container,
+    );
+
     this.skillCooldown.updateLockStates();
     this.updateCharacterInfo();
   }
