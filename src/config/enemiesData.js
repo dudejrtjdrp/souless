@@ -796,7 +796,7 @@ export const EnemiesData = {
     },
   },
 
-  fire_boss: {
+  fire_knight_boss: {
     type: 'boss',
 
     sprite: {

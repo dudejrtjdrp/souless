@@ -21,6 +21,11 @@ export default class EndingScene extends Phaser.Scene {
 
   create() {
     // 1. 애니메이션 생성
+
+    if (this.scene.isActive('UIScene')) {
+      this.scene.stop('UIScene');
+    }
+
     this.createCharacterAnimations();
 
     const { width, height } = this.cameras.main;
