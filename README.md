@@ -61,19 +61,19 @@ Phaser3 기반의 멀티 캐릭터 로그라이크 액션 게임
 
 ### 메인 메뉴
 
-<img src="docs/images/main_menu.png" width="600"/>
+![Intro](https://i.imgur.com/RGuuwBi.gif)
+
+### 튜토리얼
+
+![Tutorial](https://i.imgur.com/F8xKJl7.gif)
 
 ### 게임플레이
 
-<img src="docs/images/gameplay.png" width="600"/>
-
-### 보스 전투
-
-<img src="docs/images/boss_fight.png" width="600"/>
+![Game](https://i.imgur.com/HPL8O6P.gif)
 
 ### 캐릭터 선택
 
-<img src="docs/images/character_select.png" width="600"/>
+![Ending](https://i.imgur.com/usOavXB.gif)
 
 </div>
 
