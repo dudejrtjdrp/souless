@@ -9,9 +9,9 @@ const srcRootPath = path.join(__dirname, 'src');
 
 export default defineConfig({
   root: './renderer',
-  base: './', // ✅ 상대 경로
+  base: './', // 상대 경로
 
-  // ✅ public 폴더가 renderer 내부에 있으므로 경로 수정
+  // public 폴더가 renderer 내부에 있으므로 경로 수정
   publicDir: './public', // '../public'이 아니라 './public'
 
   resolve: {
