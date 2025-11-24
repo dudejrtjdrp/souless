@@ -48,7 +48,7 @@ export default class TransitionEffects {
           vhsLines.fillRect(0, lineY, canvas.width * 2, lineHeight);
         }
 
-        // ✅ RandRange → FloatBetween 수정
+        // RandRange → FloatBetween 수정
         const glitchColor = Phaser.Math.FloatBetween(0, 1) > 0.5 ? 0xff0000 : 0x00ff00;
         glitchOverlay.setFillStyle(glitchColor, Phaser.Math.FloatBetween(0.05, 0.15));
 
@@ -119,7 +119,7 @@ export default class TransitionEffects {
         redOverlay.setAlpha(intensity * 0.8);
         blueOverlay.setAlpha(intensity * 0.5);
 
-        // ✅ RandRange → FloatBetween 수정
+        // RandRange → FloatBetween 수정
         if (Phaser.Math.FloatBetween(0, 1) > 0.6) {
           camera.flash(50, 255, 100, 100);
         }
@@ -340,7 +340,7 @@ export default class TransitionEffects {
    * 레벨업 효과
    */
   playLevelUpEffect(level) {
-    // ✅ level이 undefined인 경우 기본값 설정
+    // level이 undefined인 경우 기본값 설정
     if (!level || typeof level !== 'number') {
       level = 1;
     }

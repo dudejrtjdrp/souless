@@ -106,14 +106,14 @@ export default class TutorialSystem {
         duration: 5000,
       },
       {
-        title: '✨ 스킬 시스템',
+        title: '스킬 시스템',
         description:
           '현재 Soul 육체에는 스킬을 사용할 수 없습니다.\n새로운 육체를 획득하면 Q, W, E, R 스킬을 사용할 수 있습니다!\n\n스킬은 10레벨당 하나씩 해방됩니다:\n Lv10: Q 스킬 해방\n Lv20: W 스킬 해방\n Lv30: E 스킬 해방\n Lv40: R 스킬 해방',
         duration: 8000,
         isLong: true,
       },
       {
-        title: '✨ 준비 완료!',
+        title: '준비 완료!',
         description: '이제 게임을 진행해보세요!',
         duration: 3000,
         isLast: true,

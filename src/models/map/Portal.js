@@ -213,7 +213,7 @@ export default class Portal extends Phaser.GameObjects.Sprite {
       });
       lockTextContent += lines.join('\n');
     }
-    // ✅ 6. 레벨 + 보스 (복합 조건)
+    // 6. 레벨 + 보스 (복합 조건)
     else if (progress.type === 'level_and_boss') {
       // 보스 상태
       const bossIcon = progress.isBossComplete ? '✓' : '✗';

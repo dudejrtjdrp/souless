@@ -44,7 +44,8 @@ export const EnemiesData = {
       detectRange: 180,
       attack: {
         range: 60,
-        damage: 1,
+        damage: 10, 
+        cooldown: 500,
         cooldown: 1800,
         hitDelay: 200,
       },
@@ -96,7 +97,8 @@ export const EnemiesData = {
       detectRange: 200,
       attack: {
         range: 40,
-        damage: 1,
+        damage: 15, 
+        cooldown: 500,
         cooldown: 1500,
         hitDelay: 200,
       },
@@ -146,7 +148,8 @@ export const EnemiesData = {
       detectRange: 250,
       attack: {
         range: 70,
-        damage: 1,
+        damage: 10, 
+        cooldown: 500,
         cooldown: 1200,
         hitDelay: 150,
       },
@@ -198,12 +201,14 @@ export const EnemiesData = {
       detectRange: 200,
       attack: {
         range: 50,
-        damage: 1,
+        damage: 15, 
+        cooldown: 500,
         cooldown: 1500,
         hitDelay: 200,
       },
     },
   },
+
   assassin_boss: {
     type: 'boss',
 
@@ -223,10 +228,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 800, 
+        cooldown: 500, (800 HP / 200 Dmg)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -260,15 +266,14 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        attackRange: 80, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리 (detectRange보다 작게)
-        runRange: 250, // 달리기 거리
+        attackRange: 80,
+        walkRange: 1200,
+        runRange: 250,
       },
 
       skillNames: ['attack', 'shadowDash'],
 
       skills: {
-        // 단일 히트박스 → hitboxSequence로 변환
         attack: {
           type: 'melee',
           animation: 'attack',
@@ -289,7 +294,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 200, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
             {
@@ -301,7 +307,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 200, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
           ],
@@ -311,7 +318,6 @@ export const EnemiesData = {
           targetType: 'single',
         },
 
-        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
           animation: 'dash',
@@ -372,10 +378,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 800, 
+        cooldown: 500, (800 HP / 200 Dmg)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -409,9 +416,9 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        attackRange: 80, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리 (detectRange보다 작게)
-        runRange: 250, // 달리기 거리
+        attackRange: 80,
+        walkRange: 1200,
+        runRange: 250,
       },
 
       skillNames: ['attack', 'shadowDash'],
@@ -437,7 +444,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 200, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
             {
@@ -449,7 +457,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 200, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
           ],
@@ -459,7 +468,6 @@ export const EnemiesData = {
           targetType: 'single',
         },
 
-        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
           animation: 'dash',
@@ -521,10 +529,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 50,
+      maxHP: 1100, 
+        cooldown: 500, (1100 HP / 150 Dmg)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -556,9 +565,9 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        attackRange: 80, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리 (detectRange보다 작게)
-        runRange: 250, // 달리기 거리
+        attackRange: 80,
+        walkRange: 1200,
+        runRange: 250,
       },
 
       skillNames: ['attack', 'shadowDash'],
@@ -584,7 +593,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 150, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
             {
@@ -596,7 +606,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 150, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
           ],
@@ -606,7 +617,6 @@ export const EnemiesData = {
           targetType: 'single',
         },
 
-        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
           animation: 'dash',
@@ -667,10 +677,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 1000, 
+        cooldown: 500, (1000 HP / 175 Dmg)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -704,9 +715,9 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        attackRange: 80, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리 (detectRange보다 작게)
-        runRange: 250, // 달리기 거리
+        attackRange: 80,
+        walkRange: 1200,
+        runRange: 250,
       },
 
       skillNames: ['attack', 'shadowDash'],
@@ -732,7 +743,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 175, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
             {
@@ -744,7 +756,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 175, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
           ],
@@ -754,7 +767,6 @@ export const EnemiesData = {
           targetType: 'single',
         },
 
-        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
           animation: 'dash',
@@ -815,10 +827,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 1300, 
+        cooldown: 500, (1300 HP / 100 Dmg)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -850,9 +863,9 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        attackRange: 200, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리
-        runRange: 450, // 달리기 거리
+        attackRange: 200,
+        walkRange: 1200,
+        runRange: 450,
       },
 
       skillNames: ['attack', 'shadowDash'],
@@ -878,7 +891,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 100, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
             {
@@ -890,7 +904,8 @@ export const EnemiesData = {
                 offsetY: 40,
                 duration: 200,
               },
-              damage: 5,
+              damage: 100, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
           ],
@@ -900,7 +915,6 @@ export const EnemiesData = {
           targetType: 'single',
         },
 
-        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
           animation: 'dash',
@@ -961,10 +975,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 1500, 
+        cooldown: 500, (1500 HP / 50 Dmg)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -994,9 +1009,9 @@ export const EnemiesData = {
       detectRange: 1200,
 
       attack: {
-        attackRange: 100, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리
-        runRange: 450, // 달리기 거리
+        attackRange: 100,
+        walkRange: 1200,
+        runRange: 450,
       },
 
       skillNames: ['attack', 'shadowDash'],
@@ -1022,7 +1037,8 @@ export const EnemiesData = {
                 offsetY: -40,
                 duration: 400,
               },
-              damage: 25,
+              damage: 50, 
+        cooldown: 500,
               knockback: { x: 30, y: 150 },
             },
           ],
@@ -1032,7 +1048,6 @@ export const EnemiesData = {
           targetType: 'single',
         },
 
-        // 단일 히트박스 → hitboxSequence로 변환
         shadowDash: {
           type: 'movement',
           animation: 'dash',
@@ -1093,10 +1108,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 8000, 
+        cooldown: 500, (8000 HP)
       speed: { min: 50, max: 50 },
       runSpeed: 120,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -1124,129 +1140,121 @@ export const EnemiesData = {
     ai: {
       type: 'boss',
       detectRange: 2000,
-
       maxPhase: 3, // 3페이즈
-      phaseMaxHPs: {
-        1: 500,
-        2: 1000,
-        3: 1500,
-      },
+      phaseMaxHPs: { 1: 3000, 2: 5000, 3: 8000 }, 
+        cooldown: 500,
       attack: {
-        attackRange: 2000, // 멈추고 공격하는 거리
-        walkRange: 0, // 걷기 거리
-        runRange: 0, // 달리기 거리
+        attackRange: 2000,
+        walkRange: 0,
+        runRange: 0,
       },
-
-      skillNames: ['attack', 'explosion'],
-
+      skillNames: ['explosion', 'attack', 'bloodSurf'],
       skills: {
-        attack: {
-          type: 'melee',
-          animation: 'attack',
-          range: 2000,
-          cooldown: 1000,
-          hitDelay: 100,
-          duration: 500,
-          priority: 2,
-          turnDelay: 200,
-
-          hitboxSequence: [
-            {
-              delay: 200,
-              hitbox: {
-                width: 80,
-                height: 160,
-                offsetX: 95,
-                offsetY: -40,
-                duration: 400,
-              },
-              damage: 25,
-              knockback: { x: 30, y: 150 },
-            },
-          ],
-
-          impactEffect: '',
-          hitstop: 'BOSS_HEAVY',
-          targetType: 'single',
-        },
-
-        // 단일 히트박스 → hitboxSequence로 변환
         explosion: {
           type: 'melee',
           animation: 'dash',
-          range: 350,
-          cooldown: 6000,
-          hitDelay: 100,
-          duration: 500,
+          range: 900,
+          cooldown: 2000,
+          hitDelay: 0,
+          duration: 800,
           priority: 3,
           turnDelay: 200,
-
           hitboxSequence: [
             {
               delay: 0,
-              hitbox: {
-                width: 80,
-                height: 150,
-                offsetX: -500,
-                offsetY: 340,
-                duration: 500,
-              },
-              damage: 0.001,
+              hitbox: { width: 80, height: 150, offsetX: -500, offsetY: 340, duration: 800 },
+              damage: 1000,
               knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
+            },
+            {
+              delay: 200,
+              hitbox: { width: 80, height: 150, offsetX: -200, offsetY: 340, duration: 800 },
+              damage: 1000,
+              knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
+            },
+            {
+              delay: 100,
+              hitbox: { width: 80, height: 150, offsetX: 100, offsetY: 340, duration: 800 },
+              damage: 1000,
+              knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
+            },
+            {
+              delay: 300,
+              hitbox: { width: 80, height: 150, offsetX: 300, offsetY: 340, duration: 800 },
+              damage: 1000,
+              knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
             },
             {
               delay: 0,
-              hitbox: {
-                width: 80,
-                height: 150,
-                offsetX: -200,
-                offsetY: 340,
-                duration: 500,
-              },
-              damage: 0.001,
+              hitbox: { width: 80, height: 150, offsetX: 500, offsetY: 340, duration: 800 },
+              damage: 1000,
               knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
+            },
+            {
+              delay: 100,
+              hitbox: { width: 80, height: 150, offsetX: 700, offsetY: 340, duration: 800 },
+              damage: 1000,
+              knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
+            },
+            {
+              delay: 300,
+              hitbox: { width: 80, height: 150, offsetX: -500, offsetY: 340, duration: 800 },
+              damage: 1000,
+              knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
             },
             {
               delay: 0,
-              hitbox: {
-                width: 80,
-                height: 150,
-                offsetX: 100,
-                offsetY: 340,
-                duration: 500,
-              },
-              damage: 0.001,
+              hitbox: { width: 80, height: 150, offsetX: 900, offsetY: 340, duration: 800 },
+              damage: 1000,
               knockback: { x: 50, y: 0 },
+              effect: 'final_boss_default_skill_effect',
             },
             {
-              delay: 0,
-              hitbox: {
-                width: 80,
-                height: 150,
-                offsetX: 300,
-                offsetY: 340,
-                duration: 500,
-              },
-              damage: 0.2,
+              delay: 300,
+              hitbox: { width: 80, height: 150, offsetX: -700, offsetY: 340, duration: 800 },
+              damage: 1000,
               knockback: { x: 50, y: 0 },
-            },
-            {
-              delay: 0,
-              hitbox: {
-                width: 80,
-                height: 150,
-                offsetX: 300,
-                offsetY: 340,
-                duration: 500,
-              },
-              damage: 0.2,
-              knockback: { x: 50, y: 0 },
-              effect: '',
+              effect: 'final_boss_default_skill_effect',
             },
           ],
-
           impactEffect: '',
-          hitstop: 'light',
+          hitstop: 'BOSS_HEAVY',
+          targetType: 'multi',
+        },
+        attack: {
+          type: 'melee',
+          animation: 'dash',
+          range: 900,
+          cooldown: 2000,
+          hitDelay: 0,
+          duration: 1500,
+          priority: 3,
+          turnDelay: 200,
+          hitboxSequence: [
+            {
+              delay: 100,
+              hitbox: {
+                width: 200,
+                height: 150,
+                offsetX: 45,
+                offsetY: 240,
+                duration: 900,
+                effect: 'final_boss_bird_skill_effect',
+              },
+              movement: { distanceX: 1500, distanceY: 0, duration: 1500 },
+              damage: 500,
+              knockback: { x: 50, y: 0 },
+            },
+          ],
+          impactEffect: '',
+          hitstop: 'BOSS_HEAVY',
           targetType: 'multi',
         },
       },
@@ -1272,10 +1280,11 @@ export const EnemiesData = {
     },
 
     stats: {
-      maxHP: 500,
+      maxHP: 5000, 
+        cooldown: 500, (5000 HP)
       speed: { min: 50, max: 50 },
       runSpeed: 200,
-      patrolRange: { min: 0, max: 0 }, // 보스는 패트롤 안 함
+      patrolRange: { min: 0, max: 0 },
       expReward: 100,
       damageCooldown: 300,
     },
@@ -1305,18 +1314,14 @@ export const EnemiesData = {
     ai: {
       type: 'boss',
       detectRange: 1200,
-
       attack: {
-        attackRange: 150, // 멈추고 공격하는 거리
-        walkRange: 1200, // 걷기 거리
-        runRange: 1050, // 달리기 거리
+        attackRange: 150,
+        walkRange: 1200,
+        runRange: 1050,
       },
-
-      maxPhase: 2, // 2페이즈
-      phaseThresholds: [0.5], // HP 50%에서 2페이즈 시작
-
+      maxPhase: 2,
+      phaseThresholds: [0.5],
       skillNames: ['attack', 'soulBall', 'shadowDash'],
-
       skills: {
         attack: {
           type: 'melee',
@@ -1327,39 +1332,26 @@ export const EnemiesData = {
           duration: 500,
           priority: 2,
           turnDelay: 200,
-
           hitboxSequence: [
             {
               delay: 200,
-              hitbox: {
-                width: 200,
-                height: 200,
-                offsetX: 175,
-                offsetY: 20,
-                duration: 500,
-              },
-              damage: 25,
+              hitbox: { width: 200, height: 200, offsetX: 175, offsetY: 20, duration: 500 },
+              damage: 400,
               knockback: { x: 30, y: 150 },
-            },
+            }, 
+        cooldown: 500,
             {
               delay: 400,
-              hitbox: {
-                width: 80,
-                height: 140,
-                offsetX: 155,
-                offsetY: 20,
-                duration: 400,
-              },
-              damage: 15,
+              hitbox: { width: 80, height: 140, offsetX: 155, offsetY: 20, duration: 400 },
+              damage: 400,
               knockback: { x: 30, y: 150 },
-            },
+            }, 
+        cooldown: 500,
           ],
-
           impactEffect: 'semi_boss_default_attack',
           hitstop: 'BOSS_HEAVY',
           targetType: 'single',
         },
-
         soulBall: {
           type: 'instant',
           animation: 'skill',
@@ -1369,7 +1361,6 @@ export const EnemiesData = {
           duration: 300,
           priority: 1,
           turnDelay: 200,
-
           hitboxSequence: [
             {
               delay: 100,
@@ -1381,15 +1372,43 @@ export const EnemiesData = {
                 duration: 700,
                 effect: 'semi_boss_default_skill',
               },
-              movement: { distanceX: 500, distanceY: 0, duration: 700 },
-              damage: 0.5,
+              movement: { distanceX: 500, distanceY: 0, duration: 1500 },
+              damage: 20,
               knockback: { x: 50, y: 0 },
             },
             {
-              delay: 700,
+              delay: 200,
               hitbox: {
-                width: 200,
-                height: 200,
+                width: 80,
+                height: 150,
+                offsetX: 200,
+                offsetY: 40,
+                duration: 700,
+                effect: 'semi_boss_default_skill',
+              },
+              movement: { distanceX: 500, distanceY: 0, duration: 1500 },
+              damage: 20,
+              knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 300,
+              hitbox: {
+                width: 80,
+                height: 150,
+                offsetX: 350,
+                offsetY: 40,
+                duration: 700,
+                effect: 'semi_boss_default_skill',
+              },
+              movement: { distanceX: 500, distanceY: 0, duration: 1500 },
+              damage: 20,
+              knockback: { x: 50, y: 0 },
+            },
+            {
+              delay: 400,
+              hitbox: {
+                width: 80,
+                height: 150,
                 offsetX: 545,
                 offsetY: 40,
                 duration: 400,

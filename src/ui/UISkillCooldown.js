@@ -67,7 +67,7 @@ export default class UISkillCooldown {
         })
         .setOrigin(1);
 
-      // ✅ 잠금 오버레이
+      // 잠금 오버레이
       const lockOverlay = scene.add
         .rectangle(xPos + slotSize / 2, slotSize / 2, slotSize - 4, slotSize - 4, 0x000000, 0.85)
         .setVisible(false);
@@ -178,7 +178,7 @@ export default class UISkillCooldown {
           slot.iconImage.setTint(0x666666);
         } else {
           slot.icon.setAlpha(0.3);
-          // ✅ Circle 객체는 setFillStyle 사용
+          // Circle 객체는 setFillStyle 사용
           slot.icon.setFillStyle(0x666666, 0.3);
         }
       } else {
@@ -191,7 +191,7 @@ export default class UISkillCooldown {
           slot.iconImage.clearTint();
         } else {
           slot.icon.setAlpha(0.6);
-          // ✅ 원래 색상으로 복원
+          // 원래 색상으로 복원
           slot.icon.setFillStyle(this.getSkillColor(key), 0.6);
         }
       }
@@ -199,7 +199,7 @@ export default class UISkillCooldown {
   }
 
   /**
-   * ✅ 스킬이 사용 가능한지 확인 (외부에서 호출)
+   * 스킬이 사용 가능한지 확인 (외부에서 호출)
    */
   canUseSkill(skillKey) {
     if (!this.unlockSystem) return true; // 시스템 없으면 허용
@@ -276,21 +276,21 @@ export default class UISkillCooldown {
     if (!skillsMap) return;
 
     Object.entries(this.skillSlots).forEach(([uiKey, slot]) => {
-      // ✅ 1. 잠금 체크 최우선 (더 안전한 체크)
+      // 1. 잠금 체크 최우선 (더 안전한 체크)
       if (this.unlockSystem) {
         const isUnlocked = this.unlockSystem.isSkillUnlocked(uiKey);
 
         if (!isUnlocked) {
           this.showLocked(slot);
-          return; // ✅ 잠긴 스킬은 여기서 종료
+          return; // 잠긴 스킬은 여기서 종료
         } else {
-          // ✅ 잠금 해제된 스킬은 잠금 오버레이 숨김
+          // 잠금 해제된 스킬은 잠금 오버레이 숨김
           slot.lockOverlay.setVisible(false);
           slot.lockIcon.setVisible(false);
         }
       }
 
-      // ✅ 2. 스킬 데이터 확인
+      // 2. 스킬 데이터 확인
       const skillNames = {
         Q: ['q_skill', 'dash'],
         W: ['w_skill'],
@@ -345,7 +345,7 @@ export default class UISkillCooldown {
   }
 
   showLocked(slot) {
-    // ✅ 잠금 오버레이 표시
+    // 잠금 오버레이 표시
     slot.lockOverlay.setVisible(true);
     slot.lockOverlay.setAlpha(0.85);
 
@@ -358,7 +358,7 @@ export default class UISkillCooldown {
       slot.iconImage.setTint(0x666666);
     } else {
       slot.icon.setAlpha(0.3);
-      // ✅ Circle 객체는 setTint() 대신 setFillStyle() 사용
+      // Circle 객체는 setTint() 대신 setFillStyle() 사용
       slot.icon.setFillStyle(0x666666, 0.3);
     }
 

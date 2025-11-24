@@ -17,14 +17,14 @@ export default class SkillUnlockSystem {
       A: 1, // 기본 공격은 처음부터 사용 가능
     };
 
-    // ✅ 초기 레벨 설정
+    // 초기 레벨 설정
     if (characterType && levelSystem) {
       this.previousLevel = this.getCharacterLevel(characterType);
     }
   }
 
   /**
-   * ✅ 레벨 업데이트 메서드 추가
+   * 레벨 업데이트 메서드 추가
    */
   updateLevel(newLevel) {
     if (newLevel !== this.previousLevel) {
@@ -45,7 +45,7 @@ export default class SkillUnlockSystem {
       this.previousLevel = this.getCharacterLevel(characterType);
     }
 
-    // ✅ 즉시 잠금 상태 업데이트
+    // 즉시 잠금 상태 업데이트
     if (this.scene) {
       const uiScene = this.scene.scene.get('UIScene');
       if (uiScene?.skillCooldown) {
@@ -73,7 +73,7 @@ export default class SkillUnlockSystem {
     }
 
     try {
-      // ✅ LevelSystem에서 직접 레벨 가져오기
+      // LevelSystem에서 직접 레벨 가져오기
       if (this.levelSystem) {
         const level = this.levelSystem.getCharacterLevel(charType);
         if (level && level > 0) {
@@ -81,7 +81,7 @@ export default class SkillUnlockSystem {
         }
       }
 
-      // ✅ Scene의 levelSystem에서 가져오기 (fallback)
+      // Scene의 levelSystem에서 가져오기 (fallback)
       if (this.scene?.levelSystem) {
         const level = this.scene.levelSystem.getCharacterLevel(charType);
         if (level && level > 0) {
@@ -165,13 +165,13 @@ export default class SkillUnlockSystem {
       }
     });
 
-    // ✅ 레벨업 시 무조건 UI 업데이트 (새로 해금된 스킬이 없어도)
+    // 레벨업 시 무조건 UI 업데이트 (새로 해금된 스킬이 없어도)
     if (this.scene) {
       const uiScene = this.scene.scene.get('UIScene');
       if (uiScene?.skillCooldown) {
         uiScene.skillCooldown.updateLockStates();
 
-        // ✅ 스킬 쿨다운도 함께 업데이트
+        // 스킬 쿨다운도 함께 업데이트
         const player = this.scene.player;
         if (player?.skillSystem) {
           uiScene.skillCooldown.updateFromSkills(player, player.skillSystem.skills);

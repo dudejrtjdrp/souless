@@ -99,7 +99,7 @@ export default class UIExpBar {
   }
 
   /**
-   * ✨ 캐릭터 표시 이름 가져오기
+   * 캐릭터 표시 이름 가져오기
    */
   getCharacterDisplayName(characterType) {
     const names = {
@@ -116,7 +116,7 @@ export default class UIExpBar {
   }
 
   /**
-   * ✨ 캐릭터별 레벨 포함 업데이트 (동기)
+   * 캐릭터별 레벨 포함 업데이트 (동기)
    */
   updatePlayerExpSync(characterType, exp) {
     if (!this.playerExpBar || !this.playerExpText) {
@@ -135,7 +135,7 @@ export default class UIExpBar {
       return;
     }
 
-    // ✨ 캐릭터 레벨 정보 가져오기
+    // 캐릭터 레벨 정보 가져오기
     const charLevelInfo = levelSystem.getCharacterExpInfo(characterType);
     const charLevel = charLevelInfo.level;
     const charExp = charLevelInfo.experience;
@@ -148,7 +148,7 @@ export default class UIExpBar {
     this.playerExpBar.clear();
     this.drawExpGradient(this.playerExpBar, 0, 0, width, this.barHeight, 0x4dabf7, 0x1971c2);
 
-    // ✨ 텍스트에 레벨 정보 포함
+    // 텍스트에 레벨 정보 포함
     const name = this.getCharacterDisplayName(characterType);
     this.playerExpText.setText(`${name} Lv.${charLevel} | ${charExp} / ${charExpToNext}`);
 
@@ -163,7 +163,7 @@ export default class UIExpBar {
   }
 
   /**
-   * ✨ 전체 레벨 업데이트
+   * 전체 레벨 업데이트
    */
   async updateTotalExp() {
     try {
@@ -188,7 +188,7 @@ export default class UIExpBar {
 
       this.drawExpGradient(this.totalExpBar, 0, 0, width, this.barHeight, 0xffd43b, 0xf59f00);
 
-      // ✨ 전체 레벨 텍스트
+      // 전체 레벨 텍스트
       this.totalExpText.setText(`Total Lv.${level} | ${experience} / ${experienceToNext}`);
 
       // 레벨업 효과

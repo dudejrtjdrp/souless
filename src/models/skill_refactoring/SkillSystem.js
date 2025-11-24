@@ -7,6 +7,7 @@ import AnimationController from './SkillCore/AnimationController';
 import StateLockManager from './SkillCore/StateLockManager';
 import SkillValidator from './SkillCore/SkillValidator';
 import HitstopManager from '../../systems/HitStopManager';
+import { throttle } from '../../utils/throttle'; // throttle import 추가
 
 export class SkillSystem {
   constructor(scene, character, skillsData) {
@@ -41,7 +42,7 @@ export class SkillSystem {
     this.hitstopManager = new HitstopManager(scene);
     this.isSkillActive = false;
 
-    // ✨ 스킬 키 매핑 (스킬 이름 → UI 키)
+    // 스킬 키 매핑 (스킬 이름 → UI 키)
     this.skillKeyMapping = {
       q_skill: 'Q',
       dash: 'Q',
@@ -54,13 +55,45 @@ export class SkillSystem {
       melee_attack: 'A',
     };
 
+    //  타격 시 체력/마나 회복 throttle 함수 (500ms 간격)
+    this.throttledHealOnHit = throttle(() => {
+      this.healOnHit();
+    }, 500);
+
     this.initializeSkills(skillsData);
     this.setupAnimationCompleteListener();
   }
 
-  /**
-   * 스킬 데이터에서 사용되는 모든 이펙트 미리 로드
-   */
+  // 타격 시 체력/마나 회복 처리
+  healOnHit() {
+    if (!this.character) return;
+
+    const perLevel = this.character.maxHealth / 18;
+
+    const healAmount = 1 * perLevel.toFixed(0);
+    console.log(healAmount);
+
+    // 체력 회복 (최대 체력을 넘지 않도록)
+    if (this.character.health < this.character.maxHealth) {
+      this.character.health = Math.min(
+        this.character.health + healAmount,
+        this.character.maxHealth,
+      );
+    }
+
+    // 마나 회복 (최대 마나를 넘지 않도록)
+    if (this.character.mana < this.character.maxMana) {
+      this.character.mana = Math.min(this.character.mana + healAmount, this.character.maxMana);
+    }
+
+    // 회복 이펙트나 로그 추가 가능
+    const uiScene = this.scene.scene?.get('UIScene');
+    if (uiScene) {
+      uiScene.addLog(`타격! +${healAmount} HP/MP 회복`, '#00ff88');
+    }
+  }
+
+  // 스킬 데이터에서 사용되는 모든 이펙트 미리 로드
   preloadEffects(skillsData) {
     if (!this.effectManager) {
       console.warn('EffectManager not available for preloading');
@@ -179,7 +212,7 @@ export class SkillSystem {
   }
 
   /**
-   * ✨ 스킬 잠금 체크 (개선됨)
+   * 스킬 잠금 체크 (개선됨)
    */
   isSkillLocked(skillName) {
     const skillUnlockSystem = this.scene.skillUnlockSystem;
@@ -193,24 +226,24 @@ export class SkillSystem {
   }
 
   /**
-   * ✨ 스킬 사용 가능 여부 확인 (통합)
+   * 스킬 사용 가능 여부 확인 (통합)
    */
   canUseSkill(skillName) {
     const skill = this.skills.get(skillName);
     if (!skill) return false;
 
-    // 1️⃣ 스킬 잠금 체크 최우선
+    // 스킬 잠금 체크 최우선
     if (this.isSkillLocked(skillName)) {
       this.showSkillLockedMessage(skillName);
       return false;
     }
 
-    // 2️⃣ 기존 검증 로직 (쿨타임, 마나, 체력 등)
+    // 기존 검증 로직 (쿨타임, 마나, 체력 등)
     return SkillValidator.canUseSkill(this.character, skill, skillName);
   }
 
   /**
-   * ✨ 스킬 잠금 메시지 표시
+   * 스킬 잠금 메시지 표시
    */
   showSkillLockedMessage(skillName) {
     const skillKey = this.skillKeyMapping[skillName];
@@ -232,7 +265,7 @@ export class SkillSystem {
   }
 
   /**
-   * ✨ 스킬 사용 (개선됨)
+   * 스킬 사용 (개선됨)
    */
   useSkill(skillName) {
     const skill = this.skills.get(skillName);
@@ -241,26 +274,26 @@ export class SkillSystem {
       return false;
     }
 
-    // ✅ 1. 통합 체크 (잠금 + 쿨타임 + 마나 등)
+    // 1. 통합 체크 (잠금 + 쿨타임 + 마나 등)
     if (!this.canUseSkill(skillName)) {
       return false;
     }
 
-    // ✅ 2. 스킬 사용 처리
+    // 2. 스킬 사용 처리
     if (!skill.use(this.character)) {
       return false;
     }
 
-    // ✅ 3. 스킬 실행
+    // 3. 스킬 실행
     this.executeSkill(skillName, skill.config);
     return true;
   }
 
   /**
-   * ✨ 스킬 실행 (중복 체크 제거)
+   * 스킬 실행 (중복 체크 제거)
    */
   executeSkill(skillName, config) {
-    // ✅ useSkill()에서 이미 체크했으므로 여기서는 제거
+    // useSkill()에서 이미 체크했으므로 여기서는 제거
 
     // 이동 스킬이 아니면 캐릭터 정지
     if (config.type !== 'movement') {
@@ -366,6 +399,9 @@ export class SkillSystem {
             this.hitstopManager.triggerCombo(comboCount);
           }
 
+          // 타격 성공 시 체력/마나 회복 (throttle 적용)
+          this.throttledHealOnHit();
+
           return result;
         }
       }
@@ -389,7 +425,7 @@ export class SkillSystem {
   }
 
   /**
-   * ✨ 스킬 잠금 상태 정보 반환 (디버깅용)
+   * 스킬 잠금 상태 정보 반환 (디버깅용)
    */
   getSkillLockInfo(skillName) {
     const skillKey = this.skillKeyMapping[skillName];

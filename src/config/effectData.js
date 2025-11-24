@@ -320,4 +320,37 @@ export const EffectData = {
     scale: 2,
     offset: { x: 0, y: 0 },
   },
+
+  final_boss_default_skill_effect: {
+    url: 'assets/effects/final_boss/final_boss_skill_explosion.png',
+    frameWidth: 128,
+    frameHeight: 128,
+    frames: { start: 0, end: 9 },
+    frameRate: 15,
+    repeat: 0,
+    scale: 1,
+    offset: { x: 0, y: 0 },
+  },
+
+  final_boss_bird_skill_effect: {
+    url: 'assets/effects/final_boss/final_boss_skill_bird.png',
+    frameWidth: 192,
+    frameHeight: 128,
+    frames: { start: 0, end: 5 },
+    frameRate: 6,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 0, y: 0 },
+  },
+
+  final_boss_blood_skill_effect: {
+    url: 'assets/effects/final_boss/final_boss_skill_effect.png',
+    frameWidth: 192,
+    frameHeight: 128,
+    frames: { start: 0, end: 5 },
+    frameRate: 6,
+    repeat: 0,
+    scale: 2,
+    offset: { x: 0, y: 0 },
+  },
 };

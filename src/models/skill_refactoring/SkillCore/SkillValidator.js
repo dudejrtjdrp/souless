@@ -4,7 +4,7 @@ const AIR_ALLOWED_SKILLS = ['air_attack', 's_skill', 'attack'];
 
 export default class SkillValidator {
   /**
-   * ✨ 스킬 키 매핑
+   * 스킬 키 매핑
    */
   static skillKeyMapping = {
     q_skill: 'Q',
@@ -60,7 +60,7 @@ export default class SkillValidator {
   }
 
   /**
-   * ✨ 스킬 잠금 체크
+   * 스킬 잠금 체크
    */
   static isSkillLocked(character, skillName) {
     const scene = character.scene;
@@ -78,7 +78,7 @@ export default class SkillValidator {
    * 스킬 사용 가능 여부 종합 체크
    */
   static canUseSkill(character, skill, skillName) {
-    // 1. ✨ 스킬 잠금 체크 (최우선)
+    // 1. 스킬 잠금 체크 (최우선)
     if (this.isSkillLocked(character, skillName)) {
       return false;
     }
@@ -122,7 +122,7 @@ export default class SkillValidator {
   }
 
   /**
-   * ✨ 스킬 잠금 정보 반환
+   * 스킬 잠금 정보 반환
    */
   static getSkillLockInfo(character, skillName) {
     const scene = character.scene;

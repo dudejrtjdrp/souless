@@ -20,15 +20,15 @@ const config = {
     arcade: { debug: true },
   },
   scene: [
-    GameScene,
     MainMenuScene,
     IntroScene,
-    UITestScene,
-    EndingScene,
-    BossTestScene,
-    PauseMenuScene,
-    EffectTestScene,
+    GameScene,
     UIScene,
+    PauseMenuScene,
+    EndingScene,
+    UITestScene,
+    BossTestScene,
+    EffectTestScene,
   ],
   scale: {
     mode: Phaser.Scale.RESIZE,
@@ -37,7 +37,7 @@ const config = {
   pixelArt: true,
   antialias: false,
 
-  // ✅ 로더 설정
+  // 로더 설정
   loader: {
     baseURL: './',
     path: '',

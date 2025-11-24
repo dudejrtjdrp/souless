@@ -494,7 +494,7 @@ export default class MainMenuScene extends Phaser.Scene {
         // 슬롯이 제대로 생성되었는지 확인
         const createdData = await SaveSlotManager.load(slotIndex);
 
-        // ✅ IntroScene으로 이동 (게임 시작 시에만)
+        // IntroScene으로 이동 (게임 시작 시에만)
         this.scene.start('IntroScene', {
           slotIndex: slotIndex,
         });

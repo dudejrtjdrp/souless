@@ -241,16 +241,16 @@ export default class CharacterBase {
     const actualDamage = this.calculateDamageTaken(amount);
     this.health = Math.max(0, this.health - actualDamage);
 
-    // //  무적 상태 설정 (1초)
-    // this.setInvincible(500);
+    //  무적 상태 설정 (.5초)
+    this.setInvincible(500);
 
-    // //  히트 플래시 효과
-    // this.playHitFlash();
+    //  히트 플래시 효과
+    this.playHitFlash();
 
     this.scene.events.emit('player-damaged');
     this.scene.events.emit('player-hit');
 
-    // ✅ 체력이 0 이하이면 사망 처리
+    // 체력이 0 이하이면 사망 처리
     if (this.health <= 0 && !this.isDying) {
       this.onDeath();
     }
@@ -552,7 +552,7 @@ export default class CharacterBase {
     this.scene.scene.restart({
       mapKey: this.scene.currentMapKey, // 현재 맵 유지
       characterType: this.characterType,
-      isRespawn: true, // 🔑 리스폰 플래그
+      isRespawn: true, // 리스폰 플래그
       respawnHealth: this.maxHealth,
     });
   }

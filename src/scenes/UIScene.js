@@ -53,7 +53,7 @@ export default class UIScene extends Phaser.Scene {
 
     const gameScene = this.scene.get('GameScene');
 
-    // ✅ 0.5초 후 초기 설정 (모든 시스템이 준비된 후)
+    // 0.5초 후 초기 설정 (모든 시스템이 준비된 후)
     this.time.delayedCall(500, () => {
       const gameScene = this.scene.get('GameScene');
 
@@ -99,7 +99,7 @@ export default class UIScene extends Phaser.Scene {
     gameScene.events.off('skill-cooldowns-updated', this.handleSkillCooldownsUpdated, this);
     gameScene.events.on('skill-cooldowns-updated', this.handleSkillCooldownsUpdated, this);
 
-    // ✨ 캐릭터별 레벨업 이벤트 추가
+    // 캐릭터별 레벨업 이벤트 추가
     gameScene.events.off('character-level-up', this.handleCharacterLevelUp, this);
     gameScene.events.on('character-level-up', this.handleCharacterLevelUp, this);
   }
@@ -111,7 +111,7 @@ export default class UIScene extends Phaser.Scene {
     if (characterType === this.currentCharacterType) {
       this.addLog(`레벨 업! Lv.${level}`, '#FFD700');
 
-      // ✅ 스킬 잠금 상태 즉시 업데이트
+      // 스킬 잠금 상태 즉시 업데이트
       const gameScene = this.scene.get('GameScene');
       if (this.skillCooldown && gameScene?.skillUnlockSystem) {
         // 캐릭터 타입 재설정 (레벨 데이터 갱신)
@@ -168,14 +168,14 @@ export default class UIScene extends Phaser.Scene {
 
     const gameScene = this.scene.get('GameScene');
 
-    // ✅ 1. 스킬 잠금 시스템 먼저 설정
+    // 1. 스킬 잠금 시스템 먼저 설정
     if (gameScene?.skillUnlockSystem) {
       gameScene.skillUnlockSystem.setCurrentCharacter(characterType);
 
       this.skillCooldown.setUnlockSystem(gameScene.skillUnlockSystem);
     }
 
-    // ✅ 2. 스킬 아이콘 업데이트
+    // 2. 스킬 아이콘 업데이트
     if (player && player.skillSystem) {
       SkillIconLoader.updateAllIcons(
         this,
@@ -185,19 +185,19 @@ export default class UIScene extends Phaser.Scene {
       );
     }
 
-    // ✅ 3. 쿨다운 복원
+    // 3. 쿨다운 복원
     await this.restoreSkillCooldowns(characterType, player);
 
-    // ✅ 4. 경험치 바 업데이트
+    // 4. 경험치 바 업데이트
     await this.updatePlayerExp(characterType);
 
-    // ✅ 5. 체력/마나 UI 업데이트
+    // 5. 체력/마나 UI 업데이트
     if (player) {
       this.updateUI(player);
       this.handleSkillCooldownsUpdated(data);
     }
 
-    // ✅ 6. 잠금 상태 강제 업데이트 (여러 번 시도)
+    // 6. 잠금 상태 강제 업데이트 (여러 번 시도)
     if (gameScene?.skillUnlockSystem) {
       // 즉시 업데이트
       this.skillCooldown.updateLockStates();

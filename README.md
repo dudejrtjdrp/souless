@@ -804,11 +804,3 @@ MIT License - 자유롭게 사용하세요!
 - 게임 에셋 제공자들
 
 ---
-
-<div align="center">
-
-**⭐ 이 프로젝트가 도움이 되었다면 Star를 눌러주세요! ⭐**
-
-Made with ❤️ and ☕
-
-</div>

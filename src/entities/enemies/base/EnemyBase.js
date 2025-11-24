@@ -548,7 +548,7 @@ export default class EnemyBase {
     if (this.scene.anims.exists(deathKey)) {
       this.sprite.play(deathKey);
 
-      // ✅ 모든 적 타입 동일하게 처리
+      // 모든 적 타입 동일하게 처리
       this.sprite.once('animationcomplete', () => {
         this.spawnSoul();
       });
@@ -589,7 +589,7 @@ export default class EnemyBase {
   }
 
   destroy() {
-    // ✅ semi_boss 특별 처리 완전 제거
+    // semi_boss 특별 처리 완전 제거
     // GameScene의 setupBossDeathHandler()에서 모든 처리를 담당
 
     // 경험치 지급 (모든 적 공통)
