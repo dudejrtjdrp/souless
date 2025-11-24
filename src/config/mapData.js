@@ -449,7 +449,7 @@ export const MAPS = {
       },
       jobBossMapping: {
         assassin: 'assassin_boss',
-        fire_knight: 'fire_boss',
+        fire_knight: 'fire_knight_boss',
         bladekeeper: 'bladekeeper_boss',
         monk: 'monk_boss',
         princess: 'princess_boss',
@@ -506,7 +506,7 @@ export const MAPS = {
       },
       jobBossMapping: {
         assassin: 'assassin_boss',
-        fire_knight: 'fire_boss',
+        fire_knight: 'fire_knight_boss',
         bladekeeper: 'bladekeeper_boss',
         monk: 'monk_boss',
         princess: 'princess_boss',
@@ -563,7 +563,7 @@ export const MAPS = {
       },
       jobBossMapping: {
         assassin: 'assassin_boss',
-        fire_knight: 'fire_boss',
+        fire_knight: 'fire_knight_boss',
         bladekeeper: 'bladekeeper_boss',
         monk: 'monk_boss',
         princess: 'princess_boss',
@@ -620,7 +620,7 @@ export const MAPS = {
       },
       jobBossMapping: {
         assassin: 'assassin_boss',
-        fire_knight: 'fire_boss',
+        fire_knight: 'fire_knight_boss',
         bladekeeper: 'bladekeeper_boss',
         monk: 'monk_boss',
         princess: 'princess_boss',

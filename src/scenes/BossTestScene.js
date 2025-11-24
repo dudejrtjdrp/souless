@@ -14,7 +14,7 @@ export default class BossTestScene extends Phaser.Scene {
   }
 
   init(data = {}) {
-    // 테스트할 보스 타입 (기본값: assassin_boss,monk_boss,bladekeeper_boss,princess_boss,fire_boss,mauler_boss,final_boss)
+    // 테스트할 보스 타입 (기본값: assassin_boss,monk_boss,bladekeeper_boss,princess_boss,fire_knight_boss,mauler_boss,final_boss)
     this.bossType = 'semi_boss';
     // this.bossType = 'bladekeeper_boss';
     // 플레이어 캐릭터 타입 (기본값: soul)
