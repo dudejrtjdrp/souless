@@ -61,19 +61,19 @@ Phaser3 기반의 멀티 캐릭터 로그라이크 액션 게임
 
 ### 메인 메뉴
 
-<img src="docs/images/main_menu.png" width="600"/>
+<img src="https://github.com/user-attachments/assets/50fc24c1-2050-430d-89c9-670a310d6a64" width="650" />
+
+### 튜토리얼
+
+<img src="https://github.com/user-attachments/assets/dbba0586-35ef-4fbf-9cd5-877d895e0acc" width="650" />
 
 ### 게임플레이
 
-<img src="docs/images/gameplay.png" width="600"/>
+<img src="https://github.com/user-attachments/assets/def2e2c3-462c-4005-ba7a-73659b967dba" width="650" />
 
-### 보스 전투
+### 엔딩
 
-<img src="docs/images/boss_fight.png" width="600"/>
-
-### 캐릭터 선택
-
-<img src="docs/images/character_select.png" width="600"/>
+<img src="https://github.com/user-attachments/assets/37e9b940-8e70-44e9-adeb-8f6f1cae46cb" width="650" />
 
 </div>
 
@@ -802,11 +802,3 @@ MIT License - 자유롭게 사용하세요!
 - 게임 에셋 제공자들
 
 ---
-
-<div align="center">
-
-**⭐ 이 프로젝트가 도움이 되었다면 Star를 눌러주세요! ⭐**
-
-Made with ❤️ and ☕
-
-</div>

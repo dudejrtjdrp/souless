@@ -105,12 +105,12 @@ export default class UITestScene extends Phaser.Scene {
 
     this.time.delayedCall(100, () => {
       this.setupInputHandlers();
-      // ✅ 초기 아이콘 로드 추가
+      // 초기 아이콘 로드 추가
       this.applyInitialSkillIcons();
     });
   }
 
-  // ✅ 초기 스킬 아이콘 적용 메서드 추가
+  // 초기 스킬 아이콘 적용 메서드 추가
   applyInitialSkillIcons() {
     SkillIconLoader.updateAllIcons(
       this,
@@ -428,7 +428,7 @@ export default class UITestScene extends Phaser.Scene {
     this.testSkillUnlockSystem.setCurrentCharacter(characterType);
     this.skillCooldown.setUnlockSystem(this.testSkillUnlockSystem);
 
-    // ✅ 스킬 아이콘 업데이트 추가
+    // 스킬 아이콘 업데이트 추가
     SkillIconLoader.updateAllIcons(
       this,
       this.skillCooldown,

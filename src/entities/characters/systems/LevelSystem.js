@@ -10,7 +10,7 @@ export default class LevelSystem {
     this.experienceToNext = 100;
     this.totalExperience = 0;
 
-    // ✅ 캐릭터별 레벨 - Map으로 변경!
+    // 캐릭터별 레벨 - Map으로 변경!
     this.characterLevels = new Map();
 
     // 레벨 커브 정의
@@ -46,7 +46,7 @@ export default class LevelSystem {
   }
 
   /**
-   * ✨ 특정 캐릭터의 레벨 가져오기
+   * 특정 캐릭터의 레벨 가져오기
    */
   getCharacterLevel(characterType) {
     if (!this.characterLevels) {
@@ -82,7 +82,7 @@ export default class LevelSystem {
   }
 
   /**
-   * ✨ 특정 캐릭터에게 경험치 추가
+   * 특정 캐릭터에게 경험치 추가
    */
   addCharacterExperience(characterType, amount) {
     if (!this.characterLevels.has(characterType)) {
@@ -173,7 +173,7 @@ export default class LevelSystem {
   }
 
   /**
-   * ✨ 특정 캐릭터의 레벨 진행도 퍼센트
+   * 특정 캐릭터의 레벨 진행도 퍼센트
    */
   getCharacterProgressPercent(characterType) {
     const charData = this.getCharacterExpInfo(characterType);
@@ -282,7 +282,7 @@ export default class LevelSystem {
       experience: this.experience,
       experienceToNext: this.experienceToNext,
       totalExperience: this.totalExperience,
-      characterLevels: characterLevelsObj, // ✨ 객체로 저장
+      characterLevels: characterLevelsObj, // 객체로 저장
     };
   }
 
@@ -296,7 +296,7 @@ export default class LevelSystem {
       this.experienceToNext = data.experienceToNext || 100;
       this.totalExperience = data.totalExperience || 0;
 
-      // ✅ 객체를 Map으로 변환
+      // 객체를 Map으로 변환
       this.characterLevels = new Map();
       if (data.characterLevels) {
         for (const [key, value] of Object.entries(data.characterLevels)) {

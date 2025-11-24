@@ -11,12 +11,12 @@ export default class StateMachine {
     this.lockTimer = null;
     this.animCompleteHandler = null;
 
-    // ✅ Track if destroyed to prevent operations after cleanup
+    // Track if destroyed to prevent operations after cleanup
     this.isDestroyed = false;
   }
 
   changeState(newState) {
-    // ✅ Safety check - prevent operations on destroyed state machine
+    // Safety check - prevent operations on destroyed state machine
     if (this.isDestroyed || !this.animManager || !this.sprite) {
       return false;
     }
@@ -67,7 +67,7 @@ export default class StateMachine {
       this.isLocked = true;
 
       this.animCompleteHandler = () => {
-        // ✅ Check if destroyed before accessing
+        // Check if destroyed before accessing
         if (this.isDestroyed) return;
 
         if (this.currentState === state) {
@@ -83,7 +83,7 @@ export default class StateMachine {
 
       const maxDuration = this.getStateDuration(baseState);
       this.lockTimer = setTimeout(() => {
-        // ✅ Check if destroyed before accessing
+        // Check if destroyed before accessing
         if (this.isDestroyed) return;
 
         if (this.isLocked && this.currentState === state) {
@@ -125,14 +125,14 @@ export default class StateMachine {
   }
 
   lock(duration) {
-    // ✅ Check if destroyed
+    // Check if destroyed
     if (this.isDestroyed) return;
 
     this.clearLock();
     this.isLocked = true;
 
     this.lockTimer = setTimeout(() => {
-      // ✅ Check if destroyed before accessing
+      // Check if destroyed before accessing
       if (!this.isDestroyed) {
         this.unlock();
       }
@@ -140,7 +140,7 @@ export default class StateMachine {
   }
 
   unlock() {
-    // ✅ Check if destroyed
+    // Check if destroyed
     if (this.isDestroyed) return;
 
     this.clearLock();
@@ -164,7 +164,7 @@ export default class StateMachine {
   }
 
   destroy() {
-    // ✅ Mark as destroyed FIRST to prevent async operations
+    // Mark as destroyed FIRST to prevent async operations
     this.isDestroyed = true;
 
     this.clearLock();

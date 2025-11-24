@@ -14,10 +14,10 @@ export class BossDefeatAnimations {
     const bossX = bossSprite.x;
     const bossY = bossSprite.y;
 
-    // ✅ 1단계: 슬로우 모션 시작 (0.3배 속도)
+    // 1단계: 슬로우 모션 시작 (0.3배 속도)
     scene.time.timeScale = 0.3;
 
-    // ✅ 2단계: 카메라 줌인 (1.2배로 감소)
+    // 2단계: 카메라 줌인 (1.2배로 감소)
     scene.tweens.add({
       targets: camera,
       zoom: 1.2,
@@ -34,13 +34,13 @@ export class BossDefeatAnimations {
       ease: 'Power2.easeInOut',
     });
 
-    // ✅ 3단계: 보스 폭발 효과
+    // 3단계: 보스 폭발 효과
     this.playBossExplosionEffect(scene, bossX, bossY);
 
-    // ✅ 4단계: 화면 플래시
+    // 4단계: 화면 플래시
     camera.flash(300, 255, 200, 100);
 
-    // ✅ 5단계: 보스 스프라이트 소멸 (점진적)
+    // 5단계: 보스 스프라이트 소멸 (점진적)
     scene.tweens.add({
       targets: bossSprite,
       alpha: 0,
@@ -50,13 +50,13 @@ export class BossDefeatAnimations {
       ease: 'Back.easeIn',
     });
 
-    // ✅ 2초 대기 (슬로우 상태에서)
+    // 2초 대기 (슬로우 상태에서)
     await this.delay(scene, 2000);
 
-    // ✅ 6단계: 슬로우 모션 종료
+    // 6단계: 슬로우 모션 종료
     scene.time.timeScale = 1;
 
-    // ✅ 7단계: 카메라 줌 아웃 + VHS 효과
+    // 7단계: 카메라 줌 아웃 + VHS 효과
     scene.tweens.add({
       targets: camera,
       zoom: 1,
@@ -89,10 +89,10 @@ export class BossDefeatAnimations {
     const bossX = bossSprite.x;
     const bossY = bossSprite.y;
 
-    // ✅ 1단계: 슬로우 모션 시작 (85% 슬로우)
+    // 1단계: 슬로우 모션 시작 (85% 슬로우)
     scene.time.timeScale = 0.15;
 
-    // ✅ 2단계: 카메라 줌인 (더 크게)
+    // 2단계: 카메라 줌인 (더 크게)
     scene.tweens.add({
       targets: camera,
       zoom: 1.8,
@@ -108,13 +108,13 @@ export class BossDefeatAnimations {
       ease: 'Power2.easeInOut',
     });
 
-    // ✅ 3단계: 거대한 폭발 효과
+    // 3단계: 거대한 폭발 효과
     this.playSemiBossExplosionEffect(scene, bossX, bossY);
 
-    // ✅ 4단계: 화면 플래시 (더 강함)
+    // 4단계: 화면 플래시 (더 강함)
     camera.flash(600, 255, 255, 200);
 
-    // ✅ 5단계: 보스 스프라이트 소멸
+    // 5단계: 보스 스프라이트 소멸
     scene.tweens.add({
       targets: bossSprite,
       alpha: 0,
@@ -124,7 +124,7 @@ export class BossDefeatAnimations {
       ease: 'Back.easeIn',
     });
 
-    // ✅ 6단계: 거대한 충격파
+    // 6단계: 거대한 충격파
     const shockwave = scene.add.circle(bossX, bossY, 20, 0xffffff, 0.9);
     scene.tweens.add({
       targets: shockwave,
@@ -135,14 +135,14 @@ export class BossDefeatAnimations {
       onComplete: () => shockwave.destroy(),
     });
 
-    // ✅ 7단계: 강한 화면 진동
+    // 7단계: 강한 화면 진동
     camera.shake(800, 0.05);
 
-    // ✅ 지정된 시간 대기 (슬로우 상태에서)
+    // 지정된 시간 대기 (슬로우 상태에서)
     const timeScaleFactor = 1 / 0.15; // 0.15배 속도이므로 약 6.67배 대기
     await this.delay(scene, duration * timeScaleFactor);
 
-    // ✅ 8단계: 슬로우 모션 종료 + 카메라 원위치
+    // 8단계: 슬로우 모션 종료 + 카메라 원위치
     scene.time.timeScale = 1;
 
     scene.tweens.add({

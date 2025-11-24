@@ -152,7 +152,7 @@ export default class IntroScene extends Phaser.Scene {
       // 입력 잠금
       this.isInputLocked = true;
 
-      // ✅ 수정된 fadeOut 사용법
+      // 수정된 fadeOut 사용법
       this.cameras.main.fadeOut(2000, 0, 0, 0);
 
       // fadeOut 완료 이벤트 리스너 등록
@@ -261,7 +261,7 @@ export default class IntroScene extends Phaser.Scene {
       // 입력 잠금
       this.isInputLocked = true;
 
-      // ✅ 수정된 fadeOut 사용법
+      // 수정된 fadeOut 사용법
       this.cameras.main.fadeOut(2000, 0, 0, 0);
 
       // fadeOut 완료 이벤트 리스너 등록

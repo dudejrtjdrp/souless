@@ -143,7 +143,7 @@ class PortalConditionManagerClass {
         return await this.checkTotalLevelCondition(condition);
       case 'character_levels':
         return await this.checkCharacterLevelsCondition(condition);
-      // ✅ [추가] 복합 조건 (레벨 + 보스)
+      // [추가] 복합 조건 (레벨 + 보스)
       case 'level_and_boss':
         return await this.checkLevelAndBossCondition(condition);
       case 'custom':
@@ -211,7 +211,7 @@ class PortalConditionManagerClass {
     }
   }
 
-  // ✅ [추가] 레벨 + 보스 복합 조건 체크 로직
+  // [추가] 레벨 + 보스 복합 조건 체크 로직
   async checkLevelAndBossCondition(condition) {
     const levelConditionMet = await this.checkCharacterLevelsCondition(condition);
     const bossConditionMet = this.checkBossCondition(condition);
@@ -348,7 +348,7 @@ class PortalConditionManagerClass {
       }
     }
 
-    // ✅ [추가] 복합 조건 UI 데이터 반환
+    // [추가] 복합 조건 UI 데이터 반환
     if (condition.type === 'level_and_boss') {
       try {
         // 1. 레벨 데이터 확인

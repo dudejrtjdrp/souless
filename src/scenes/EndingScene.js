@@ -130,7 +130,7 @@ export default class EndingScene extends Phaser.Scene {
   }
 
   // =======================================================
-  // ✅ 복구된 필수 대화 시스템 함수
+  // 복구된 필수 대화 시스템 함수
   // =======================================================
 
   setupDialogueSystem(width, height, groundHeight) {
