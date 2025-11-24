@@ -21,27 +21,22 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: screenWidth,
     height: screenHeight,
-    // x: Math.floor((screenWidth - winWidth) / 2),
-    // y: screenHeight - winHeight,
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
     },
-    resizable: false, // 창 크기 고정
+    resizable: false,
     fullscreen: true,
     title: 'Souless',
     backgroundColor: '#000000',
   });
 
-  // 개발 모드: Vite 개발 서버로 연결
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
-  }
-  // 프로덕션 모드: 빌드된 파일 로드
-  else {
+  } else {
     mainWindow.loadFile(join(__dirname, 'dist/index.html'));
   }
 
@@ -49,9 +44,6 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // mainWindow.center();
-
-  // IPC로 전체화면 토글
   ipcMain.on('toggle-fullscreen', () => {
     const isFull = mainWindow.isFullScreen();
     mainWindow.setFullScreen(!isFull);
@@ -74,30 +66,30 @@ app.on('window-all-closed', () => {
   }
 });
 
-// IPC 통신 예제
 ipcMain.handle('get-app-path', () => {
   return app.getAppPath();
 });
 
-// 세이브 시스템 IPC 핸들러
+// ============================================
+// 세이브 시스템 IPC 핸들러 (슬롯별로 수정)
+// ============================================
 
-// 세이브 파일 경로 설정
-const SAVE_FILE_NAME = 'save.json';
-const getSavePath = () => {
-  // userData 디렉토리에 저장
-  // Windows: C:\Users\{username}\AppData\Roaming\Soul Game
-  // macOS: ~/Library/Application Support/Soul Game
-  // Linux: ~/.config/Soul Game
+/**
+ * 슬롯별 세이브 파일 경로 생성
+ * @param {number} slotIndex - 슬롯 인덱스 (0, 1, 2)
+ */
+const getSavePath = (slotIndex) => {
   const userDataPath = app.getPath('userData');
-  return join(userDataPath, SAVE_FILE_NAME);
+  return join(userDataPath, `save_slot_${slotIndex}.json`);
 };
 
 /**
  * 세이브 파일 로드
+ * @param {number} slotIndex - 로드할 슬롯 인덱스
  */
-ipcMain.handle('load-save', async () => {
+ipcMain.handle('load-save', async (event, slotIndex) => {
   try {
-    const savePath = getSavePath();
+    const savePath = getSavePath(slotIndex);
     const data = await fs.readFile(savePath, 'utf-8');
     return JSON.parse(data);
   } catch (error) {
@@ -105,31 +97,34 @@ ipcMain.handle('load-save', async () => {
       // 파일이 없으면 null 반환
       return null;
     }
-    console.error('Load save error:', error);
+    console.error(`Load save error (slot ${slotIndex}):`, error);
     throw error;
   }
 });
 
 /**
  * 세이브 파일 저장
+ * @param {Object} data - 저장할 데이터
+ * @param {number} slotIndex - 저장할 슬롯 인덱스
  */
-ipcMain.handle('save-save', async (event, data) => {
+ipcMain.handle('save-save', async (event, data, slotIndex) => {
   try {
-    const savePath = getSavePath();
+    const savePath = getSavePath(slotIndex);
     await fs.writeFile(savePath, JSON.stringify(data, null, 2), 'utf-8');
     return true;
   } catch (error) {
-    console.error('Save save error:', error);
+    console.error(`Save save error (slot ${slotIndex}):`, error);
     throw error;
   }
 });
 
 /**
  * 세이브 파일 삭제
+ * @param {number} slotIndex - 삭제할 슬롯 인덱스
  */
-ipcMain.handle('clear-save', async () => {
+ipcMain.handle('clear-save', async (event, slotIndex) => {
   try {
-    const savePath = getSavePath();
+    const savePath = getSavePath(slotIndex);
     await fs.unlink(savePath);
     return true;
   } catch (error) {
@@ -137,15 +132,15 @@ ipcMain.handle('clear-save', async () => {
       // 파일이 없으면 성공으로 처리
       return true;
     }
-    console.error('Clear save error:', error);
+    console.error(`Clear save error (slot ${slotIndex}):`, error);
     throw error;
   }
 });
 
 /**
  * 세이브 파일 경로 가져오기 (디버그용)
+ * @param {number} slotIndex - 조회할 슬롯 인덱스
  */
-ipcMain.handle('get-save-path', () => {
-  const savePath = getSavePath();
-  return savePath;
+ipcMain.handle('get-save-path', (event, slotIndex) => {
+  return getSavePath(slotIndex);
 });

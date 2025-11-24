@@ -8,49 +8,49 @@ export const PORTAL_CONDITIONS = {
   // Other Cave → Scary Cave
   other_cave_to_scary_cave: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'other_cave',
   },
 
   // Scary Cave → Cave
   scary_cave_to_cave: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'scary_cave',
   },
 
   // Cave → Dark Cave
   cave_to_dark_cave: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'cave',
   },
 
   // Dark Cave → Forest
   dark_cave_to_forest: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'dark_cave',
   },
 
   // Forest → Oakwood
   forest_to_oakwood: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'forest',
   },
 
   // Oakwood → Temple Way
   oakwood_to_temple_way: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'oakwood',
   },
 
   // Temple Way → Temple 1
   temple_way_to_temple_1: {
     type: 'kill_count',
-    requiredKills: 20,
+    requiredKills: 10,
     sourceMap: 'temple_way',
   },
 
