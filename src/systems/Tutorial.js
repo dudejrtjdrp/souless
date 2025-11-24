@@ -8,9 +8,9 @@ export default class TutorialSystem {
     this.currentStep = 0;
     this.tutorialActive = false;
     this.completedSteps = new Set();
-    this.tutorialContainer = null; // 컨테이너로 모든 요소를 그룹화
+    this.tutorialContainer = null;
     this.currentTimeout = null;
-    this.arrowContainer = null; // 화살표 컨테이너
+    this.arrowContainer = null;
   }
 
   /**
@@ -23,11 +23,7 @@ export default class TutorialSystem {
     this.currentStep = 0;
     this.completedSteps.clear();
 
-    console.log('📚 튜토리얼 시작');
-
-    // 키보드 입력 설정 (ENTER로 다음 단계)
     this.setupInput();
-
     this.showStep(0);
   }
 
@@ -37,7 +33,6 @@ export default class TutorialSystem {
   setupInput() {
     this.scene.input.keyboard.on('keydown-ENTER', () => {
       if (this.tutorialActive) {
-        console.log('⏭️ 튜토리얼 단계 진행');
         this.skipToNextStep();
       }
     });
@@ -68,12 +63,8 @@ export default class TutorialSystem {
       this.currentTimeout = null;
     }
 
-    // 키보드 리스너 제거
     this.scene.input.keyboard.off('keydown-ENTER');
 
-    console.log('✅ 튜토리얼 완료');
-
-    // 튜토리얼 완료 후 화살표 표시
     this.showDirectionArrow();
   }
 
@@ -104,8 +95,10 @@ export default class TutorialSystem {
       },
       {
         title: '🔄 육체 변환',
-        description: '` (백틱) 키를 길게 누르면 육체를 변환할 수 있습니다!',
-        duration: 5000,
+        description:
+          '` (백틱) 키를 누르면 캐릭터 선택창이 열립니다!\n\n← → 화살표로 원하는 캐릭터를 선택하고\nENTER 키를 눌러 변환하세요!\n\n⏱️ 캐릭터 변환 후 1.5초 쿨타임이 있습니다.',
+        duration: 7000,
+        isLong: true,
       },
       {
         title: '⚔️ 공격',
@@ -135,7 +128,6 @@ export default class TutorialSystem {
     const step = steps[stepIndex];
     this.displayTutorialBox(step, stepIndex, steps.length);
 
-    // 자동으로 다음 단계로 진행
     if (this.currentTimeout) {
       this.scene.time.removeEvent(this.currentTimeout);
     }
@@ -152,27 +144,23 @@ export default class TutorialSystem {
    * 튜토리얼 박스 표시
    */
   displayTutorialBox(step, currentStep, totalSteps) {
-    // 이전 요소 완전히 제거
     this.destroyAllUIElements();
 
     const camera = this.scene.cameras.main;
     const centerX = camera.centerX;
     const centerY = camera.centerY;
 
-    // ✅ 컨테이너 생성 (모든 튜토리얼 요소를 한곳에)
     this.tutorialContainer = this.scene.add.container(0, 0);
     this.tutorialContainer.setDepth(9998);
     this.tutorialContainer.setScrollFactor(0);
 
-    // 배경 오버레이
     const overlay = this.scene.add
       .rectangle(centerX, centerY, camera.width * 2, camera.height * 2, 0x000000, 0.3)
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 튜토리얼 박스 배경 (긴 설명용 높이 증가)
     const boxWidth = step.isLong ? 600 : 500;
-    const boxHeight = step.isLong ? 420 : 220;
+    const boxHeight = step.isLong ? 450 : 220;
     const boxX = centerX;
     const boxY = centerY - (step.isLong ? 50 : 100);
 
@@ -182,7 +170,6 @@ export default class TutorialSystem {
       .setStrokeStyle(4, 0x00d4ff, 1)
       .setScrollFactor(0);
 
-    // 제목
     const title = this.scene.add
       .text(boxX, boxY - boxHeight / 2 + 40, step.title, {
         fontSize: '36px',
@@ -195,7 +182,6 @@ export default class TutorialSystem {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 설명
     const description = this.scene.add
       .text(boxX, boxY, step.description, {
         fontSize: step.isLong ? '16px' : '20px',
@@ -207,7 +193,6 @@ export default class TutorialSystem {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // ✅ ENTER 안내 텍스트
     const enterText = this.scene.add
       .text(boxX, boxY + boxHeight / 2 - 40, '[ ENTER 키를 눌러 다음으로 진행 ]', {
         fontSize: '14px',
@@ -220,7 +205,6 @@ export default class TutorialSystem {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 진행 바
     const progressBarWidth = 300;
     const progressBarX = boxX;
     const progressBarY = boxY + boxHeight / 2 - 10;
@@ -243,7 +227,6 @@ export default class TutorialSystem {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 단계 텍스트
     const stepText = this.scene.add
       .text(boxX, progressBarY + 30, `${currentStep + 1} / ${totalSteps}`, {
         fontSize: '14px',
@@ -253,7 +236,6 @@ export default class TutorialSystem {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 컨테이너에 모든 요소 추가
     this.tutorialContainer.add([
       overlay,
       box,
@@ -265,7 +247,6 @@ export default class TutorialSystem {
       stepText,
     ]);
 
-    // depth 설정
     this.tutorialContainer.setDepth(9998);
   }
 
@@ -277,18 +258,15 @@ export default class TutorialSystem {
     const centerX = camera.centerX;
     const centerY = camera.centerY;
 
-    // 화살표 컨테이너
     this.arrowContainer = this.scene.add.container(0, 0);
     this.arrowContainer.setDepth(9999);
     this.arrowContainer.setScrollFactor(0);
 
-    // 반투명 배경
     const arrowBg = this.scene.add
       .rectangle(centerX, centerY, 200, 120, 0x000000, 0)
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 화살표 텍스트 (큼)
     const arrow = this.scene.add
       .text(centerX, centerY - 20, '➜', {
         fontSize: '80px',
@@ -296,7 +274,6 @@ export default class TutorialSystem {
       .setOrigin(0.5)
       .setScrollFactor(0);
 
-    // 안내 텍스트
     const guideText = this.scene.add
       .text(centerX, centerY + 40, '오른쪽으로 이동하세요!', {
         fontSize: '18px',
@@ -311,7 +288,6 @@ export default class TutorialSystem {
 
     this.arrowContainer.add([arrowBg, arrow, guideText]);
 
-    // 화살표 깜빡이는 애니메이션
     this.scene.tweens.add({
       targets: [arrow, guideText],
       alpha: { from: 1, to: 0.3 },
@@ -326,7 +302,7 @@ export default class TutorialSystem {
    */
   destroyAllUIElements() {
     if (this.tutorialContainer) {
-      this.tutorialContainer.destroy(true); // true: 자식 요소도 함께 삭제
+      this.tutorialContainer.destroy(true);
       this.tutorialContainer = null;
     }
   }
@@ -345,7 +321,6 @@ export default class TutorialSystem {
    * 튜토리얼 강제 종료
    */
   skip() {
-    console.log('⏭️ 튜토리얼 전체 스킵');
     this.end();
   }
 }

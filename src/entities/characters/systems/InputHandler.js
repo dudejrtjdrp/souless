@@ -20,6 +20,7 @@ export default class InputHandler {
       tab: scene.input.keyboard.addKey('TAB'), // Tab 키
       l: scene.input.keyboard.addKey('L'), // L 키
       esc: scene.input.keyboard.addKey('ESC'), // ESC 키
+      enter: scene.input.keyboard.addKey('ENTER'), // ✅ Enter 키 추가
       left: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT),
       right: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT),
       up: scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP),
@@ -68,7 +69,7 @@ export default class InputHandler {
     const isAttackPressed = state.a && !prevState.a;
     const isAttackReleased = !state.a && prevState.a;
 
-    // 나머지 키 처리
+    // 나머지 키 처리 (✅ enter 추가)
     const keysPressed = {};
     const keysReleased = {};
     const keysHeld = {};
@@ -84,6 +85,7 @@ export default class InputHandler {
       'tab',
       'l',
       'esc',
+      'enter',
       'left',
       'right',
       'up',
@@ -117,6 +119,7 @@ export default class InputHandler {
       isTabPressed: keysPressed.tab,
       isLPressed: keysPressed.l,
       isEscPressed: keysPressed.esc,
+      isEnterPressed: keysPressed.enter, // ✅ Enter Pressed 추가
       isLeftPressed: keysPressed.left,
       isRightPressed: keysPressed.right,
       isUpPressed: keysPressed.up,
@@ -135,6 +138,7 @@ export default class InputHandler {
       isTabReleased: keysReleased.tab,
       isLReleased: keysReleased.l,
       isEscReleased: keysReleased.esc,
+      isEnterReleased: keysReleased.enter, // ✅ Enter Released 추가
       isLeftReleased: keysReleased.left,
       isRightReleased: keysReleased.right,
       isUpReleased: keysReleased.up,
@@ -153,6 +157,7 @@ export default class InputHandler {
       isTabHeld: keysHeld.tab,
       isLHeld: keysHeld.l,
       isEscHeld: keysHeld.esc,
+      isEnterHeld: keysHeld.enter, // ✅ Enter Held 추가
       isLeftHeld: keysHeld.left,
       isRightHeld: keysHeld.right,
       isUpHeld: keysHeld.up,
@@ -182,6 +187,7 @@ export default class InputHandler {
       isTabPressed: false,
       isLPressed: false,
       isEscPressed: false,
+      isEnterPressed: false, // ✅ Enter Pressed 추가
       isLeftPressed: false,
       isRightPressed: false,
       isUpPressed: false,
@@ -200,6 +206,7 @@ export default class InputHandler {
       isTabReleased: false,
       isLReleased: false,
       isEscReleased: false,
+      isEnterReleased: false, // ✅ Enter Released 추가
       isLeftReleased: false,
       isRightReleased: false,
       isUpReleased: false,
@@ -218,6 +225,7 @@ export default class InputHandler {
       isTabHeld: state.tab,
       isLHeld: state.l,
       isEscHeld: state.esc,
+      isEnterHeld: state.enter, // ✅ Enter Held 추가
       isLeftHeld: state.left,
       isRightHeld: state.right,
       isUpHeld: state.up,

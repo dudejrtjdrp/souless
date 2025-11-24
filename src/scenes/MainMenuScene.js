@@ -68,7 +68,6 @@ export default class MainMenuScene extends Phaser.Scene {
   async loadSaveSlots() {
     try {
       this.saveSlots = await SaveSlotManager.loadAllSlots();
-      console.log(this.saveSlots);
     } catch (error) {
       console.error('Error loading save slots:', error);
       this.saveSlots = new Array(SaveSlotManager.MAX_SLOTS).fill(null);
@@ -81,7 +80,6 @@ export default class MainMenuScene extends Phaser.Scene {
    * @returns {number} 클리어 퍼센트 (0-100)
    */
   calculateClearPercentage(slotSummary) {
-    console.log(slotSummary);
     // final_boss를 잡았으면 무조건 100%
     if (slotSummary.clearedBosses && slotSummary.clearedBosses.includes('final_boss')) {
       return 100;
@@ -529,7 +527,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
         // 로드된 데이터 확인
         const loadedData = await SaveSlotManager.load(slotIndex);
-        console.log(slotSummary);
+
         this.scene.start('GameScene', {
           mapKey: slotSummary.mapKey || 'other_cave',
           characterType: slotSummary.characterType || 'soul',

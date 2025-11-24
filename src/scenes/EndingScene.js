@@ -122,7 +122,6 @@ export default class EndingScene extends Phaser.Scene {
         });
       });
     }
-    console.log('✅ Character animations created successfully.');
   }
 
   // =======================================================

@@ -1,29 +1,3 @@
-// (() => {
-//   const originalError = console.error;
-//   const originalWarn = console.warn;
-
-//   function shouldIgnore(message) {
-//     // 🔍 Phaser가 파일 처리 실패 메시지를 찍을 때 공통적으로 포함되는 키워드
-//     return message.includes('Failed to process file') && message.includes('image');
-//   }
-
-//   console.error = function (...args) {
-//     const message = args.join(' ');
-//     if (shouldIgnore(message)) {
-//       return;
-//     }
-//     originalError.apply(console, args);
-//   };
-
-//   console.warn = function (...args) {
-//     const message = args.join(' ');
-//     if (shouldIgnore(message)) {
-//       return;
-//     }
-//     originalWarn.apply(console, args);
-//   };
-// })();
-
 import Phaser from 'phaser';
 import GameScene from '../src/scenes/GameScene';
 import UIScene from '../src/scenes/UIScene';
@@ -43,13 +17,13 @@ const config = {
   backgroundColor: '#000000',
   physics: {
     default: 'arcade',
-    arcade: { debug: true },
+    arcade: { debug: false },
   },
   scene: [
-    GameScene,
-    UITestScene,
     MainMenuScene,
     IntroScene,
+    GameScene,
+    UITestScene,
     EndingScene,
     BossTestScene,
     PauseMenuScene,
@@ -62,12 +36,20 @@ const config = {
   },
   pixelArt: true,
   antialias: false,
+
+  // ✅ 로더 설정
+  loader: {
+    baseURL: './',
+    path: '',
+    crossOrigin: undefined,
+  },
 };
 
 const game = new Phaser.Game(config);
 
-// Electron API 사용 예제
-if (window.electronAPI) {
-}
+// 에러 핸들링
+game.events.on('error', (error) => {
+  console.error('Phaser Error:', error);
+});
 
 export default game;

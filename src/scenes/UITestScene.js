@@ -34,7 +34,6 @@ export default class UITestScene extends Phaser.Scene {
         frameWidth: ICON_PNG_SIZE,
         frameHeight: ICON_PNG_SIZE,
       });
-      console.log(`✅ Spritesheet 로드: ${charType}.png`);
     });
 
     SkillIconLoader.preload(this);
@@ -109,13 +108,10 @@ export default class UITestScene extends Phaser.Scene {
       // ✅ 초기 아이콘 로드 추가
       this.applyInitialSkillIcons();
     });
-
-    console.log('🎨 UITestScene 생성 완료');
   }
 
   // ✅ 초기 스킬 아이콘 적용 메서드 추가
   applyInitialSkillIcons() {
-    console.log(`🎯 초기 스킬 아이콘 적용: ${this.selectedCharacter}`);
     SkillIconLoader.updateAllIcons(
       this,
       this.skillCooldown,
@@ -162,14 +158,12 @@ export default class UITestScene extends Phaser.Scene {
             skills.forEach((s) => this.unlockedSkills.add(s));
           }
         }
-        console.log(`📊 레벨 설정: ${level}, 해금된 스킬:`, Array.from(this.unlockedSkills));
       },
 
       setCurrentCharacter(characterType) {
         this.unlockedSkills.clear();
         this.unlockedSkills.add('Q');
         this.unlockedSkills.add('A');
-        console.log(`🎯 캐릭터 설정: ${characterType}, 스킬:`, Array.from(this.unlockedSkills));
       },
 
       updateLevel(level) {
@@ -430,7 +424,6 @@ export default class UITestScene extends Phaser.Scene {
   }
 
   switchCharacter(characterType) {
-    console.log(`🔄 캐릭터 전환: ${characterType}`);
     this.selectedCharacter = characterType;
     this.testSkillUnlockSystem.setCurrentCharacter(characterType);
     this.skillCooldown.setUnlockSystem(this.testSkillUnlockSystem);

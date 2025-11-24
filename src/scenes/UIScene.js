@@ -58,8 +58,6 @@ export default class UIScene extends Phaser.Scene {
       const gameScene = this.scene.get('GameScene');
 
       if (gameScene && gameScene.player && gameScene.selectedCharacter) {
-        console.log(`🎬 UIScene 초기화 완료 - 스킬 설정 시작`);
-
         // 스킬 아이콘 업데이트
         SkillIconLoader.updateAllIcons(
           this,
@@ -72,8 +70,6 @@ export default class UIScene extends Phaser.Scene {
         if (gameScene.skillUnlockSystem) {
           this.skillCooldown.setUnlockSystem(gameScene.skillUnlockSystem);
           this.skillCooldown.updateLockStates();
-
-          console.log(`✅ 초기 잠금 상태 설정 완료`);
         }
       }
     });
@@ -110,8 +106,6 @@ export default class UIScene extends Phaser.Scene {
 
   handleCharacterLevelUp(data) {
     const { characterType, level } = data;
-
-    console.log(`🎊 UI: Character level up - ${characterType} Lv.${level}`);
 
     // 현재 플레이 중인 캐릭터면 알림 표시
     if (characterType === this.currentCharacterType) {
@@ -174,15 +168,11 @@ export default class UIScene extends Phaser.Scene {
 
     const gameScene = this.scene.get('GameScene');
 
-    console.log(`🔄 캐릭터 변경: ${characterType}`);
-
     // ✅ 1. 스킬 잠금 시스템 먼저 설정
     if (gameScene?.skillUnlockSystem) {
       gameScene.skillUnlockSystem.setCurrentCharacter(characterType);
-      console.log(`🎯 SkillUnlockSystem 캐릭터 설정: ${characterType}`);
 
       this.skillCooldown.setUnlockSystem(gameScene.skillUnlockSystem);
-      console.log(`✅ UISkillCooldown에 UnlockSystem 설정 완료`);
     }
 
     // ✅ 2. 스킬 아이콘 업데이트
@@ -193,7 +183,6 @@ export default class UIScene extends Phaser.Scene {
         characterType,
         this.skillCooldown.container,
       );
-      console.log(`🖼️ 스킬 아이콘 업데이트 완료`);
     }
 
     // ✅ 3. 쿨다운 복원
@@ -210,20 +199,16 @@ export default class UIScene extends Phaser.Scene {
 
     // ✅ 6. 잠금 상태 강제 업데이트 (여러 번 시도)
     if (gameScene?.skillUnlockSystem) {
-      console.log(`🔒 잠금 상태 업데이트 시작...`);
-
       // 즉시 업데이트
       this.skillCooldown.updateLockStates();
 
       // 0.1초 후 재시도
       this.time.delayedCall(100, () => {
-        console.log(`🔒 잠금 상태 재업데이트 (0.1초 후)`);
         this.skillCooldown.updateLockStates();
       });
 
       // 0.3초 후 재시도
       this.time.delayedCall(300, () => {
-        console.log(`🔒 잠금 상태 재업데이트 (0.3초 후)`);
         this.skillCooldown.updateLockStates();
 
         // 스킬 쿨다운도 함께 업데이트

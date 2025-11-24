@@ -129,8 +129,8 @@ export default class Portal extends Phaser.GameObjects.Sprite {
 
   // 포탈 열림 여부 확인 주석 삭제
   isUnlocked() {
-    return true;
-    // return PortalConditionManager.isPortalUnlocked(this.portalId);
+    // return true;
+    return PortalConditionManager.isPortalUnlocked(this.portalId);
   }
 
   // 시각적 상태 업데이트

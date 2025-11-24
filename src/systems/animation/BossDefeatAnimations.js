@@ -14,8 +14,6 @@ export class BossDefeatAnimations {
     const bossX = bossSprite.x;
     const bossY = bossSprite.y;
 
-    console.log('🎬 보스 처치 연출 시작');
-
     // ✅ 1단계: 슬로우 모션 시작 (0.3배 속도)
     scene.time.timeScale = 0.3;
 
@@ -78,8 +76,6 @@ export class BossDefeatAnimations {
     }
 
     await this.delay(scene, 300);
-
-    console.log('🎬 보스 처치 연출 완료');
   }
 
   /**
@@ -92,8 +88,6 @@ export class BossDefeatAnimations {
     const camera = scene.cameras.main;
     const bossX = bossSprite.x;
     const bossY = bossSprite.y;
-
-    console.log('🎬 Semi-Boss 처치 연출 시작');
 
     // ✅ 1단계: 슬로우 모션 시작 (85% 슬로우)
     scene.time.timeScale = 0.15;
@@ -167,8 +161,6 @@ export class BossDefeatAnimations {
     });
 
     await this.delay(scene, 700);
-
-    console.log('🎬 Semi-Boss 처치 연출 완료');
   }
 
   /**

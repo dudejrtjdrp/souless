@@ -28,7 +28,6 @@ export default class SkillUnlockSystem {
    */
   updateLevel(newLevel) {
     if (newLevel !== this.previousLevel) {
-      console.log(`📊 레벨 업데이트: ${this.previousLevel} → ${newLevel}`);
       this.onLevelUp(newLevel);
       this.previousLevel = newLevel;
     }
@@ -157,8 +156,6 @@ export default class SkillUnlockSystem {
    * 레벨업 시 처리
    */
   onLevelUp(newLevel) {
-    console.log(`🎉 레벨업 감지: Lv.${newLevel}`);
-
     // 새로 해금된 스킬 체크
     const newlyUnlocked = [];
 
@@ -172,7 +169,6 @@ export default class SkillUnlockSystem {
     if (this.scene) {
       const uiScene = this.scene.scene.get('UIScene');
       if (uiScene?.skillCooldown) {
-        console.log('✅ UI 스킬 잠금 상태 업데이트');
         uiScene.skillCooldown.updateLockStates();
 
         // ✅ 스킬 쿨다운도 함께 업데이트

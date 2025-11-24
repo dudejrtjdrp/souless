@@ -64,14 +64,23 @@ export default class CharacterSwitchHandler {
   async performSwitch(nextType) {
     this.scene.characterSwitchManager.setTransitioning(true);
 
-    const state = this.captureCurrentState();
-    this.scene.cameras.main.flash(200, 255, 255, 255);
-    this.destroyCurrentPlayer();
+    try {
+      const state = this.captureCurrentState();
+      this.scene.cameras.main.flash(200, 255, 255, 255);
+      this.destroyCurrentPlayer();
 
-    this.scene.time.delayedCall(100, async () => {
+      // delayedCall 대신 Promise 사용
+      await new Promise((resolve) => {
+        this.scene.time.delayedCall(100, resolve);
+      });
+
       await this.createNewPlayer(nextType, state);
+    } catch (error) {
+      console.error('Character switch error:', error);
+    } finally {
+      // 에러가 나도 반드시 플래그 해제
       this.scene.characterSwitchManager.setTransitioning(false);
-    });
+    }
   }
 
   captureCurrentState() {

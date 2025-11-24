@@ -36,7 +36,6 @@ export default class CharacterSelectOverlay {
         frameWidth: ICON_PNG_SIZE,
         frameHeight: ICON_PNG_SIZE,
       });
-      console.log(`✅ Spritesheet 로드: ${charType}_icon from ${charType}.png`);
     });
   }
 

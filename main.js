@@ -26,12 +26,12 @@ function createWindow() {
     webPreferences: {
       preload: join(__dirname, 'preload.js'),
       nodeIntegration: false,
-      contextIsolation: false,
+      contextIsolation: true,
       sandbox: false,
     },
     resizable: false, // 창 크기 고정
     fullscreen: true,
-    title: 'Soul Game',
+    title: 'Souless',
     backgroundColor: '#000000',
   });
 

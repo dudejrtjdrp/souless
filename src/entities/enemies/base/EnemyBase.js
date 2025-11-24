@@ -550,7 +550,6 @@ export default class EnemyBase {
 
       // ✅ 모든 적 타입 동일하게 처리
       this.sprite.once('animationcomplete', () => {
-        console.log(`[playDeath] ${this.enemyType} 애니메이션 완료`);
         this.spawnSoul();
       });
 
@@ -575,7 +574,6 @@ export default class EnemyBase {
 
     // semi_boss는 영혼 생성 스킵 (GameScene에서 처리)
     if (this.enemyType === 'semi_boss') {
-      console.log('[spawnSoul] semi_boss - 영혼 스킵, destroy 호출');
       this.destroy();
       return;
     }
