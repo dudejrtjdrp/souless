@@ -12,9 +12,9 @@ export const CharacterData = {
     },
     physics: {
       collisionBox: { width: 46, height: 76, offsetX: 268, offsetY: 170 },
-      walkSpeed: 200,
-      runSpeed: 350,
-      jumpPower: 300,
+      walkSpeed: 180,
+      runSpeed: 300,
+      jumpPower: 280,
       maxJumps: 2,
     },
     combat: {
@@ -35,7 +35,7 @@ export const CharacterData = {
               duration: 200,
               effect: 'monk_circle_turn_in',
             },
-            damage: 10,
+            damage: 12,
           },
         ],
         animation: 'attack',
@@ -45,7 +45,6 @@ export const CharacterData = {
         cost: { mana: 0 },
         targetType: 'multi',
         hitstop: 'FIREKNIGHT',
-        // impactEffect: ['monk_circle_turn_in'],
       },
       air_attack: {
         type: 'melee',
@@ -118,7 +117,7 @@ export const CharacterData = {
               offsetY: 80,
               duration: 300,
             },
-            damage: 30,
+            damage: 20,
           },
         ],
         animation: 'w_skill',
@@ -151,7 +150,7 @@ export const CharacterData = {
         },
         effects: ['heal', 'mana_regen'],
         cooldown: 3000,
-        healAmount: 2,
+        healAmount: 3,
         manaAmount: 2,
         targetType: 'single',
       },
@@ -217,7 +216,6 @@ export const CharacterData = {
       { key: 'e_skill', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
       { key: 'e_skill_channeling', frames: { start: 232, end: 238 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 251, end: 255 }, frameRate: 10, repeat: 0 },
-      // { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 301, end: 306 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 326, end: 340 }, frameRate: 15, repeat: 0 },
     ],
@@ -236,9 +234,9 @@ export const CharacterData = {
     },
     physics: {
       collisionBox: { width: 46, height: 76, offsetX: 268, offsetY: 170 },
-      walkSpeed: 200,
-      runSpeed: 350,
-      jumpPower: 300,
+      walkSpeed: 280,
+      runSpeed: 450,
+      jumpPower: 350,
       maxJumps: 2,
     },
     combat: {
@@ -261,7 +259,7 @@ export const CharacterData = {
               duration: 300,
               effect: 'assassin_multiple_rectangle',
             },
-            damage: 30,
+            damage: 18,
           },
         ],
         knockback: { x: 250, y: -150 },
@@ -293,7 +291,7 @@ export const CharacterData = {
               offsetY: 70,
               duration: 800,
             },
-            damage: 30,
+            damage: 20,
           },
           {
             delay: 150,
@@ -304,13 +302,13 @@ export const CharacterData = {
               offsetY: 70,
               duration: 800,
             },
-            damage: 30,
+            damage: 20,
           },
         ],
         animation: 'q_skill',
         knockback: { x: 250, y: -150 },
         effects: ['burn'],
-        cooldown: 0,
+        cooldown: 4000,
         cost: { mana: 0 },
         targetType: 'multi',
         hitstop: 'FIREKNIGHT',
@@ -346,7 +344,6 @@ export const CharacterData = {
           maxDuration: 3000,
           manaPerTick: 0,
         },
-        // cost: { mana: 10 },
         cooldown: 3000,
         healAmount: 2,
         manaAmount: 2,
@@ -443,9 +440,9 @@ export const CharacterData = {
     },
     physics: {
       collisionBox: { width: 46, height: 76, offsetX: 268, offsetY: 170 },
-      walkSpeed: 200,
-      runSpeed: 350,
-      jumpPower: 400,
+      walkSpeed: 220,
+      runSpeed: 380,
+      jumpPower: 420,
       maxJumps: 2,
     },
     combat: {
@@ -455,7 +452,7 @@ export const CharacterData = {
     skills: {
       attack: {
         type: 'instant',
-        icon: 'assets/skills/bladekeeper/attack.png', // 아이콘 추가
+        icon: 'assets/skills/bladekeeper/attack.png',
         animation: 'attack',
         hitboxSequence: [
           {
@@ -468,7 +465,7 @@ export const CharacterData = {
               duration: 300,
               effect: 'bladekeeper_arrow_circle',
             },
-            damage: 5,
+            damage: 8,
           },
         ],
         knockback: { x: 250, y: -150 },
@@ -632,7 +629,7 @@ export const CharacterData = {
               duration: 600,
               effect: '',
             },
-            damage: 30,
+            damage: 40,
           },
         ],
         knockback: { x: 250, y: -150 },
@@ -652,14 +649,12 @@ export const CharacterData = {
       { key: 'jump_down', frames: { start: 60, end: 62 }, frameRate: 4, repeat: 0 },
       { key: 'air_attack', frames: { start: 101, end: 107 }, frameRate: 8, repeat: 0 },
       { key: 'attack', frames: { start: 180, end: 185 }, frameRate: 15, repeat: 0 },
-      // { key: 'q_skill', frames: { start: 160, end: 169 }, frameRate: 9, repeat: 0 },
       { key: 'q_skill', frames: { start: 204, end: 207 }, frameRate: 9, repeat: 0 },
       { key: 'w_skill', frames: { start: 227, end: 237 }, frameRate: 20, repeat: 0 },
       { key: 'r_skill', frames: { start: 240, end: 250 }, frameRate: 12, repeat: 0 },
       { key: 'e_skill', frames: { start: 260, end: 271 }, frameRate: 20, repeat: -1 },
       { key: 'e_skill_channeling', frames: { start: 266, end: 268 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 120, end: 126 }, frameRate: 10, repeat: 0 },
-      // { key: 's_skill', frames: { start: 140, end: 146 }, frameRate: 10, repeat: 0 },
       { key: 'take_hit', frames: { start: 280, end: 285 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 300, end: 311 }, frameRate: 15, repeat: 0 },
     ],
@@ -678,10 +673,10 @@ export const CharacterData = {
     },
     physics: {
       collisionBox: { width: 46, height: 76, offsetX: 268, offsetY: 170 },
-      walkSpeed: 150,
-      runSpeed: 200,
-      jumpPower: 300,
-      maxJumps: 2,
+      walkSpeed: 130,
+      runSpeed: 220,
+      jumpPower: 250,
+      maxJumps: 1,
     },
     combat: {
       attackHitbox: { width: 150, height: 155, offsetX: 35, offsetY: 70, duration: 100 },
@@ -691,7 +686,7 @@ export const CharacterData = {
       attack: {
         type: 'melee',
         damage: 10,
-        icon: 'assets/skills/fireknight/attack.png', // 아이콘 추가
+        icon: 'assets/skills/fireknight/attack.png',
         hitboxSequence: [
           {
             delay: 300,
@@ -702,7 +697,7 @@ export const CharacterData = {
               offsetY: 40,
               effect: 'slash_basic',
               duration: 300,
-              damage: 10,
+              damage: 35,
             },
           },
         ],
@@ -736,7 +731,7 @@ export const CharacterData = {
           {
             delay: 0,
             hitbox: { width: 250, height: 140, offsetX: 0, offsetY: 50, effect: '' },
-            damage: 10,
+            damage: 20,
           },
         ],
         hitstop: 'FIREKNIGHT',
@@ -762,12 +757,12 @@ export const CharacterData = {
               effect: '',
               duration: 200,
             },
-            damage: 10,
+            damage: 20,
           },
           {
             delay: 300,
             hitbox: { width: 40, height: 155, offsetX: 40, offsetY: 60, effect: '', duration: 200 },
-            damage: 10,
+            damage: 20,
           },
           {
             delay: 500,
@@ -779,7 +774,7 @@ export const CharacterData = {
               effect: '',
               duration: 300,
             },
-            damage: 15,
+            damage: 40,
           },
         ],
         hitstop: 'FIREKNIGHT',
@@ -789,7 +784,7 @@ export const CharacterData = {
         cooldown: 0,
         cost: { mana: 0 },
         targetType: 'multi',
-        impactEffect: ['fire_knight_w_skill'], // 타격 시 이펙트
+        impactEffect: ['fire_knight_w_skill'],
       },
       s_skill: {
         type: 'movement',
@@ -829,7 +824,7 @@ export const CharacterData = {
               offsetY: 20,
               duration: 700,
             },
-            damage: 10,
+            damage: 20,
           },
           {
             delay: 700,
@@ -840,7 +835,7 @@ export const CharacterData = {
               offsetY: 80,
               duration: 500,
             },
-            damage: 15,
+            damage: 30,
           },
           {
             delay: 1000,
@@ -851,7 +846,7 @@ export const CharacterData = {
               offsetY: 50,
               duration: 500,
             },
-            damage: 15,
+            damage: 50,
           },
         ],
         animation: 'r_skill',
@@ -861,7 +856,7 @@ export const CharacterData = {
         cost: { mana: 0 },
         targetType: 'multi',
         hitstop: 'FIREKNIGHT_ULTIMATE',
-        impactEffect: ['fire_knight_r_skill_ready', 'fire_knight_r_skill'], // 타격 시 이펙트
+        impactEffect: ['fire_knight_r_skill_ready', 'fire_knight_r_skill'],
       },
     },
     animations: [
@@ -878,7 +873,6 @@ export const CharacterData = {
       { key: 'e_skill', frames: { start: 308, end: 317 }, frameRate: 8, repeat: -1 },
       { key: 'e_skill_channeling', frames: { start: 310, end: 315 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 168, end: 175 }, frameRate: 14, repeat: 0 },
-      // { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 338, end: 343 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 366, end: 378 }, frameRate: 15, repeat: 0 },
     ],
@@ -909,7 +903,7 @@ export const CharacterData = {
     skills: {
       attack: {
         type: 'melee',
-        icon: 'assets/skills/ranger/attack.png', // 아이콘 추가
+        icon: 'assets/skills/ranger/attack.png',
         animation: 'attack',
         hitboxSequence: [
           {
@@ -1029,8 +1023,6 @@ export const CharacterData = {
       { key: 'e_skill', frames: { start: 226, end: 240 }, frameRate: 8, repeat: -1 },
       { key: 'e_skill_channeling', frames: { start: 232, end: 238 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 176, end: 183 }, frameRate: 15, repeat: 0 },
-      // { key: 's_skill_ground', frames: { start: 198, end: 210 }, frameRate: 15, repeat: 0 }, //slide
-      // { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 301, end: 306 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 326, end: 340 }, frameRate: 15, repeat: 0 },
     ],
@@ -1049,8 +1041,8 @@ export const CharacterData = {
     },
     physics: {
       collisionBox: { width: 46, height: 76, offsetX: 268, offsetY: 170 },
-      walkSpeed: 200,
-      runSpeed: 350,
+      walkSpeed: 180,
+      runSpeed: 400,
       jumpPower: 300,
       maxJumps: 2,
     },
@@ -1074,7 +1066,7 @@ export const CharacterData = {
               duration: 300,
               effect: 'mauler_rectangle_shield',
             },
-            damage: 30,
+            damage: 25,
           },
         ],
         knockback: { x: 250, y: -150 },
@@ -1100,7 +1092,7 @@ export const CharacterData = {
               duration: 300,
               effect: 'mauler_rectangle_shield',
             },
-            damage: 30,
+            damage: 25,
           },
         ],
         knockback: { x: 250, y: -150 },
@@ -1126,7 +1118,7 @@ export const CharacterData = {
               duration: 500,
               effect: '',
             },
-            damage: 10,
+            damage: 30,
             movement: { distanceX: 60, distanceY: 60, duration: 550 },
           },
         ],
@@ -1218,7 +1210,7 @@ export const CharacterData = {
               duration: 500,
               effect: '',
             },
-            damage: 30,
+            damage: 40,
             movement: { distanceX: 0, distanceY: -100, duration: 200 },
           },
           {
@@ -1231,7 +1223,7 @@ export const CharacterData = {
               duration: 500,
               effect: '',
             },
-            damage: 15,
+            damage: 20,
           },
           {
             delay: 600,
@@ -1243,7 +1235,7 @@ export const CharacterData = {
               duration: 500,
               effect: '',
             },
-            damage: 15,
+            damage: 20,
           },
           {
             delay: 600,
@@ -1255,7 +1247,7 @@ export const CharacterData = {
               duration: 500,
               effect: '',
             },
-            damage: 15,
+            damage: 20,
           },
           {
             delay: 600,
@@ -1267,7 +1259,7 @@ export const CharacterData = {
               duration: 500,
               effect: '',
             },
-            damage: 15,
+            damage: 20,
           },
         ],
         knockback: { x: 100, y: -150 },
@@ -1311,9 +1303,9 @@ export const CharacterData = {
     },
     physics: {
       collisionBox: { width: 46, height: 76, offsetX: 268, offsetY: 170 },
-      walkSpeed: 200,
-      runSpeed: 350,
-      jumpPower: 300,
+      walkSpeed: 210,
+      runSpeed: 340,
+      jumpPower: 380,
       maxJumps: 2,
     },
     combat: {
@@ -1323,7 +1315,7 @@ export const CharacterData = {
     skills: {
       attack: {
         type: 'instant',
-        icon: 'assets/skills/princess/attack.png', // 아이콘 추가
+        icon: 'assets/skills/princess/attack.png',
         animation: 'attack',
         hitboxSequence: [
           {
@@ -1336,7 +1328,7 @@ export const CharacterData = {
               duration: 300,
               effect: '',
             },
-            damage: 5,
+            damage: 8,
           },
           {
             delay: 300,
@@ -1348,7 +1340,7 @@ export const CharacterData = {
               duration: 500,
               effect: 'princess_water_four_circles_turn_in',
             },
-            damage: 5,
+            damage: 12,
           },
         ],
         knockback: { x: 250, y: -150 },
@@ -1425,7 +1417,6 @@ export const CharacterData = {
             },
             damage: 10,
           },
-
           {
             delay: 700,
             hitbox: {
@@ -1462,7 +1453,7 @@ export const CharacterData = {
               duration: 300,
               effect: 'energy_wave',
             },
-            damage: 10,
+            damage: 20,
           },
           {
             delay: 200,
@@ -1474,10 +1465,9 @@ export const CharacterData = {
               duration: 400,
               effect: 'impact_heavy',
             },
-            damage: 15,
+            damage: 30,
           },
         ],
-        // hitboxDelay: 300,
         hitstop: 'FIREKNIGHT',
         animation: 'w_skill',
         knockback: { x: 200, y: -100 },
@@ -1485,17 +1475,17 @@ export const CharacterData = {
         cooldown: 0,
         cost: { mana: 0 },
         targetType: 'multi',
-        impactEffect: 'explosion', // 폭발 이펙트
+        impactEffect: 'explosion',
       },
       s_skill: {
         type: 'movement',
         icon: 'assets/skills/princess/s_skill.png',
         animation: 's_skill',
         invincible: true,
-        distance: 150,
+        distance: 250,
         cooldown: 3000,
         targetType: 'single',
-        dashEffect: 'dash_trail', // 대시 트레일 이펙트
+        dashEffect: 'dash_trail',
       },
       e_skill: {
         type: 'channeling',
@@ -1513,7 +1503,7 @@ export const CharacterData = {
         healAmount: 2,
         manaAmount: 2,
         targetType: 'single',
-        healEffect: 'heal_aura', // 힐링 오라 이펙트 (캐릭터에 부착)
+        healEffect: 'heal_aura',
       },
       r_skill: {
         type: 'instant',
@@ -1566,7 +1556,7 @@ export const CharacterData = {
         cooldown: 0,
         cost: { mana: 0 },
         targetType: 'multi',
-        impactEffect: 'princess_r_skill', // 불꽃 폭발 이펙트
+        impactEffect: 'princess_r_skill',
       },
     },
     animations: [
@@ -1581,10 +1571,8 @@ export const CharacterData = {
       { key: 'w_skill', frames: { start: 304, end: 314 }, frameRate: 12, repeat: 0 },
       { key: 'r_skill', frames: { start: 321, end: 351 }, frameRate: 15, repeat: 0 },
       { key: 'e_skill', frames: { start: 352, end: 363 }, frameRate: 8, repeat: -1 },
-      // { key: 'e_skill', frames: { start: 384, end: 395 }, frameRate: 8, repeat: -1 }, defend
       { key: 'e_skill_channeling', frames: { start: 354, end: 360 }, frameRate: 8, repeat: -1 },
       { key: 's_skill', frames: { start: 192, end: 197 }, frameRate: 10, repeat: 0 },
-      // { key: 'e_skill', frames: { start: 276, end: 290 }, frameRate: 15, repeat: -1 },
       { key: 'take_hit', frames: { start: 384, end: 390 }, frameRate: 8, repeat: 0 },
       { key: 'death', frames: { start: 416, end: 436 }, frameRate: 21, repeat: 0 },
     ],
@@ -1606,7 +1594,7 @@ export const CharacterData = {
       walkSpeed: 200,
       runSpeed: 350,
       jumpPower: 300,
-      maxJumps: 1,
+      maxJumps: 2,
     },
     combat: {
       attackHitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0, duration: 400 },
@@ -1621,12 +1609,12 @@ export const CharacterData = {
           {
             delay: 150,
             hitbox: { width: 50, height: 35, offsetX: 35, offsetY: 0, duration: 100 },
-            damage: 500,
+            damage: 10,
           },
         ],
         knockback: { x: 50, y: 50 },
         effects: ['burn'],
-        cooldown: 100,
+        cooldown: 0,
         cost: { mana: 0 },
         targetType: 'single',
         hitstop: 'FIREKNIGHT',
