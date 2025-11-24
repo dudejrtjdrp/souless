@@ -10,9 +10,17 @@ export default class StateMachine {
     this.isLocked = false;
     this.lockTimer = null;
     this.animCompleteHandler = null;
+
+    // ✅ Track if destroyed to prevent operations after cleanup
+    this.isDestroyed = false;
   }
 
   changeState(newState) {
+    // ✅ Safety check - prevent operations on destroyed state machine
+    if (this.isDestroyed || !this.animManager || !this.sprite) {
+      return false;
+    }
+
     if (this.isLocked && newState !== this.currentState) {
       return false;
     }
@@ -43,7 +51,6 @@ export default class StateMachine {
   setupStateLock(state) {
     this.clearLock();
 
-    // 접두사 제거
     const baseState = state.includes('-') ? state.split('-')[1] : state;
 
     const lockStates = [
@@ -60,21 +67,29 @@ export default class StateMachine {
       this.isLocked = true;
 
       this.animCompleteHandler = () => {
+        // ✅ Check if destroyed before accessing
+        if (this.isDestroyed) return;
+
         if (this.currentState === state) {
           this.unlock();
-          const onGround = this.sprite.body?.touching.down || false;
+          const onGround = this.sprite?.body?.touching.down || false;
           this.changeState(onGround ? 'idle' : 'jump');
         }
       };
 
-      this.sprite.once('animationcomplete', this.animCompleteHandler);
+      if (this.sprite) {
+        this.sprite.once('animationcomplete', this.animCompleteHandler);
+      }
 
       const maxDuration = this.getStateDuration(baseState);
       this.lockTimer = setTimeout(() => {
+        // ✅ Check if destroyed before accessing
+        if (this.isDestroyed) return;
+
         if (this.isLocked && this.currentState === state) {
           console.warn(`State '${state}' exceeded max duration, force unlocking`);
           this.unlock();
-          const onGround = this.sprite.body?.touching.down || false;
+          const onGround = this.sprite?.body?.touching.down || false;
           this.changeState(onGround ? 'idle' : 'jump');
         }
       }, maxDuration);
@@ -103,22 +118,31 @@ export default class StateMachine {
       this.lockTimer = null;
     }
 
-    if (this.animCompleteHandler) {
+    if (this.animCompleteHandler && this.sprite) {
       this.sprite.off('animationcomplete', this.animCompleteHandler);
       this.animCompleteHandler = null;
     }
   }
 
   lock(duration) {
+    // ✅ Check if destroyed
+    if (this.isDestroyed) return;
+
     this.clearLock();
     this.isLocked = true;
 
     this.lockTimer = setTimeout(() => {
-      this.unlock();
+      // ✅ Check if destroyed before accessing
+      if (!this.isDestroyed) {
+        this.unlock();
+      }
     }, duration);
   }
 
   unlock() {
+    // ✅ Check if destroyed
+    if (this.isDestroyed) return;
+
     this.clearLock();
     this.isLocked = false;
   }
@@ -140,6 +164,9 @@ export default class StateMachine {
   }
 
   destroy() {
+    // ✅ Mark as destroyed FIRST to prevent async operations
+    this.isDestroyed = true;
+
     this.clearLock();
     this.sprite = null;
     this.animManager = null;

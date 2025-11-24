@@ -44,18 +44,18 @@ export default class Fireknight extends CharacterBase {
     // 상태 잠금 시 입력 무시
     if (this.stateMachine.isStateLocked()) return;
 
-    // 1️⃣ 공중 공격 (A)
+    // 공중 공격 (A)
     if (!this.movement.isOnGround() && input.isAttackPressed) {
       this.skillSystem.useSkill('air_attack');
       return;
     }
 
-    // 2️⃣ 지상 공격 콤보 (A)
+    // 지상 공격 콤보 (A)
     if (input.isAttackPressed) {
       const result = this.skillSystem.useSkill('attack');
     }
 
-    // 3️⃣ Q/W/E/R/S 스킬
+    // Q/W/E/R/S 스킬
     const skillKeys = [
       { key: 'Q', skill: 'q_skill', pressed: input.isQPressed },
       { key: 'W', skill: 'w_skill', pressed: input.isWPressed },

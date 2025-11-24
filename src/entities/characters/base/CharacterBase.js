@@ -18,10 +18,17 @@ export default class CharacterBase {
     this.health = 100;
     this.maxMana = 100;
     this.mana = 100;
+
+    this.strength = 1; // 물리 공격력 배수 (기본 1)
+    this.defense = 0; // 방어력 (기본 0)
+
     this.isInvincible = false;
     this.invincibleTimer = null;
 
+    this.isKnockedBack = false;
+
     this.activeSkillHitbox = null;
+    this.isDying = false;
 
     this.initSprite(x, y);
     this.applyNormalization();
@@ -36,31 +43,42 @@ export default class CharacterBase {
 
   async loadSavedResources() {
     try {
-      // SaveManager -> SaveSlotManager로 변경
       const savedResources = await SaveSlotManager.getCharacterResources(this.characterType);
 
       if (savedResources) {
-        this.health = savedResources.hp;
-        this.mana = savedResources.mp;
+        // 스탯을 먼저 로드 (maxHealth, maxMana 포함)
+        if (savedResources.stats) {
+          this.setStats(savedResources.stats);
+        }
 
+        // HP가 0이면 최소한 10%는 회복 (사망 루프 방지)
+        const minHealth = Math.max(10, Math.floor(this.maxHealth * 0.1));
+        this.health = Math.max(minHealth, Math.min(savedResources.hp, this.maxHealth));
+
+        this.mana = Math.min(savedResources.mp, this.maxMana);
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error(`❌ ${this.characterType} 체력/마나 복원 실패:`, error);
+      console.error(`${this.characterType} 리소스 복원 실패:`, error);
       return false;
     }
   }
 
   async saveResources() {
     try {
-      // SaveManager -> SaveSlotManager로 변경
-      await SaveSlotManager.saveCharacterResources(this.characterType, this.health, this.mana);
+      // 스탯 포함해서 저장
+      await SaveSlotManager.saveCharacterResources(
+        this.characterType,
+        this.health,
+        this.mana,
+        this.getStats(),
+      );
 
       return true;
     } catch (error) {
-      console.error(`❌ ${this.characterType} 체력/마나 저장 실패:`, error);
+      console.error(`${this.characterType} 리소스 저장 실패:`, error);
       return false;
     }
   }
@@ -107,7 +125,7 @@ export default class CharacterBase {
         x: collisionBox.offset.x / this.config.spriteScale,
         y: collisionBox.offset.y / this.config.spriteScale,
       };
-    } // 2. 공격 히트박스 설정 // 우선순위: skills.attack.hitbox > attackHitbox (레거시) > 기본값
+    }
 
     if (this.config.skills?.attack?.hitbox) {
       const attackHitbox = this.config.skills.attack.hitbox;
@@ -123,13 +141,11 @@ export default class CharacterBase {
       };
       this.config.attackDuration =
         hitboxData.duration || this.config.skills.attack.hitboxDuration || 200;
-    } // 레거시 지원
-    else if (this.config.attackHitbox) {
+    } else if (this.config.attackHitbox) {
       this.config.attackHitboxSize = this.config.attackHitbox.size;
       this.config.attackHitboxOffset = this.config.attackHitbox.offset;
       this.config.attackDuration = this.config.attackHitbox.duration || 200;
-    } // 기본값
-    else {
+    } else {
       this.config.attackHitboxSize = { width: 40, height: 30 };
       this.config.attackHitboxOffset = { x: 30, y: 0 };
       this.config.attackDuration = 200;
@@ -159,6 +175,7 @@ export default class CharacterBase {
 
     const attackTargetType = this.config.skills?.attack?.targetType || 'single';
 
+    // AttackSystem에 this (character) 전달
     this.attackSystem = new AttackSystem(
       this.scene,
       this.sprite,
@@ -166,6 +183,7 @@ export default class CharacterBase {
       this.config.attackDuration,
       this.config.attackHitboxOffset,
       attackTargetType,
+      this, // character 참조 전달
     );
 
     this.movement = new MovementController(this.sprite, {
@@ -176,7 +194,6 @@ export default class CharacterBase {
     });
 
     this.inputHandler = new InputHandler(this.scene);
-
     this.stateMachine.changeState('idle');
   }
 
@@ -217,13 +234,50 @@ export default class CharacterBase {
   }
 
   takeDamage(amount) {
-    if (this.isInvincible) return;
+    if (this.isInvincible || this.isDying) {
+      return;
+    }
 
-    this.health = Math.max(0, this.health - amount);
+    const actualDamage = this.calculateDamageTaken(amount);
+    this.health = Math.max(0, this.health - actualDamage);
 
-    if (this.health <= 0) {
+    // //  무적 상태 설정 (1초)
+    // this.setInvincible(500);
+
+    // //  히트 플래시 효과
+    // this.playHitFlash();
+
+    this.scene.events.emit('player-damaged');
+    this.scene.events.emit('player-hit');
+
+    // ✅ 체력이 0 이하이면 사망 처리
+    if (this.health <= 0 && !this.isDying) {
       this.onDeath();
     }
+  }
+
+  playHitFlash() {
+    if (!this.sprite) return;
+
+    // 기존 트윈 정지
+    if (this.invincibilityTween) {
+      this.invincibilityTween.stop();
+    }
+
+    // 새로운 깜빡임 트윈
+    this.invincibilityTween = this.scene.tweens.add({
+      targets: this.sprite,
+      alpha: 0.5,
+      duration: 100,
+      yoyo: true,
+      repeat: 9, // 총 1초 동안 깜빡임
+      onComplete: () => {
+        if (this.sprite) {
+          this.sprite.setAlpha(1);
+        }
+        this.invincibilityTween = null;
+      },
+    });
   }
 
   heal(amount) {
@@ -243,21 +297,294 @@ export default class CharacterBase {
   setInvincible(duration) {
     this.isInvincible = true;
 
+    // 기존 타이머가 있다면 제거
     if (this.invincibleTimer) {
-      clearTimeout(this.invincibleTimer);
+      this.invincibleTimer.remove(false);
+      this.invincibleTimer = null;
     }
 
-    this.invincibleTimer = setTimeout(() => {
-      this.isInvincible = false;
-    }, duration);
+    // 깜빡임 트윈이 있으면 제거
+    if (this.invincibilityTween) {
+      this.invincibilityTween.stop();
+      this.invincibilityTween = null;
+    }
+
+    // 스프라이트 강제 불투명
+    if (this.sprite) {
+      this.sprite.setAlpha(1);
+    }
+
+    // 새로운 무적 타이머 설정
+    this.invincibleTimer = this.scene.time.delayedCall(duration, () => {
+      this.releaseInvincibility();
+    });
   }
 
-  onDeath() {}
+  releaseInvincibility() {
+    if (this.invincibleTimer) {
+      this.invincibleTimer.remove(false);
+      this.invincibleTimer = null;
+    }
+
+    if (this.invincibilityTween) {
+      this.invincibilityTween.stop();
+      this.invincibilityTween = null;
+    }
+
+    this.isInvincible = false;
+
+    if (this.sprite) {
+      this.sprite.setAlpha(1);
+      this.scene.tweens.killTweensOf(this.sprite);
+    }
+  }
+
+  forceReleaseInvincibility() {
+    // 타이머 강제 해제
+    if (this.invincibleTimer) {
+      this.invincibleTimer.remove(false);
+      this.invincibleTimer = null;
+    }
+
+    // 트윈 강제 정지
+    if (this.invincibilityTween) {
+      this.invincibilityTween.stop();
+      this.invincibilityTween = null;
+    }
+
+    this.isInvincible = false;
+
+    // 스프라이트 상태 초기화
+    if (this.sprite) {
+      this.sprite.setAlpha(1);
+      this.scene.tweens.killTweensOf(this.sprite);
+    }
+  }
+
+  async onDeath() {
+    if (this.isDying) return;
+    this.isDying = true;
+    this.scene.setDeath(this.isDying);
+
+    await this.playDeathAnimation();
+
+    const ghostSpawnX = this.sprite.x;
+    const ghostSpawnY = this.sprite.y;
+
+    const ghostSprite = this.createFloatingGhost(ghostSpawnX, ghostSpawnY);
+
+    await this.showRespawnPrompt(ghostSprite);
+
+    // 완전 재시작으로 변경
+    await this.handleRespawn(ghostSprite);
+  }
+
+  async playDeathAnimation() {
+    return new Promise((resolve) => {
+      if (this.sprite.body) {
+        this.sprite.setVelocityX(0);
+        this.sprite.setVelocityY(0);
+      }
+
+      if (this.stateMachine) {
+        this.stateMachine.changeState('death');
+        this.stateMachine.lock(2000);
+      }
+
+      this.scene.cameras.main.shake(300, 0.02);
+
+      this.scene.time.delayedCall(2000, () => {
+        if (this.sprite.anims) {
+          this.sprite.anims.pause();
+        }
+        resolve();
+      });
+    });
+  }
+
+  createFloatingGhost(x, y) {
+    const ghost = this.scene.add.sprite(x, y, this.config.spriteKey, 0);
+    ghost.setTint(0x6666ff);
+    ghost.setAlpha(0.6);
+    ghost.setDepth(this.config.depth - 1);
+
+    this.scene.tweens.add({
+      targets: ghost,
+      y: y - 30,
+      duration: 1500,
+      ease: 'Sine.inOut',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    this.scene.tweens.add({
+      targets: ghost,
+      rotation: Math.PI * 2,
+      duration: 3000,
+      ease: 'Linear',
+      repeat: -1,
+    });
+
+    this.scene.tweens.add({
+      targets: ghost,
+      alpha: { from: 0.6, to: 0.3 },
+      duration: 800,
+      ease: 'Sine.inOut',
+      repeat: -1,
+      yoyo: true,
+    });
+
+    return ghost;
+  }
+
+  showRespawnPrompt(ghostSprite) {
+    return new Promise((resolve) => {
+      const centerX = this.scene.cameras.main.centerX;
+      const centerY = this.scene.cameras.main.centerY;
+
+      const overlay = this.scene.add
+        .rectangle(centerX, centerY, 800, 600, 0x000000, 0.5)
+        .setOrigin(0.5)
+        .setDepth(10000)
+        .setScrollFactor(0);
+
+      const diedText = this.createDeathText(centerX, centerY);
+      const descText = this.createDescriptionText(centerX, centerY);
+
+      const confirmButton = this.createButton(centerX, centerY + 80, '확인', '#4CAF50', () => {
+        this.destroyRespawnUI(overlay, diedText, descText, confirmButton);
+        resolve(true);
+      });
+    });
+  }
+
+  createDeathText(centerX, centerY) {
+    return this.scene.add
+      .text(centerX, centerY - 100, 'YOU DIED', {
+        fontSize: '64px',
+        fontFamily: 'Arial Black',
+        color: '#ff0000',
+        stroke: '#000000',
+        strokeThickness: 8,
+      })
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0);
+  }
+
+  createDescriptionText(centerX, centerY) {
+    return this.scene.add
+      .text(centerX, centerY, '리스폰 하시겠습니까?', {
+        fontSize: '24px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0);
+  }
+
+  destroyRespawnUI(overlay, diedText, descText, confirmButton) {
+    overlay.destroy();
+    diedText.destroy();
+    descText.destroy();
+    confirmButton.bg.destroy();
+    confirmButton.text.destroy();
+  }
+
+  createButton(x, y, text, color, callback) {
+    const bg = this.scene.add
+      .rectangle(x, y, 150, 50, color)
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+
+    const btnText = this.scene.add
+      .text(x, y, text, {
+        fontSize: '20px',
+        fontFamily: 'Arial',
+        color: '#ffffff',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setDepth(10001)
+      .setScrollFactor(0);
+
+    bg.on('pointerdown', callback);
+    bg.on('pointerover', () => {
+      bg.setScale(1.1);
+    });
+    bg.on('pointerout', () => {
+      bg.setScale(1);
+    });
+
+    return { bg, text: btnText };
+  }
+
+  async handleRespawn(ghostSprite) {
+    await new Promise((resolve) => {
+      this.scene.cameras.main.fade(800, 0, 0, 0, false, () => {
+        resolve();
+      });
+    });
+
+    if (ghostSprite) ghostSprite.destroy();
+
+    // 리스폰 전 상태 초기화
+    this.isDying = false;
+    this.scene.isPlayerDead = false;
+
+    if (this.stateMachine) {
+      this.stateMachine.unlock();
+    }
+
+    // 보스 상태도 초기화
+    this.scene.isBossSpawning = false;
+    this.scene.currentBoss = null;
+
+    // UI Scene도 재시작
+    if (this.scene.scene.isActive('UIScene')) {
+      this.scene.scene.restart('UIScene');
+    }
+
+    // 리스폰 플래그 추가
+    this.scene.scene.restart({
+      mapKey: this.scene.currentMapKey, // 현재 맵 유지
+      characterType: this.characterType,
+      isRespawn: true, // 🔑 리스폰 플래그
+      respawnHealth: this.maxHealth,
+    });
+  }
 
   update() {
     const input = this.inputHandler.getInputState();
-
     this.movement.update();
+
+    // 타이머가 없는데 무적 상태라면 강제 해제
+    if (this.isInvincible && !this.invincibleTimer) {
+      this.forceReleaseInvincibility();
+    }
+
+    // 사망 중일 때는 입력 무시
+    if (this.isDying) {
+      this.renderDebug();
+      return;
+    }
+
+    // HP 0 체크 추가
+    if (this.health <= 0 && !this.isDying) {
+      this.onDeath();
+      return;
+    }
+
+    if (this.isKnockedBack) {
+      if (typeof this.onUpdate === 'function') {
+        this.onUpdate(input);
+      }
+      this.renderDebug();
+      return;
+    }
 
     if (!this.stateMachine.isStateLocked()) {
       this.handleInput(input);
@@ -276,16 +603,66 @@ export default class CharacterBase {
     if (input.isJumpPressed) {
       this.jump();
     }
-    if (input.isEPressed) {
-    }
-    if (input.isEReleased) {
-    }
   }
 
   updateMovement(input) {
     if (!this.stateMachine.isStateLocked()) {
+      // 캐릭터 선택 오버레이 보일 때 이동 멈추기
+      const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
+
+      if (isCharacterSelectVisible) {
+        // 속도를 0으로 설정
+        if (this.sprite.body) {
+          this.sprite.setVelocityX(0);
+        }
+        return;
+      }
+
       this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
     }
+  }
+
+  calculateDamage(baseDamage) {
+    return Math.floor(baseDamage * this.strength);
+  }
+
+  // 방어력 적용된 받는 데미지 계산
+  calculateDamageTaken(incomingDamage) {
+    const reduction = Math.min(this.defense * 0.01, 0.8);
+    const damage = Math.floor(incomingDamage * (1 - reduction));
+    return Math.max(1, damage); // 최소 1 데미지
+  }
+
+  addStrength(amount) {
+    this.strength += amount;
+  }
+
+  addDefense(amount) {
+    this.defense += amount;
+  }
+
+  setStats(stats) {
+    if (stats.strength !== undefined) this.strength = stats.strength;
+    if (stats.defense !== undefined) this.defense = stats.defense;
+    if (stats.maxHealth !== undefined) {
+      this.maxHealth = stats.maxHealth;
+      // 현재 체력이 새로운 최대값을 초과하지 않도록
+      this.health = Math.min(this.health, this.maxHealth);
+    }
+    if (stats.maxMana !== undefined) {
+      this.maxMana = stats.maxMana;
+      // 현재 마나가 새로운 최대값을 초과하지 않도록
+      this.mana = Math.min(this.mana, this.maxMana);
+    }
+  }
+
+  getStats() {
+    return {
+      strength: this.strength,
+      defense: this.defense,
+      maxHealth: this.maxHealth,
+      maxMana: this.maxMana,
+    };
   }
 
   updateState(input) {
@@ -294,7 +671,25 @@ export default class CharacterBase {
     }
 
     const onGround = this.movement.isOnGround();
+    const currentState = this.stateMachine.getCurrentState();
 
+    // 캐릭터 선택 오버레이가 보이면 이동 차단
+    const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
+
+    if (isCharacterSelectVisible) {
+      // UI가 보일 때는 idle 상태만 유지
+      if (currentState !== 'idle') {
+        this.stateMachine.changeState('idle');
+      }
+      return;
+    }
+
+    // 좌우 이동 키 직접 확인
+    const isLeftDown = input.cursors.left.isDown;
+    const isRightDown = input.cursors.right.isDown;
+    const isHorizontalMoving = isLeftDown || isRightDown;
+
+    // 공중 상태 확인
     if (!onGround) {
       const velocityY = this.sprite.body.velocity.y;
 
@@ -303,11 +698,27 @@ export default class CharacterBase {
       } else {
         this.stateMachine.changeState('jump_down');
       }
-    } else if (input.isMoving) {
-      const newState = input.isRunning ? 'run' : 'walk';
-      this.stateMachine.changeState(newState);
-    } else {
-      this.stateMachine.changeState('idle');
+    }
+    // 지면에 있을 때만 walk/run/idle 상태 변환
+    else {
+      if (isHorizontalMoving) {
+        // 현재 상태가 이미 walk/run이면 run 상태만 토글
+        if (currentState === 'walk' || currentState === 'run') {
+          const targetState = input.isRunning ? 'run' : 'walk';
+          if (currentState !== targetState) {
+            this.stateMachine.changeState(targetState);
+          }
+        } else {
+          // idle이나 다른 상태에서 movement 시작
+          const newState = input.isRunning ? 'run' : 'walk';
+          this.stateMachine.changeState(newState);
+        }
+      } else {
+        // 이동 키가 모두 해제됨 - idle로 변환
+        if (currentState !== 'idle') {
+          this.stateMachine.changeState('idle');
+        }
+      }
     }
   }
 
@@ -353,20 +764,7 @@ export default class CharacterBase {
     }
   }
 
-  async gainExp(amount) {
-    if (amount <= 0) return; // SaveManager -> SaveSlotManager로 변경
-
-    await SaveSlotManager.addExp(amount, this.characterType); // GameScene에 이벤트 발생 알림
-
-    if (this.scene && this.scene.events) {
-      this.scene.onExpGained(amount, this.characterType);
-    } // 경험치 획득 이펙트 표시 (선택사항)
-
-    this.showExpGainEffect(amount);
-  }
-
   showExpGainEffect(amount) {
-    // 캐릭터 위에 +EXP 텍스트 표시
     const expText = this.scene.add
       .text(this.sprite.x, this.sprite.y - 50, `+${amount} EXP`, {
         fontSize: '16px',
@@ -375,7 +773,7 @@ export default class CharacterBase {
         stroke: '#000000',
         strokeThickness: 3,
       })
-      .setOrigin(0.5); // 위로 떠오르면서 페이드아웃
+      .setOrigin(0.5);
 
     this.scene.tweens.add({
       targets: expText,
@@ -390,6 +788,17 @@ export default class CharacterBase {
   }
 
   destroy() {
+    // 무적 타이머 정리
+    if (this.invincibleTimer) {
+      this.invincibleTimer.remove(false);
+      this.invincibleTimer = null;
+    }
+
+    // 무적 트윈 정리
+    if (this.invincibilityTween) {
+      this.invincibilityTween.stop();
+      this.invincibilityTween = null;
+    }
     if (this.inputHandler) this.inputHandler.destroy();
     if (this.stateMachine) this.stateMachine.destroy();
     if (this.sprite) this.sprite.destroy();
@@ -397,7 +806,6 @@ export default class CharacterBase {
     if (this.debugGraphics) this.debugGraphics.destroy();
   }
 
-  // === Getter 프로퍼티 추가 ===
   get x() {
     return this.sprite ? this.sprite.x : 0;
   }

@@ -30,8 +30,19 @@ export default class Soul extends CharacterBase {
     return CharacterDataAdapter.getAnimationConfig('soul');
   }
 
-  //  updateMovement 오버라이드
+  // updateMovement 오버라이드 - 오버레이 체크 추가
   updateMovement(input) {
+    // 캐릭터 선택 오버레이 보일 때 이동 멈추기
+    const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
+
+    if (isCharacterSelectVisible) {
+      // 속도를 0으로 설정
+      if (this.sprite && this.sprite.body) {
+        this.sprite.setVelocityX(0);
+      }
+      return;
+    }
+
     if (!this.stateMachine.isStateLocked() && !this.isDashing) {
       this.movement.handleHorizontalMovement(input.cursors, input.isRunning);
     }
@@ -70,7 +81,16 @@ export default class Soul extends CharacterBase {
       this.scene.time.delayedCall(300, () => {
         this.isDashing = false;
 
-        //  대시 끝날 때 현재 입력 상태 확인해서 속도 설정
+        // 대시 끝날 때 오버레이 체크 추가
+        const isCharacterSelectVisible = this.scene.characterSelectOverlay?.isVisible || false;
+
+        if (isCharacterSelectVisible) {
+          // 오버레이가 보이면 속도 0 유지
+          this.sprite.setVelocityX(0);
+          return;
+        }
+
+        // 대시 끝날 때 현재 입력 상태 확인해서 속도 설정
         const input = this.inputHandler.getInputState();
         const speed = input.isRunning ? this.config.runSpeed : this.config.walkSpeed;
 

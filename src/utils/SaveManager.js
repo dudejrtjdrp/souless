@@ -47,14 +47,14 @@ export default class SaveManager {
           const storedSlot = localStorage.getItem(`save_slot_${targetSlotIndex}`);
           data = storedSlot ? JSON.parse(storedSlot) : null;
         } else {
-          console.error(`❌ Save load error: Invalid target slot index: ${targetSlotIndex}`);
+          console.error(`Save load error: Invalid target slot index: ${targetSlotIndex}`);
           return this.getDefaultSaveData();
         }
       }
 
       return data ? { ...this.getDefaultSaveData(), ...data } : this.getDefaultSaveData();
     } catch (error) {
-      console.error('❌ Save load error:', error);
+      console.error('Save load error:', error);
       return this.getDefaultSaveData();
     }
   }
@@ -81,18 +81,13 @@ export default class SaveManager {
         if (targetSlotIndex >= 0 && targetSlotIndex < this.MAX_SLOTS) {
           // 오직 save_slot_X 키만 사용합니다.
           localStorage.setItem(`save_slot_${targetSlotIndex}`, JSON.stringify(dataToSave));
-          console.log(
-            `💾 Saved to slot ${targetSlotIndex} (character: ${dataToSave.currentCharacter})`,
-          );
         } else {
-          console.error(
-            `❌ Save error: Attempted save with invalid slot index: ${targetSlotIndex}`,
-          );
+          console.error(`Save error: Attempted save with invalid slot index: ${targetSlotIndex}`);
         }
       }
       return true;
     } catch (error) {
-      console.error('❌ Save error:', error);
+      console.error('Save error:', error);
       return false;
     }
   }

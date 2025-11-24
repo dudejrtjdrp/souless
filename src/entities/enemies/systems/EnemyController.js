@@ -12,6 +12,11 @@ export default class EnemyController {
   }
 
   update(time, delta) {
+    // 피격 중에는 아무 행동도 하지 않음
+    if (this.enemy.isBeingHit) {
+      return;
+    }
+
     // 1. 매 프레임 타겟을 찾거나 갱신
     this.findTarget();
 
@@ -19,18 +24,22 @@ export default class EnemyController {
       // 2. 타겟이 있는 경우: 추적 및 공격
       const targetX = this.target.sprite ? this.target.sprite.x : this.target.x;
       const targetY = this.target.sprite ? this.target.sprite.y : this.target.y;
+      const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
+      const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
 
-      const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, targetX, targetY);
+      const dist = Phaser.Math.Distance.Between(enemyX, enemyY, targetX, targetY);
+      const sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
+      const realDist = dist - sizeOffset;
 
       // 공격 범위 내인 경우
-      if (dist <= this.attackRange) {
+      if (realDist <= this.attackRange) {
         // 공격 시 완전히 멈춤
         if (this.enemy.sprite.body) {
           this.enemy.sprite.body.setVelocityX(0);
           this.enemy.sprite.body.setVelocityY(0);
         }
 
-        // ⚠️ 쿨다운 체크 후 공격
+        // 쿨다운 체크 후 공격
         this.tryAttack(time);
         return;
       }
@@ -58,9 +67,12 @@ export default class EnemyController {
 
     const playerX = player.sprite.x;
     const playerY = player.sprite.y;
+    const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
+    const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
 
-    const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, playerX, playerY);
+    const dist = Phaser.Math.Distance.Between(enemyX, enemyY, playerX, playerY);
 
+    // 감지 범위 내에 있으면 항상 타겟으로 설정 (넉백 후에도 추적 재개)
     if (dist <= this.detectRange) {
       this.target = player;
     } else {
@@ -94,49 +106,46 @@ export default class EnemyController {
   }
 
   tryAttack(time) {
-    // 🔍 쿨다운 체크 (가장 먼저!)
-    const timeSinceLastAttack = time - this.lastAttackTime;
-    if (timeSinceLastAttack < this.attackCooldown) {
-      // 쿨다운 중일 때는 로그 줄이기 (1초마다만)
+    // 피격 중이면 공격 불가
+    if (this.enemy.isBeingHit) {
       return;
     }
 
-    // 🔍 이미 공격 중이면 스킵
+    const timeSinceLastAttack = time - this.lastAttackTime;
+    if (timeSinceLastAttack < this.attackCooldown) {
+      return;
+    }
+
     if (this.isInAttackState) {
       return;
     }
 
-    // 🔍 attackSystem 존재 확인
     if (!this.enemy.attackSystem) {
-      console.warn('⚠️ attackSystem not found on enemy:', this.enemy.enemyType);
       return;
     }
 
-    // 🔍 target 유효성 확인
     if (!this.target || !this.target.sprite) {
-      console.warn('⚠️ Invalid target');
       return;
     }
 
-    // 🔍 거리 재확인
     const targetX = this.target.sprite.x;
     const targetY = this.target.sprite.y;
-    const dist = Phaser.Math.Distance.Between(this.enemy.x, this.enemy.y, targetX, targetY);
+    const enemyX = this.enemy.sprite ? this.enemy.sprite.x : this.enemy.x;
+    const enemyY = this.enemy.sprite ? this.enemy.sprite.y : this.enemy.y;
 
-    if (dist > this.attackRange * 1.2) {
+    const dist = Phaser.Math.Distance.Between(enemyX, enemyY, targetX, targetY);
+    const sizeOffset = this.enemy.sprite.body.width / 2 + this.target.sprite.body.width / 2;
+    const realDist = dist - sizeOffset;
+
+    if (realDist > this.attackRange * 1.2) {
       return;
     }
 
-    // ⚠️ 쿨다운 시간 기록 (먼저!)
     this.lastAttackTime = time;
     this.isInAttackState = true;
 
-    // 🎯 실제 공격 실행
-    this.enemy.attackSystem.attack(this.target);
-
-    // ⚠️ 공격 애니메이션 시간 + 약간의 여유 후 공격 상태 해제
-    const attackDuration = this.attackCooldown * 0.3; // 쿨다운의 30% 정도
-    this.enemy.scene.time.delayedCall(attackDuration, () => {
+    // 공격 실행하고 완료 시 콜백으로 상태 해제
+    this.enemy.attackSystem.attack(this.target, () => {
       this.isInAttackState = false;
     });
   }

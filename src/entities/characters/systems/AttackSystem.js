@@ -6,6 +6,7 @@ export default class AttackSystem {
     duration = 200, // 기본값 추가
     offset = { x: 0, y: 0 }, // 기본값 추가
     targetType = 'single',
+    character = null,
   ) {
     this.scene = scene;
     this.sprite = sprite;
@@ -13,6 +14,8 @@ export default class AttackSystem {
     this.duration = duration;
     this.offset = offset;
     this.targetType = targetType;
+    this.character = character;
+    this.baseDamage = 10;
 
     this.active = false;
     this.hitbox = null;
@@ -21,6 +24,13 @@ export default class AttackSystem {
     this.deactivateTimer = null; // 타이머 참조 저장
 
     this.createHitbox();
+  }
+
+  getDamage() {
+    if (this.character && typeof this.character.calculateDamage === 'function') {
+      return this.character.calculateDamage(this.baseDamage, 'physical');
+    }
+    return this.baseDamage;
   }
 
   createHitbox() {
@@ -82,27 +92,29 @@ export default class AttackSystem {
   }
 
   checkHit(target) {
-    if (!this.active || !target) {
-      return false;
-    }
-
-    // single 타입: 한 번만 맞춤
-    if (this.targetType === 'single' && this.hasHitThisAttack) {
-      return false;
-    }
+    if (!this.active || !target) return false;
+    if (this.targetType === 'single' && this.hasHitThisAttack) return false;
 
     const targetSprite = target.sprite || target;
-
-    if (!targetSprite?.getBounds) {
-      return false;
-    }
+    if (!targetSprite) return false;
 
     this.updateHitboxPosition();
 
-    const bounds1 = this.hitbox.getBounds();
-    const bounds2 = targetSprite.getBounds();
+    const attackBounds = this.hitbox.getBounds();
+    let targetRect;
 
-    const hit = Phaser.Geom.Intersects.RectangleToRectangle(bounds1, bounds2);
+    if (targetSprite.body) {
+      targetRect = new Phaser.Geom.Rectangle(
+        targetSprite.body.x,
+        targetSprite.body.y,
+        targetSprite.body.width,
+        targetSprite.body.height,
+      );
+    } else {
+      targetRect = targetSprite.getBounds();
+    }
+
+    const hit = Phaser.Geom.Intersects.RectangleToRectangle(attackBounds, targetRect);
 
     if (hit) {
       if (this.targetType === 'single') {
@@ -112,7 +124,11 @@ export default class AttackSystem {
       const enemyId = targetSprite.name || targetSprite;
       this.hitEnemies.add(enemyId);
 
-      return true;
+      // 데미지 정보 포함해서 반환
+      return {
+        hit: true,
+        damage: this.getDamage(),
+      };
     }
 
     return false;
