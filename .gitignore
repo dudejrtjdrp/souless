@@ -37,9 +37,6 @@ out/
 Thumbs.db
 .vscode/
 
-# 에셋 폴더 무시
-/src/assets/
-public
 
 .eslintrc.cjs
 .prettierrc
